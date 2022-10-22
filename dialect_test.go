@@ -27,6 +27,14 @@ func getTable() (table *dialect.TableModel) {
 			{Name: "userId", Type: "bigint", Length: 20, PrimaryKey: true},
 			{Name: "name", Type: "varchar", Length: 200},
 			{Name: "account", Type: "varchar", Length: 50},
+			{Name: "status", Type: "int", Length: 3},
+			{Name: "deleted", Type: "bit", Length: 1},
+			{Name: "detail", Type: "text", Length: 500},
+			{Name: "detail2", Type: "longtext", Length: 500},
+			{Name: "detail3", Type: "blob", Length: 500},
+			{Name: "detail4", Type: "longblob", Length: 500},
+			{Name: "createDate", Type: "date", Length: 20},
+			{Name: "createDate1", Type: "datetime", Length: 20},
 		},
 		IndexList: []*dialect.IndexModel{
 			{Name: "account", Type: "UNIQUE", Columns: []string{"account"}},
@@ -76,6 +84,39 @@ func testTableDelete(dbContext context.Context, dialect2 dialect.Dialect, param 
 	fmt.Println()
 
 }
+func testColumnAdd(dbContext context.Context, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string, column *dialect.ColumnModel) {
+	sqlList, err := dialect2.ColumnAddSql(param, databaseName, tableName, column)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] column [" + column.Name + "] add--------")
+	testUpdate(dbContext, sqlList)
+	fmt.Println()
+	fmt.Println()
+
+}
+func testColumnUpdate(dbContext context.Context, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string, column *dialect.ColumnModel) {
+	sqlList, err := dialect2.ColumnUpdateSql(param, databaseName, tableName, column)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] column [" + column.Name + "] update--------")
+	testUpdate(dbContext, sqlList)
+	fmt.Println()
+	fmt.Println()
+
+}
+func testColumnDelete(dbContext context.Context, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string, columnName string) {
+	sqlList, err := dialect2.ColumnDeleteSql(param, databaseName, tableName, columnName)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] column [" + columnName + "] delete--------")
+	testUpdate(dbContext, sqlList)
+	fmt.Println()
+	fmt.Println()
+
+}
 
 func testUpdate(dbContext context.Context, sqlList []string) {
 
@@ -87,6 +128,10 @@ func testUpdate(dbContext context.Context, sqlList []string) {
 
 			fmt.Printf("%s\n", one)
 			_, err = zorm.UpdateFinder(ctx, finder)
+			if err != nil {
+				return
+			}
+
 		}
 		return
 	})

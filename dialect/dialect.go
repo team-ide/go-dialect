@@ -35,9 +35,14 @@ type Dialect interface {
 	ColumnsSelectSql(databaseName string, tableName string) (sql string, err error)
 	ColumnSelectSql(databaseName string, tableName string, columnName string) (sql string, err error)
 	ColumnAddSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error)
+	ColumnCommentSql(param *GenerateParam, databaseName string, tableName string, columnName string, comment string) (sqlList []string, err error)
 	ColumnUpdateSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error)
-	ColumnRenameSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error)
 	ColumnDeleteSql(param *GenerateParam, databaseName string, tableName string, columnName string) (sqlList []string, err error)
+
+	PrimaryKeyModel(data map[string]interface{}) (primaryKey *PrimaryKeyModel, err error)
+	PrimaryKeysSelectSql(databaseName string, tableName string) (sql string, err error)
+	PrimaryKeyAddSql(param *GenerateParam, databaseName string, tableName string, primaryKeys []string) (sqlList []string, err error)
+	PrimaryKeyDeleteSql(param *GenerateParam, databaseName string, tableName string) (sqlList []string, err error)
 
 	IndexModel(data map[string]interface{}) (index *IndexModel, err error)
 	IndexesSelectSql(databaseName string, tableName string) (sql string, err error)
@@ -45,12 +50,6 @@ type Dialect interface {
 	IndexAddSql(param *GenerateParam, databaseName string, tableName string, index *IndexModel) (sqlList []string, err error)
 	IndexUpdateSql(param *GenerateParam, databaseName string, tableName string, index *IndexModel) (sqlList []string, err error)
 	IndexDeleteSql(param *GenerateParam, databaseName string, tableName string, indexName string) (sqlList []string, err error)
-	IndexRenameSql(param *GenerateParam, databaseName string, tableName string, indexName string, rename string) (sqlList []string, err error)
-
-	PrimaryKeyModel(data map[string]interface{}) (primaryKey *PrimaryKeyModel, err error)
-	PrimaryKeysSelectSql(databaseName string, tableName string) (sql string, err error)
-	PrimaryKeyAddSql(param *GenerateParam, databaseName string, tableName string, primaryKeys []string) (sqlList []string, err error)
-	PrimaryKeyDeleteSql(param *GenerateParam, databaseName string, tableName string, primaryKeys []string) (sqlList []string, err error)
 }
 
 var (

@@ -48,5 +48,19 @@ func TestMysqlTableCreate(t *testing.T) {
 	testTableDelete(getMysqlConfig(), dialect.Mysql, param, database.Name, getTable().Name)
 	testTableCreate(getMysqlConfig(), dialect.Mysql, param, database.Name, getTable())
 
+	testColumnUpdate(getMysqlConfig(), dialect.Mysql, param, database.Name, getTable().Name, &dialect.ColumnModel{
+		Name:    "name1",
+		Type:    "varchar",
+		Length:  500,
+		Comment: "name1注释",
+		OldName: "name",
+	})
+	testColumnDelete(getMysqlConfig(), dialect.Mysql, param, database.Name, getTable().Name, "detail3")
+	testColumnAdd(getMysqlConfig(), dialect.Mysql, param, database.Name, getTable().Name, &dialect.ColumnModel{
+		Name:    "name2",
+		Type:    "varchar",
+		Length:  500,
+		Comment: "name2注释",
+	})
 	testTables(getMysqlConfig(), dialect.Mysql, database.Name)
 }

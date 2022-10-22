@@ -2,6 +2,8 @@ package dialect
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -101,12 +103,12 @@ func (this_ *MysqlDialect) init() {
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TINYTEXT", TypeFormat: "TINYTEXT($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TEXT", TypeFormat: "TEXT($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "MEDIUMTEXT", TypeFormat: "MEDIUMTEXT($l)", HasLength: true, IsString: true})
-	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONGTEXT", TypeFormat: "LONGTEXT($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONGTEXT", TypeFormat: "LONGTEXT", HasLength: false, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "ENUM", TypeFormat: "ENUM($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TINYBLOB", TypeFormat: "TINYBLOB($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BLOB", TypeFormat: "BLOB($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "MEDIUMBLOB", TypeFormat: "MEDIUMBLOB($l)", HasLength: true, IsString: true})
-	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONGBLOB", TypeFormat: "LONGBLOB($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONGBLOB", TypeFormat: "LONGBLOB", HasLength: false, IsString: true})
 
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SET", TypeFormat: "SET($l)", HasLength: true, IsString: true})
 }
@@ -350,7 +352,87 @@ func (this_ *MysqlDialect) ColumnsSelectSql(databaseName string, tableName strin
 	sql += `AND TABLE_NAME='` + tableName + `' `
 	return
 }
+func (this_ *MysqlDialect) ColumnAddSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
+	var columnType string
+	columnType, err = this_.FormatColumnType(column.Type, column.Length, column.Decimal)
+	if err != nil {
+		return
+	}
 
+	sql := "ALTER TABLE "
+	if param.AppendDatabase && databaseName != "" {
+		sql += param.packingCharacterDatabase(databaseName) + "."
+	}
+	sql += "" + param.packingCharacterTable(tableName)
+	sql += " ADD COLUMN " + param.packingCharacterColumn(column.Name)
+	sql += " " + columnType
+	if column.NotNull {
+		sql += " NOT NULL"
+	}
+	if column.Default == "" {
+		sql += " DEFAULT NULL"
+	} else {
+		sql += " DEFAULT " + formatStringValue("'", GetStringValue(column.Default))
+	}
+	sql += " COMMENT " + formatStringValue("'", column.Comment)
+	if column.BeforeColumn != "" {
+		sql += " AFTER " + param.packingCharacterColumn(column.BeforeColumn)
+	}
+
+	sqlList = append(sqlList, sql)
+	return
+}
+func (this_ *MysqlDialect) ColumnUpdateSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
+	var columnType string
+	columnType, err = this_.FormatColumnType(column.Type, column.Length, column.Decimal)
+	if err != nil {
+		return
+	}
+
+	sql := "ALTER TABLE "
+	if param.AppendDatabase && databaseName != "" {
+		sql += param.packingCharacterDatabase(databaseName) + "."
+	}
+	sql += "" + param.packingCharacterTable(tableName)
+	if column.OldName != "" && column.Name != column.OldName {
+		sql += " CHANGE COLUMN " + param.packingCharacterColumn(column.OldName)
+	} else {
+		sql += " MODIFY COLUMN"
+	}
+	sql += " " + param.packingCharacterColumn(column.Name)
+	sql += " " + columnType
+	if column.NotNull {
+		sql += " NOT NULL"
+	}
+	if column.Default == "" {
+		sql += " DEFAULT NULL"
+	} else {
+		sql += " DEFAULT " + formatStringValue("'", GetStringValue(column.Default))
+	}
+	sql += " COMMENT " + formatStringValue("'", column.Comment)
+	if column.BeforeColumn != "" {
+		sql += " AFTER " + param.packingCharacterColumn(column.BeforeColumn)
+	}
+
+	sqlList = append(sqlList, sql)
+
+	return
+}
+func (this_ *MysqlDialect) ColumnDeleteSql(param *GenerateParam, databaseName string, tableName string, columnName string) (sqlList []string, err error) {
+	var sql string
+	sql = `ALTER TABLE `
+
+	if param.AppendDatabase && databaseName != "" {
+		sql += param.packingCharacterDatabase(databaseName) + "."
+	}
+	sql += param.packingCharacterTable(tableName)
+
+	sql += ` DROP COLUMN `
+	sql += param.packingCharacterColumn(columnName)
+
+	sqlList = append(sqlList, sql)
+	return
+}
 func (this_ *MysqlDialect) PrimaryKeyModel(data map[string]interface{}) (primaryKey *PrimaryKeyModel, err error) {
 	if data == nil {
 		return
@@ -378,6 +460,32 @@ func (this_ *MysqlDialect) PrimaryKeysSelectSql(databaseName string, tableName s
 	sql += `AND t.CONSTRAINT_TYPE='PRIMARY KEY' `
 	return
 }
+func (this_ *MysqlDialect) PrimaryKeyAddSql(param *GenerateParam, databaseName string, tableName string, primaryKeys []string) (sqlList []string, err error) {
+	sql := "ALTER TABLE "
+	if param.AppendDatabase && databaseName != "" {
+		sql += param.packingCharacterDatabase(databaseName) + "."
+	}
+	sql += "" + param.packingCharacterTable(tableName)
+
+	sql += ` ADD PRIMARY KEY `
+
+	sql += "(" + param.packingCharacterColumns(strings.Join(primaryKeys, ",")) + ")"
+
+	sqlList = append(sqlList, sql)
+	return
+}
+func (this_ *MysqlDialect) PrimaryKeyDeleteSql(param *GenerateParam, databaseName string, tableName string) (sqlList []string, err error) {
+	sql := "ALTER TABLE "
+	if param.AppendDatabase && databaseName != "" {
+		sql += param.packingCharacterDatabase(databaseName) + "."
+	}
+	sql += "" + param.packingCharacterTable(tableName)
+
+	sql += ` DROP PRIMARY KEY `
+
+	sqlList = append(sqlList, sql)
+	return
+}
 
 func (this_ *MysqlDialect) IndexModel(data map[string]interface{}) (index *IndexModel, err error) {
 	if data == nil {
@@ -393,8 +501,11 @@ func (this_ *MysqlDialect) IndexModel(data map[string]interface{}) (index *Index
 	if data["INDEX_COMMENT"] != nil {
 		index.Comment = data["INDEX_COMMENT"].(string)
 	}
-	if data["NON_UNIQUE"] == "0" {
-		index.Type = "unique"
+	if data["NON_UNIQUE"] != nil {
+		i64, e := strconv.ParseInt(fmt.Sprintf(GetStringValue(data["NON_UNIQUE"])), 10, 64)
+		if e == nil && i64 == 0 {
+			index.Type = "unique"
+		}
 	}
 	if data["TABLE_NAME"] != nil {
 		index.TableName = data["TABLE_NAME"].(string)
@@ -442,7 +553,7 @@ func (this_ *MysqlDialect) IndexAddSql(param *GenerateParam, databaseName string
 		return
 	}
 	if index.Name != "" {
-		sql += "" + index.Name + " "
+		sql += "" + formatStringValue("'", index.Name) + " "
 	}
 	if len(index.Columns) > 0 {
 		sql += "(" + param.packingCharacterColumns(strings.Join(index.Columns, ",")) + ")"
@@ -451,6 +562,53 @@ func (this_ *MysqlDialect) IndexAddSql(param *GenerateParam, databaseName string
 	if index.Comment != "" {
 		sql += " COMMENT " + formatStringValue("'", index.Comment)
 	}
+
+	sqlList = append(sqlList, sql)
+	return
+}
+
+func (this_ *MysqlDialect) IndexUpdateSql(param *GenerateParam, databaseName string, tableName string, index *IndexModel) (sqlList []string, err error) {
+	sql := "ALTER TABLE "
+	if param.AppendDatabase && databaseName != "" {
+		sql += param.packingCharacterDatabase(databaseName) + "."
+	}
+	sql += "" + param.packingCharacterTable(tableName)
+
+	if index.OldName != "" {
+		sql += " DROP INDEX " + formatStringValue("'", index.OldName) + ","
+	} else {
+		sql += " DROP INDEX " + formatStringValue("'", index.Name) + ","
+	}
+	switch strings.ToUpper(index.Type) {
+	case "PRIMARY":
+		sql += " ADD PRIMARY KEY "
+	case "UNIQUE":
+		sql += " ADD UNIQUE "
+	case "FULLTEXT":
+		sql += " ADD FULLTEXT "
+	case "":
+		sql += " ADD INDEX "
+	default:
+		err = errors.New("dialect [" + this_.DialectType().Name + "] not support index type [" + index.Type + "]")
+		return
+	}
+	sql += " " + formatStringValue("'", index.Name) + "(" + param.packingCharacterColumns(strings.Join(index.Columns, ",")) + ")"
+
+	if index.Comment != "" {
+		sql += " COMMENT " + formatStringValue("'", index.Comment)
+	}
+	sqlList = append(sqlList, sql)
+	return
+}
+func (this_ *MysqlDialect) IndexDeleteSql(param *GenerateParam, databaseName string, tableName string, indexName string) (sqlList []string, err error) {
+	sql := "ALTER TABLE "
+	if param.AppendDatabase && databaseName != "" {
+		sql += param.packingCharacterDatabase(databaseName) + "."
+	}
+	sql += "" + param.packingCharacterTable(tableName)
+
+	sql += ` DROP INDEX `
+	sql += "" + formatStringValue("'", indexName)
 
 	sqlList = append(sqlList, sql)
 	return
