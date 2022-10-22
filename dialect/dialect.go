@@ -57,6 +57,8 @@ var (
 	DefaultType = &Type{Name: "default"}
 	Mysql       = NewMysqlDialect()
 	MysqlType   = &Type{Name: "mysql"}
+	Sqlite      = NewSqliteDialect()
+	SqliteType  = &Type{Name: "sqlite"}
 )
 
 type GenerateParam struct {

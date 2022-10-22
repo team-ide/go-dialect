@@ -199,9 +199,6 @@ func (this_ *DefaultDialect) TableCreateSql(param *GenerateParam, databaseName s
 
 	if len(table.IndexList) > 0 {
 		for _, one := range table.IndexList {
-			if one.Name == "" || len(one.Columns) == 0 {
-				continue
-			}
 			var sqlList_ []string
 			sqlList_, err = this_.IndexAddSql(param, databaseName, table.Name, one)
 			if err != nil {
@@ -229,6 +226,7 @@ func (this_ *DefaultDialect) TableDeleteSql(param *GenerateParam, databaseName s
 		sql += param.packingCharacterDatabase(databaseName) + "."
 	}
 	sql += param.packingCharacterTable(tableName)
+	sqlList = append(sqlList, sql)
 	return
 }
 
