@@ -18,11 +18,6 @@ type SqliteDialect struct {
 	*DefaultDialect
 }
 
-func (this_ *SqliteDialect) DialectType() (dialectType *Type) {
-	dialectType = SqliteType
-	return
-}
-
 func (this_ *SqliteDialect) init() {
 	/** 数值类型 **/
 	/**

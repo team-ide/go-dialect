@@ -1,21 +1,24 @@
 package dialect
 
-import "strings"
+import (
+	"gitee.com/chunanyong/zorm/decimal"
+	"strings"
+)
 
-func NewOracleDialect() *OracleDialect {
+func NewKinBaseDialect() *KinBaseDialect {
 
-	res := &OracleDialect{
-		DefaultDialect: NewDefaultDialect(OracleType),
+	res := &KinBaseDialect{
+		DefaultDialect: NewDefaultDialect(KinBaseType),
 	}
 	res.init()
 	return res
 }
 
-type OracleDialect struct {
+type KinBaseDialect struct {
 	*DefaultDialect
 }
 
-func (this_ *OracleDialect) init() {
+func (this_ *KinBaseDialect) init() {
 	/** 数值类型 **/
 
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BIT", TypeFormat: "NUMBER($l, $d)", HasLength: false, IsNumber: true})
@@ -63,9 +66,48 @@ func (this_ *OracleDialect) init() {
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "XMLTYPE", TypeFormat: "XMLTYPE($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "RAW", TypeFormat: "RAW($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NVARCHAR2", TypeFormat: "NVARCHAR2($l)", HasLength: true, IsString: true})
+
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NUMERIC", TypeFormat: "NUMERIC($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "OID", TypeFormat: "OID($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NAME", TypeFormat: "NAME($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BOOL", TypeFormat: "BOOL($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "INT1", TypeFormat: "INT1($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "INT2", TypeFormat: "INT2($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "INT4", TypeFormat: "INT4($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "INT8", TypeFormat: "INT8($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SYS_LSN", TypeFormat: "SYS_LSN($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "REGCLASS", TypeFormat: "REGCLASS($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TIMESTAMPTZ", TypeFormat: "TIMESTAMPTZ($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_TEXT", TypeFormat: "_TEXT", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "JSON", TypeFormat: "JSON", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SYS_NODE_TREE", TypeFormat: "SYS_NODE_TREE", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "character_data", TypeFormat: "character_data", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "yes_or_no", TypeFormat: "yes_or_no", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "cardinal_number", TypeFormat: "cardinal_number", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "INTERVAL", TypeFormat: "INTERVAL($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "REGPROC", TypeFormat: "REGPROC($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_ACLITEM", TypeFormat: "_ACLITEM", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "FLOAT4", TypeFormat: "FLOAT4($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "FLOAT8", TypeFormat: "FLOAT8($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "XID", TypeFormat: "XID($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TDEKEY", TypeFormat: "TDEKEY($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_INT2", TypeFormat: "_INT2", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_INT4", TypeFormat: "_INT4", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_OID", TypeFormat: "_OID", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "INT2VECTOR", TypeFormat: "INT2VECTOR", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "OIDVECTOR", TypeFormat: "OIDVECTOR", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BYTEA", TypeFormat: "BYTEA", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_CHAR", TypeFormat: "_CHAR", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_FLOAT4", TypeFormat: "_FLOAT4", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_FLOAT8", TypeFormat: "_FLOAT8", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "ANYARRAY", TypeFormat: "ANYARRAY", HasLength: true, IsString: true})
+
+	// 神通
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARBINARY", TypeFormat: "VARBINARY($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BFILE", TypeFormat: "BFILE", HasLength: true, IsString: true})
 }
 
-func (this_ *OracleDialect) DatabaseModel(data map[string]interface{}) (database *DatabaseModel, err error) {
+func (this_ *KinBaseDialect) DatabaseModel(data map[string]interface{}) (database *DatabaseModel, err error) {
 	if data == nil {
 		return
 	}
@@ -75,12 +117,12 @@ func (this_ *OracleDialect) DatabaseModel(data map[string]interface{}) (database
 	}
 	return
 }
-func (this_ *OracleDialect) DatabasesSelectSql() (sql string, err error) {
+func (this_ *KinBaseDialect) DatabasesSelectSql() (sql string, err error) {
 	sql = `SELECT * FROM dba_users ORDER BY USERNAME`
 	return
 }
 
-func (this_ *OracleDialect) TableModel(data map[string]interface{}) (table *TableModel, err error) {
+func (this_ *KinBaseDialect) TableModel(data map[string]interface{}) (table *TableModel, err error) {
 	if data == nil {
 		return
 	}
@@ -90,7 +132,7 @@ func (this_ *OracleDialect) TableModel(data map[string]interface{}) (table *Tabl
 	}
 	return
 }
-func (this_ *OracleDialect) TablesSelectSql(databaseName string) (sql string, err error) {
+func (this_ *KinBaseDialect) TablesSelectSql(databaseName string) (sql string, err error) {
 	sql = `SELECT * FROM all_tables  `
 	if databaseName != "" {
 		sql += `WHERE OWNER ='` + databaseName + `' `
@@ -98,7 +140,7 @@ func (this_ *OracleDialect) TablesSelectSql(databaseName string) (sql string, er
 	sql += `ORDER BY TABLE_NAME`
 	return
 }
-func (this_ *OracleDialect) TableSelectSql(databaseName string, tableName string) (sql string, err error) {
+func (this_ *KinBaseDialect) TableSelectSql(databaseName string, tableName string) (sql string, err error) {
 	sql = `SELECT * FROM all_tables `
 	sql += `WHERE 1=1 `
 	if databaseName != "" {
@@ -109,7 +151,7 @@ func (this_ *OracleDialect) TableSelectSql(databaseName string, tableName string
 	return
 }
 
-func (this_ *OracleDialect) ColumnModel(data map[string]interface{}) (column *ColumnModel, err error) {
+func (this_ *KinBaseDialect) ColumnModel(data map[string]interface{}) (column *ColumnModel, err error) {
 	if data == nil {
 		return
 	}
@@ -145,18 +187,18 @@ func (this_ *OracleDialect) ColumnModel(data map[string]interface{}) (column *Co
 		}
 		column.Type = columnTypeInfo.Name
 		if data["DATA_LENGTH"] != nil {
-			column.Length = int(data["DATA_LENGTH"].(float64))
+			column.Length = int((data["DATA_LENGTH"].(decimal.Decimal)).CoefficientInt64())
 		}
 		if data["DATA_PRECISION"] != nil {
-			column.Length = int(data["DATA_PRECISION"].(float64))
+			column.Length = int((data["DATA_PRECISION"].(decimal.Decimal)).CoefficientInt64())
 		}
 		if data["DATA_SCALE"] != nil {
-			column.Decimal = int(data["DATA_SCALE"].(float64))
+			column.Decimal = int((data["DATA_SCALE"].(decimal.Decimal)).CoefficientInt64())
 		}
 	}
 	return
 }
-func (this_ *OracleDialect) ColumnsSelectSql(databaseName string, tableName string) (sql string, err error) {
+func (this_ *KinBaseDialect) ColumnsSelectSql(databaseName string, tableName string) (sql string, err error) {
 	sql = `SELECT t.*,tc.COMMENTS from all_tab_columns t `
 	sql += "LEFT JOIN all_col_comments tc ON(tc.OWNER=t.OWNER AND tc.TABLE_NAME=t.TABLE_NAME AND tc.COLUMN_NAME=t.COLUMN_NAME)"
 	sql += `WHERE 1=1 `
@@ -166,8 +208,29 @@ func (this_ *OracleDialect) ColumnsSelectSql(databaseName string, tableName stri
 	sql += `AND t.TABLE_NAME='` + tableName + `' `
 	return
 }
+func (this_ *KinBaseDialect) ColumnUpdateSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
 
-func (this_ *OracleDialect) PrimaryKeyModel(data map[string]interface{}) (primaryKey *PrimaryKeyModel, err error) {
+	var sqlList_ []string
+
+	if column.OldName != "" && column.OldName != column.Name {
+		sqlList_, err = this_.columnRenameSql(param, databaseName, tableName, column.OldName, column.Name)
+		if err != nil {
+			return
+		}
+		sqlList = append(sqlList, sqlList_...)
+	}
+
+	if column.Comment != column.OldComment {
+		sqlList_, err = this_.ColumnCommentSql(param, databaseName, tableName, column.Name, column.Comment)
+		if err != nil {
+			return
+		}
+		sqlList = append(sqlList, sqlList_...)
+	}
+	return
+}
+
+func (this_ *KinBaseDialect) PrimaryKeyModel(data map[string]interface{}) (primaryKey *PrimaryKeyModel, err error) {
 	if data == nil {
 		return
 	}
@@ -186,7 +249,7 @@ func (this_ *OracleDialect) PrimaryKeyModel(data map[string]interface{}) (primar
 	}
 	return
 }
-func (this_ *OracleDialect) PrimaryKeysSelectSql(databaseName string, tableName string) (sql string, err error) {
+func (this_ *KinBaseDialect) PrimaryKeysSelectSql(databaseName string, tableName string) (sql string, err error) {
 	sql = `SELECT cu.* FROM all_cons_columns cu, all_constraints au `
 	sql += `WHERE cu.constraint_name = au.constraint_name and au.constraint_type = 'P' `
 	if databaseName != "" {
@@ -196,7 +259,7 @@ func (this_ *OracleDialect) PrimaryKeysSelectSql(databaseName string, tableName 
 	return
 }
 
-func (this_ *OracleDialect) IndexModel(data map[string]interface{}) (index *IndexModel, err error) {
+func (this_ *KinBaseDialect) IndexModel(data map[string]interface{}) (index *IndexModel, err error) {
 	if data == nil {
 		return
 	}
@@ -218,7 +281,7 @@ func (this_ *OracleDialect) IndexModel(data map[string]interface{}) (index *Inde
 	}
 	return
 }
-func (this_ *OracleDialect) IndexesSelectSql(databaseName string, tableName string) (sql string, err error) {
+func (this_ *KinBaseDialect) IndexesSelectSql(databaseName string, tableName string) (sql string, err error) {
 	sql = `SELECT t.*,i.index_type,i.UNIQUENESS FROM all_ind_columns t,all_indexes i  `
 	sql += `WHERE t.index_name = i.index_name `
 	if databaseName != "" {

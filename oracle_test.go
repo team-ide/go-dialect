@@ -9,7 +9,14 @@ import (
 	"testing"
 )
 
-func getOracleConfig() (dbContext context.Context) {
+var (
+	OracleContext context.Context
+)
+
+func initOracle() {
+	if OracleContext != nil {
+		return
+	}
 	//dbConfig := db_oracle.NewDataSourceConfig("root", "123456", "127.0.0.1", 1521, "xe")
 	connStr := fmt.Sprintf("%s/%s@%s:%d/%s", "root", "123456", "127.0.0.1", 1521, "xe")
 	dbConfig := zorm.DataSourceConfig{
@@ -26,7 +33,7 @@ func getOracleConfig() (dbContext context.Context) {
 	}
 
 	cxt := context.Background()
-	dbContext, err = dbDao.BindContextDBConnection(cxt)
+	OracleContext, err = dbDao.BindContextDBConnection(cxt)
 	if err != nil {
 		return
 	}
@@ -34,29 +41,31 @@ func getOracleConfig() (dbContext context.Context) {
 }
 
 func TestOracle(t *testing.T) {
-	testDatabases(getOracleConfig(), dialect.Oracle)
+	initOracle()
+	testDatabases(OracleContext, dialect.Oracle)
 }
 
 func TestOracleTableCreate(t *testing.T) {
+	initOracle()
 	param := &dialect.GenerateParam{
 		AppendDatabase: true,
 	}
-	testTableDelete(getOracleConfig(), dialect.Oracle, param, "", getTable().Name)
-	testTableCreate(getOracleConfig(), dialect.Oracle, param, "", getTable())
+	testTableDelete(OracleContext, dialect.Oracle, param, "", getTable().Name)
+	testTableCreate(OracleContext, dialect.Oracle, param, "", getTable())
 
-	testColumnUpdate(getOracleConfig(), dialect.Oracle, param, "", getTable().Name, &dialect.ColumnModel{
+	testColumnUpdate(OracleContext, dialect.Oracle, param, "", getTable().Name, &dialect.ColumnModel{
 		Name:    "name1",
 		Type:    "varchar",
 		Length:  500,
 		Comment: "name1注释",
 		OldName: "name",
 	})
-	testColumnDelete(getOracleConfig(), dialect.Oracle, param, "", getTable().Name, "detail3")
-	testColumnAdd(getOracleConfig(), dialect.Oracle, param, "", getTable().Name, &dialect.ColumnModel{
+	testColumnDelete(OracleContext, dialect.Oracle, param, "", getTable().Name, "detail3")
+	testColumnAdd(OracleContext, dialect.Oracle, param, "", getTable().Name, &dialect.ColumnModel{
 		Name:    "name2",
 		Type:    "varchar",
 		Length:  500,
 		Comment: "name2注释",
 	})
-	testTable(getOracleConfig(), dialect.Oracle, "", getTable().Name)
+	testTable(OracleContext, dialect.Oracle, "", getTable().Name)
 }

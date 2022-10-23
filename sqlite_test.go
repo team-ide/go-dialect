@@ -8,7 +8,14 @@ import (
 	"testing"
 )
 
-func getSqliteConfig() (dbContext context.Context) {
+var (
+	SqliteContext context.Context
+)
+
+func initSqlite() (dbContext context.Context) {
+	if SqliteContext != nil {
+		return
+	}
 	connStr := "test_sqlite"
 	dbConfig := zorm.DataSourceConfig{
 		//DSN 数据库的连接字符串
@@ -24,7 +31,7 @@ func getSqliteConfig() (dbContext context.Context) {
 	}
 
 	cxt := context.Background()
-	dbContext, err = dbDao.BindContextDBConnection(cxt)
+	SqliteContext, err = dbDao.BindContextDBConnection(cxt)
 	if err != nil {
 		return
 	}
@@ -32,29 +39,31 @@ func getSqliteConfig() (dbContext context.Context) {
 }
 
 func TestSqlite(t *testing.T) {
-	testDatabases(getSqliteConfig(), dialect.Sqlite)
+	initSqlite()
+	testDatabases(SqliteContext, dialect.Sqlite)
 }
 
 func TestSqliteTableCreate(t *testing.T) {
+	initSqlite()
 	param := &dialect.GenerateParam{
 		AppendDatabase: true,
 	}
-	testTableDelete(getSqliteConfig(), dialect.Sqlite, param, "", getTable().Name)
-	testTableCreate(getSqliteConfig(), dialect.Sqlite, param, "", getTable())
+	testTableDelete(SqliteContext, dialect.Sqlite, param, "", getTable().Name)
+	testTableCreate(SqliteContext, dialect.Sqlite, param, "", getTable())
 
-	testColumnUpdate(getSqliteConfig(), dialect.Sqlite, param, "", getTable().Name, &dialect.ColumnModel{
+	testColumnUpdate(SqliteContext, dialect.Sqlite, param, "", getTable().Name, &dialect.ColumnModel{
 		Name:    "name1",
 		Type:    "varchar",
 		Length:  500,
 		Comment: "name1注释",
 		OldName: "name",
 	})
-	testColumnDelete(getSqliteConfig(), dialect.Sqlite, param, "", getTable().Name, "detail3")
-	testColumnAdd(getSqliteConfig(), dialect.Sqlite, param, "", getTable().Name, &dialect.ColumnModel{
+	testColumnDelete(SqliteContext, dialect.Sqlite, param, "", getTable().Name, "detail3")
+	testColumnAdd(SqliteContext, dialect.Sqlite, param, "", getTable().Name, &dialect.ColumnModel{
 		Name:    "name2",
 		Type:    "varchar",
 		Length:  500,
 		Comment: "name2注释",
 	})
-	testTables(getSqliteConfig(), dialect.Sqlite, "")
+	testTables(SqliteContext, dialect.Sqlite, "")
 }

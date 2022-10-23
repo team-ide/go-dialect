@@ -11,9 +11,7 @@ func NewDefaultDialect(dialectType *Type) *DefaultDialect {
 
 	return &DefaultDialect{
 		columnTypeInfoCache: make(map[string]*ColumnTypeInfo),
-		DialectType: func() *Type {
-			return dialectType
-		},
+		dialectType:         dialectType,
 	}
 }
 
@@ -21,7 +19,12 @@ type DefaultDialect struct {
 	columnTypeInfoList      []*ColumnTypeInfo
 	columnTypeInfoCache     map[string]*ColumnTypeInfo
 	columnTypeInfoCacheLock sync.Mutex
-	DialectType             func() *Type
+	dialectType             *Type
+}
+
+func (this_ *DefaultDialect) DialectType() (dialectType *Type) {
+	dialectType = this_.dialectType
+	return
 }
 
 func (this_ *DefaultDialect) GetColumnTypeInfos() (columnTypeInfoList []*ColumnTypeInfo) {

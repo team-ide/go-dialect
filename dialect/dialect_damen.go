@@ -1,21 +1,29 @@
 package dialect
 
-import "strings"
+import (
+	"gitee.com/chunanyong/zorm/decimal"
+	"strings"
+)
 
-func NewOracleDialect() *OracleDialect {
+func NewDaMenDialect() *DaMenDialect {
 
-	res := &OracleDialect{
-		DefaultDialect: NewDefaultDialect(OracleType),
+	res := &DaMenDialect{
+		DefaultDialect: NewDefaultDialect(DaMenType),
 	}
 	res.init()
 	return res
 }
 
-type OracleDialect struct {
+type DaMenDialect struct {
 	*DefaultDialect
 }
 
-func (this_ *OracleDialect) init() {
+func (this_ *DaMenDialect) DialectType() (dialectType *Type) {
+	dialectType = DaMenType
+	return
+}
+
+func (this_ *DaMenDialect) init() {
 	/** 数值类型 **/
 
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BIT", TypeFormat: "NUMBER($l, $d)", HasLength: false, IsNumber: true})
@@ -63,9 +71,14 @@ func (this_ *OracleDialect) init() {
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "XMLTYPE", TypeFormat: "XMLTYPE($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "RAW", TypeFormat: "RAW($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NVARCHAR2", TypeFormat: "NVARCHAR2($l)", HasLength: true, IsString: true})
+
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CLASS234882065", TypeFormat: "CLASS234882065($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARBINARY", TypeFormat: "VARBINARY($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BYTE", TypeFormat: "BYTE($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BINARY", TypeFormat: "BINARY($l)", HasLength: true, IsString: true})
 }
 
-func (this_ *OracleDialect) DatabaseModel(data map[string]interface{}) (database *DatabaseModel, err error) {
+func (this_ *DaMenDialect) DatabaseModel(data map[string]interface{}) (database *DatabaseModel, err error) {
 	if data == nil {
 		return
 	}
@@ -75,12 +88,12 @@ func (this_ *OracleDialect) DatabaseModel(data map[string]interface{}) (database
 	}
 	return
 }
-func (this_ *OracleDialect) DatabasesSelectSql() (sql string, err error) {
+func (this_ *DaMenDialect) DatabasesSelectSql() (sql string, err error) {
 	sql = `SELECT * FROM dba_users ORDER BY USERNAME`
 	return
 }
 
-func (this_ *OracleDialect) TableModel(data map[string]interface{}) (table *TableModel, err error) {
+func (this_ *DaMenDialect) TableModel(data map[string]interface{}) (table *TableModel, err error) {
 	if data == nil {
 		return
 	}
@@ -90,7 +103,7 @@ func (this_ *OracleDialect) TableModel(data map[string]interface{}) (table *Tabl
 	}
 	return
 }
-func (this_ *OracleDialect) TablesSelectSql(databaseName string) (sql string, err error) {
+func (this_ *DaMenDialect) TablesSelectSql(databaseName string) (sql string, err error) {
 	sql = `SELECT * FROM all_tables  `
 	if databaseName != "" {
 		sql += `WHERE OWNER ='` + databaseName + `' `
@@ -98,7 +111,7 @@ func (this_ *OracleDialect) TablesSelectSql(databaseName string) (sql string, er
 	sql += `ORDER BY TABLE_NAME`
 	return
 }
-func (this_ *OracleDialect) TableSelectSql(databaseName string, tableName string) (sql string, err error) {
+func (this_ *DaMenDialect) TableSelectSql(databaseName string, tableName string) (sql string, err error) {
 	sql = `SELECT * FROM all_tables `
 	sql += `WHERE 1=1 `
 	if databaseName != "" {
@@ -109,7 +122,7 @@ func (this_ *OracleDialect) TableSelectSql(databaseName string, tableName string
 	return
 }
 
-func (this_ *OracleDialect) ColumnModel(data map[string]interface{}) (column *ColumnModel, err error) {
+func (this_ *DaMenDialect) ColumnModel(data map[string]interface{}) (column *ColumnModel, err error) {
 	if data == nil {
 		return
 	}
@@ -145,18 +158,18 @@ func (this_ *OracleDialect) ColumnModel(data map[string]interface{}) (column *Co
 		}
 		column.Type = columnTypeInfo.Name
 		if data["DATA_LENGTH"] != nil {
-			column.Length = int(data["DATA_LENGTH"].(float64))
+			column.Length = int((data["DATA_LENGTH"].(decimal.Decimal)).CoefficientInt64())
 		}
 		if data["DATA_PRECISION"] != nil {
-			column.Length = int(data["DATA_PRECISION"].(float64))
+			column.Length = int((data["DATA_PRECISION"].(decimal.Decimal)).CoefficientInt64())
 		}
 		if data["DATA_SCALE"] != nil {
-			column.Decimal = int(data["DATA_SCALE"].(float64))
+			column.Decimal = int((data["DATA_SCALE"].(decimal.Decimal)).CoefficientInt64())
 		}
 	}
 	return
 }
-func (this_ *OracleDialect) ColumnsSelectSql(databaseName string, tableName string) (sql string, err error) {
+func (this_ *DaMenDialect) ColumnsSelectSql(databaseName string, tableName string) (sql string, err error) {
 	sql = `SELECT t.*,tc.COMMENTS from all_tab_columns t `
 	sql += "LEFT JOIN all_col_comments tc ON(tc.OWNER=t.OWNER AND tc.TABLE_NAME=t.TABLE_NAME AND tc.COLUMN_NAME=t.COLUMN_NAME)"
 	sql += `WHERE 1=1 `
@@ -167,7 +180,7 @@ func (this_ *OracleDialect) ColumnsSelectSql(databaseName string, tableName stri
 	return
 }
 
-func (this_ *OracleDialect) PrimaryKeyModel(data map[string]interface{}) (primaryKey *PrimaryKeyModel, err error) {
+func (this_ *DaMenDialect) PrimaryKeyModel(data map[string]interface{}) (primaryKey *PrimaryKeyModel, err error) {
 	if data == nil {
 		return
 	}
@@ -186,7 +199,7 @@ func (this_ *OracleDialect) PrimaryKeyModel(data map[string]interface{}) (primar
 	}
 	return
 }
-func (this_ *OracleDialect) PrimaryKeysSelectSql(databaseName string, tableName string) (sql string, err error) {
+func (this_ *DaMenDialect) PrimaryKeysSelectSql(databaseName string, tableName string) (sql string, err error) {
 	sql = `SELECT cu.* FROM all_cons_columns cu, all_constraints au `
 	sql += `WHERE cu.constraint_name = au.constraint_name and au.constraint_type = 'P' `
 	if databaseName != "" {
@@ -196,7 +209,7 @@ func (this_ *OracleDialect) PrimaryKeysSelectSql(databaseName string, tableName 
 	return
 }
 
-func (this_ *OracleDialect) IndexModel(data map[string]interface{}) (index *IndexModel, err error) {
+func (this_ *DaMenDialect) IndexModel(data map[string]interface{}) (index *IndexModel, err error) {
 	if data == nil {
 		return
 	}
@@ -218,7 +231,7 @@ func (this_ *OracleDialect) IndexModel(data map[string]interface{}) (index *Inde
 	}
 	return
 }
-func (this_ *OracleDialect) IndexesSelectSql(databaseName string, tableName string) (sql string, err error) {
+func (this_ *DaMenDialect) IndexesSelectSql(databaseName string, tableName string) (sql string, err error) {
 	sql = `SELECT t.*,i.index_type,i.UNIQUENESS FROM all_ind_columns t,all_indexes i  `
 	sql += `WHERE t.index_name = i.index_name `
 	if databaseName != "" {

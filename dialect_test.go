@@ -119,6 +119,9 @@ func testColumnDelete(dbContext context.Context, dialect2 dialect.Dialect, param
 }
 
 func testUpdate(dbContext context.Context, sqlList []string) {
+	if len(sqlList) == 0 {
+		return
+	}
 
 	_, err := zorm.Transaction(dbContext, func(ctx context.Context) (res interface{}, err error) {
 		for _, one := range sqlList {

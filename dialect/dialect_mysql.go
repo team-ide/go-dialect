@@ -19,11 +19,6 @@ type MysqlDialect struct {
 	*DefaultDialect
 }
 
-func (this_ *MysqlDialect) DialectType() (dialectType *Type) {
-	dialectType = MysqlType
-	return
-}
-
 func (this_ *MysqlDialect) init() {
 	/** 数值类型 **/
 	/**
