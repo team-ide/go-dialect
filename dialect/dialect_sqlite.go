@@ -8,7 +8,7 @@ import (
 func NewSqliteDialect() *SqliteDialect {
 
 	res := &SqliteDialect{
-		DefaultDialect: NewDefaultDialect(),
+		DefaultDialect: NewDefaultDialect(SqliteType),
 	}
 	res.init()
 	return res
@@ -16,6 +16,11 @@ func NewSqliteDialect() *SqliteDialect {
 
 type SqliteDialect struct {
 	*DefaultDialect
+}
+
+func (this_ *SqliteDialect) DialectType() (dialectType *Type) {
+	dialectType = SqliteType
+	return
 }
 
 func (this_ *SqliteDialect) init() {
@@ -118,10 +123,41 @@ func (this_ *SqliteDialect) DatabaseDeleteSql(param *GenerateParam, databaseName
 
 	return
 }
+func (this_ *SqliteDialect) TableModel(data map[string]interface{}) (table *TableModel, err error) {
+	if data == nil {
+		return
+	}
+	table = &TableModel{}
+	if data["name"] != nil {
+		table.Name = data["name"].(string)
+	}
+	if data["sql"] != nil {
+		table.Sql = data["sql"].(string)
+	}
+	return
+}
+func (this_ *SqliteDialect) TablesSelectSql(databaseName string) (sql string, err error) {
+	sql = `SELECT * FROM sqlite_master WHERE type ='table' `
+	sql += `ORDER BY name`
+	return
+}
+func (this_ *SqliteDialect) TableSelectSql(databaseName string, tableName string) (sql string, err error) {
+	sql = `SELECT * from information_schema.tables `
+	sql += `WHERE 1=1 `
+	if databaseName != "" {
+		sql += `AND TABLE_SCHEMA='` + databaseName + `' `
+	}
+	sql += `AND TABLE_NAME='` + tableName + `' `
+	sql += `ORDER BY TABLE_NAME`
+	return
+}
 func (this_ *SqliteDialect) TableCreateSql(param *GenerateParam, databaseName string, table *TableModel) (sqlList []string, err error) {
 
 	createTableSql := `CREATE TABLE `
 
+	if param.AppendDatabase && databaseName != "" {
+		createTableSql += param.packingCharacterDatabase(databaseName) + "."
+	}
 	createTableSql += param.packingCharacterTable(table.Name)
 
 	createTableSql += `(`
@@ -176,17 +212,81 @@ func (this_ *SqliteDialect) TableCreateSql(param *GenerateParam, databaseName st
 	return
 }
 func (this_ *SqliteDialect) TableCommentSql(param *GenerateParam, databaseName string, tableName string, comment string) (sqlList []string, err error) {
-	sql := "COMMENT ON TABLE  "
-	sql += "" + param.packingCharacterTable(tableName)
-	sql += " IS " + formatStringValue("'", comment)
-	sqlList = append(sqlList, sql)
+
 	return
 }
 func (this_ *SqliteDialect) TableDeleteSql(param *GenerateParam, databaseName string, tableName string) (sqlList []string, err error) {
 	var sql string
 	sql = `DROP TABLE `
+
+	if param.AppendDatabase && databaseName != "" {
+		sql += param.packingCharacterDatabase(databaseName) + "."
+	}
 	sql += param.packingCharacterTable(tableName)
 	sqlList = append(sqlList, sql)
+	return
+}
+func (this_ *SqliteDialect) ColumnModel(data map[string]interface{}) (column *ColumnModel, err error) {
+	if data == nil {
+		return
+	}
+	column = &ColumnModel{}
+	if data["name"] != nil {
+		column.Name = data["name"].(string)
+	}
+	if data["dflt_value"] != nil {
+		column.Default = GetStringValue(data["dflt_value"])
+	}
+	if GetStringValue(data["dflt_value"]) == "1" {
+		column.PrimaryKey = true
+	}
+	if GetStringValue(data["notnull"]) == "1" {
+		column.NotNull = true
+	}
+
+	var columnTypeInfo *ColumnTypeInfo
+	if data["type"] != nil {
+		columnType := data["type"].(string)
+		columnTypeInfo, column.Length, column.Decimal, err = this_.ToColumnTypeInfo(columnType)
+		if err != nil {
+			return
+		}
+		column.Type = columnTypeInfo.Name
+	}
+	return
+}
+func (this_ *SqliteDialect) ColumnsSelectSql(databaseName string, tableName string) (sql string, err error) {
+	sql = `select * from pragma_table_info("` + tableName + `") as t_i `
+	return
+}
+func (this_ *SqliteDialect) ColumnAddSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
+	var columnType string
+	columnType, err = this_.FormatColumnType(column.Type, column.Length, column.Decimal)
+	if err != nil {
+		return
+	}
+
+	var sql string
+	sql = `ALTER TABLE `
+
+	if param.AppendDatabase && databaseName != "" {
+		sql += param.packingCharacterDatabase(databaseName) + "."
+	}
+	sql += param.packingCharacterTable(tableName)
+
+	sql += ` ADD COLUMN `
+	sql += param.packingCharacterColumn(column.Name)
+	sql += ` ` + columnType + ``
+	if column.NotNull {
+		sql += ` NOT NULL`
+	}
+	if column.Default != "" {
+		sql += ` DEFAULT ` + formatStringValue("'", GetStringValue(column.Default))
+	}
+	sql += ``
+
+	sqlList = append(sqlList, sql)
+
 	return
 }
 func (this_ *SqliteDialect) ColumnCommentSql(param *GenerateParam, databaseName string, tableName string, columnName string, comment string) (sqlList []string, err error) {
@@ -197,6 +297,9 @@ func (this_ *SqliteDialect) columnRenameSql(param *GenerateParam, databaseName s
 	var sql string
 	sql = `ALTER TABLE `
 
+	if param.AppendDatabase && databaseName != "" {
+		sql += param.packingCharacterDatabase(databaseName) + "."
+	}
 	sql += param.packingCharacterTable(tableName)
 
 	sql += ` RENAME COLUMN `
@@ -208,52 +311,16 @@ func (this_ *SqliteDialect) columnRenameSql(param *GenerateParam, databaseName s
 	return
 }
 func (this_ *SqliteDialect) ColumnUpdateSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
-	var columnType string
-	columnType, err = this_.FormatColumnType(column.Type, column.Length, column.Decimal)
-	if err != nil {
-		return
-	}
 
-	var sqlList_ []string
-
-	if column.OldName != "" && column.OldName != column.Name {
-		sqlList_, err = this_.columnRenameSql(param, databaseName, tableName, column.OldName, column.Name)
-		if err != nil {
-			return
-		}
-		sqlList = append(sqlList, sqlList_...)
-	}
-
-	if column.Type != column.OldType ||
-		column.Length != column.OldLength ||
-		column.Decimal != column.OldDecimal ||
-		column.NotNull != column.OldNotNull ||
-		column.Default != column.OldDefault ||
-		column.BeforeColumn != "" {
-		var sql string
-		sql = `ALTER TABLE `
-
-		sql += param.packingCharacterTable(tableName)
-
-		sql += ` MODIFY (`
-		sql += param.packingCharacterColumn(column.Name)
-		sql += ` ` + columnType + ``
-		if column.NotNull {
-			sql += ` NOT NULL`
-		}
-		if column.Default != "" {
-			sql += ` DEFAULT ` + formatStringValue("'", GetStringValue(column.Default))
-		}
-		sql += `)`
-
-		sqlList = append(sqlList, sql)
-	}
 	return
 }
 func (this_ *SqliteDialect) ColumnDeleteSql(param *GenerateParam, databaseName string, tableName string, columnName string) (sqlList []string, err error) {
 	var sql string
 	sql = `ALTER TABLE `
 
+	if param.AppendDatabase && databaseName != "" {
+		sql += param.packingCharacterDatabase(databaseName) + "."
+	}
 	sql += param.packingCharacterTable(tableName)
 
 	sql += ` DROP COLUMN `
@@ -263,6 +330,41 @@ func (this_ *SqliteDialect) ColumnDeleteSql(param *GenerateParam, databaseName s
 	return
 }
 
+func (this_ *SqliteDialect) PrimaryKeyModel(data map[string]interface{}) (primaryKey *PrimaryKeyModel, err error) {
+	if data == nil {
+		return
+	}
+	primaryKey = &PrimaryKeyModel{}
+	if data["name"] != nil {
+		primaryKey.ColumnName = data["name"].(string)
+	}
+	return
+}
+func (this_ *SqliteDialect) PrimaryKeysSelectSql(databaseName string, tableName string) (sql string, err error) {
+	sql = `select * from pragma_table_info("` + tableName + `") as t_i where t_i.pk=1 `
+	return
+}
+
+func (this_ *SqliteDialect) IndexModel(data map[string]interface{}) (index *IndexModel, err error) {
+	if data == nil {
+		return
+	}
+	index = &IndexModel{}
+	if data["name"] != nil {
+		index.Name = data["name"].(string)
+	}
+	if data["name"] != nil {
+		index.ColumnName = data["name"].(string)
+	}
+	if GetStringValue(data["unique"]) == "1" {
+		index.Type = "unique"
+	}
+	return
+}
+func (this_ *SqliteDialect) IndexesSelectSql(databaseName string, tableName string) (sql string, err error) {
+	sql = `select * from pragma_index_list("` + tableName + `") as t_i where origin!="pk"  `
+	return
+}
 func (this_ *SqliteDialect) IndexAddSql(param *GenerateParam, databaseName string, tableName string, index *IndexModel) (sqlList []string, err error) {
 	sql := "CREATE "
 	switch strings.ToUpper(index.Type) {
@@ -278,6 +380,9 @@ func (this_ *SqliteDialect) IndexAddSql(param *GenerateParam, databaseName strin
 	sql += " " + param.packingCharacterColumn(index.Name) + ""
 
 	sql += " ON "
+	if param.AppendDatabase && databaseName != "" {
+		sql += param.packingCharacterDatabase(databaseName) + "."
+	}
 	sql += "" + param.packingCharacterTable(tableName)
 
 	sql += "(" + param.packingCharacterColumns(strings.Join(index.Columns, ",")) + ")"

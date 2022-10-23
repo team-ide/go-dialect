@@ -2,8 +2,6 @@ package dialect
 
 import (
 	"errors"
-	"fmt"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -11,7 +9,7 @@ import (
 func NewMysqlDialect() *MysqlDialect {
 
 	res := &MysqlDialect{
-		DefaultDialect: NewDefaultDialect(),
+		DefaultDialect: NewDefaultDialect(MysqlType),
 	}
 	res.init()
 	return res
@@ -19,6 +17,11 @@ func NewMysqlDialect() *MysqlDialect {
 
 type MysqlDialect struct {
 	*DefaultDialect
+}
+
+func (this_ *MysqlDialect) DialectType() (dialectType *Type) {
+	dialectType = MysqlType
+	return
 }
 
 func (this_ *MysqlDialect) init() {
@@ -188,13 +191,18 @@ func (this_ *MysqlDialect) TableModel(data map[string]interface{}) (table *Table
 }
 func (this_ *MysqlDialect) TablesSelectSql(databaseName string) (sql string, err error) {
 	sql = `SELECT * from information_schema.tables `
-	sql += `WHERE TABLE_SCHEMA='` + databaseName + `' `
+	if databaseName != "" {
+		sql += `WHERE TABLE_SCHEMA='` + databaseName + `' `
+	}
 	sql += `ORDER BY TABLE_NAME`
 	return
 }
 func (this_ *MysqlDialect) TableSelectSql(databaseName string, tableName string) (sql string, err error) {
 	sql = `SELECT * from information_schema.tables `
-	sql += `WHERE TABLE_SCHEMA='` + databaseName + `' `
+	sql += `WHERE 1=1 `
+	if databaseName != "" {
+		sql += `AND TABLE_SCHEMA='` + databaseName + `' `
+	}
 	sql += `AND TABLE_NAME='` + tableName + `' `
 	sql += `ORDER BY TABLE_NAME`
 	return
@@ -311,7 +319,7 @@ func (this_ *MysqlDialect) ColumnModel(data map[string]interface{}) (column *Col
 		column.Comment = data["COLUMN_COMMENT"].(string)
 	}
 	if data["COLUMN_DEFAULT"] != nil {
-		column.Default = data["COLUMN_DEFAULT"].(string)
+		column.Default = GetStringValue(data["COLUMN_DEFAULT"])
 	}
 	if data["TABLE_NAME"] != nil {
 		column.TableName = data["TABLE_NAME"].(string)
@@ -326,7 +334,7 @@ func (this_ *MysqlDialect) ColumnModel(data map[string]interface{}) (column *Col
 		column.CharacterSetName = data["CHARACTER_SET_NAME"].(string)
 	}
 
-	if data["IS_NULLABLE"] == "NO" {
+	if GetStringValue(data["IS_NULLABLE"]) == "NO" {
 		column.NotNull = true
 	}
 	var columnTypeInfo *ColumnTypeInfo
@@ -348,7 +356,10 @@ func (this_ *MysqlDialect) ColumnModel(data map[string]interface{}) (column *Col
 }
 func (this_ *MysqlDialect) ColumnsSelectSql(databaseName string, tableName string) (sql string, err error) {
 	sql = `SELECT * from information_schema.columns `
-	sql += `WHERE TABLE_SCHEMA='` + databaseName + `' `
+	sql += `WHERE 1=1 `
+	if databaseName != "" {
+		sql += `AND TABLE_SCHEMA='` + databaseName + `' `
+	}
 	sql += `AND TABLE_NAME='` + tableName + `' `
 	return
 }
@@ -455,7 +466,10 @@ func (this_ *MysqlDialect) PrimaryKeyModel(data map[string]interface{}) (primary
 func (this_ *MysqlDialect) PrimaryKeysSelectSql(databaseName string, tableName string) (sql string, err error) {
 	sql = `SELECT * from information_schema.table_constraints t `
 	sql += `JOIN information_schema.key_column_usage k USING (CONSTRAINT_NAME,TABLE_SCHEMA,TABLE_NAME) `
-	sql += `WHERE t.TABLE_SCHEMA='` + databaseName + `' `
+	sql += `WHERE 1=1 `
+	if databaseName != "" {
+		sql += `AND t.TABLE_SCHEMA='` + databaseName + `' `
+	}
 	sql += `AND t.TABLE_NAME='` + tableName + `' `
 	sql += `AND t.CONSTRAINT_TYPE='PRIMARY KEY' `
 	return
@@ -501,11 +515,8 @@ func (this_ *MysqlDialect) IndexModel(data map[string]interface{}) (index *Index
 	if data["INDEX_COMMENT"] != nil {
 		index.Comment = data["INDEX_COMMENT"].(string)
 	}
-	if data["NON_UNIQUE"] != nil {
-		i64, e := strconv.ParseInt(fmt.Sprintf(GetStringValue(data["NON_UNIQUE"])), 10, 64)
-		if e == nil && i64 == 0 {
-			index.Type = "unique"
-		}
+	if GetStringValue(data["NON_UNIQUE"]) == "0" {
+		index.Type = "unique"
 	}
 	if data["TABLE_NAME"] != nil {
 		index.TableName = data["TABLE_NAME"].(string)
@@ -520,12 +531,18 @@ func (this_ *MysqlDialect) IndexModel(data map[string]interface{}) (index *Index
 }
 func (this_ *MysqlDialect) IndexesSelectSql(databaseName string, tableName string) (sql string, err error) {
 	sql = `SELECT * from information_schema.statistics `
-	sql += `WHERE TABLE_SCHEMA='` + databaseName + `' `
+	sql += `WHERE 1=1 `
+	if databaseName != "" {
+		sql += `AND TABLE_SCHEMA='` + databaseName + `' `
+	}
 	sql += `AND TABLE_NAME='` + tableName + `' `
 	sql += `AND INDEX_NAME NOT IN(`
 	sql += `SELECT t.CONSTRAINT_NAME from information_schema.table_constraints t `
 	sql += `JOIN information_schema.key_column_usage k USING (CONSTRAINT_NAME,TABLE_SCHEMA,TABLE_NAME) `
-	sql += `WHERE t.TABLE_SCHEMA='` + databaseName + `' `
+	sql += `WHERE 1=1 `
+	if databaseName != "" {
+		sql += `AND t.TABLE_SCHEMA='` + databaseName + `' `
+	}
 	sql += `AND t.TABLE_NAME='` + tableName + `' `
 	sql += `AND t.CONSTRAINT_TYPE='PRIMARY KEY' `
 	sql += `) `

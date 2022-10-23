@@ -53,12 +53,12 @@ type Dialect interface {
 }
 
 var (
-	Default     = NewDefaultDialect()
-	DefaultType = &Type{Name: "default"}
-	Mysql       = NewMysqlDialect()
-	MysqlType   = &Type{Name: "mysql"}
-	Sqlite      = NewSqliteDialect()
-	SqliteType  = &Type{Name: "sqlite"}
+	Mysql      = NewMysqlDialect()
+	MysqlType  = &Type{Name: "mysql"}
+	Sqlite     = NewSqliteDialect()
+	SqliteType = &Type{Name: "sqlite"}
+	Oracle     = NewOracleDialect()
+	OracleType = &Type{Name: "oracle"}
 )
 
 type GenerateParam struct {

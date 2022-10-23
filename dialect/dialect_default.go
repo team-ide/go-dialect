@@ -7,10 +7,13 @@ import (
 	"sync"
 )
 
-func NewDefaultDialect() *DefaultDialect {
+func NewDefaultDialect(dialectType *Type) *DefaultDialect {
 
 	return &DefaultDialect{
 		columnTypeInfoCache: make(map[string]*ColumnTypeInfo),
+		DialectType: func() *Type {
+			return dialectType
+		},
 	}
 }
 
@@ -18,11 +21,7 @@ type DefaultDialect struct {
 	columnTypeInfoList      []*ColumnTypeInfo
 	columnTypeInfoCache     map[string]*ColumnTypeInfo
 	columnTypeInfoCacheLock sync.Mutex
-}
-
-func (this_ *DefaultDialect) DialectType() (dialectType *Type) {
-	dialectType = DefaultType
-	return
+	DialectType             func() *Type
 }
 
 func (this_ *DefaultDialect) GetColumnTypeInfos() (columnTypeInfoList []*ColumnTypeInfo) {
@@ -97,6 +96,7 @@ func (this_ *DefaultDialect) DatabaseModel(data map[string]interface{}) (databas
 	return
 }
 func (this_ *DefaultDialect) DatabasesSelectSql() (sql string, err error) {
+	err = errors.New("dialect [" + this_.DialectType().Name + "] not support database select")
 	return
 }
 func (this_ *DefaultDialect) DatabaseCreateSql(param *GenerateParam, database *DatabaseModel) (sqlList []string, err error) {
@@ -121,6 +121,7 @@ func (this_ *DefaultDialect) TableModel(data map[string]interface{}) (table *Tab
 	return
 }
 func (this_ *DefaultDialect) TablesSelectSql(databaseName string) (sql string, err error) {
+	err = errors.New("dialect [" + this_.DialectType().Name + "] not support table select")
 	return
 }
 func (this_ *DefaultDialect) TableSelectSql(databaseName string, tableName string) (sql string, err error) {
@@ -234,9 +235,11 @@ func (this_ *DefaultDialect) ColumnModel(data map[string]interface{}) (table *Co
 	return
 }
 func (this_ *DefaultDialect) ColumnsSelectSql(databaseName string, tableName string) (sql string, err error) {
+	err = errors.New("dialect [" + this_.DialectType().Name + "] not support columns select")
 	return
 }
 func (this_ *DefaultDialect) ColumnSelectSql(databaseName string, tableName string, columnName string) (sql string, err error) {
+	err = errors.New("dialect [" + this_.DialectType().Name + "] not support column select")
 	return
 }
 func (this_ *DefaultDialect) ColumnAddSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
@@ -379,6 +382,7 @@ func (this_ *DefaultDialect) PrimaryKeyModel(data map[string]interface{}) (prima
 	return
 }
 func (this_ *DefaultDialect) PrimaryKeysSelectSql(databaseName string, tableName string) (sql string, err error) {
+	err = errors.New("dialect [" + this_.DialectType().Name + "] not support primaryKeys select")
 	return
 }
 func (this_ *DefaultDialect) PrimaryKeyAddSql(param *GenerateParam, databaseName string, tableName string, primaryKeys []string) (sqlList []string, err error) {
@@ -412,9 +416,11 @@ func (this_ *DefaultDialect) IndexModel(data map[string]interface{}) (index *Ind
 	return
 }
 func (this_ *DefaultDialect) IndexesSelectSql(databaseName string, tableName string) (sql string, err error) {
+	err = errors.New("dialect [" + this_.DialectType().Name + "] not support indexes select")
 	return
 }
 func (this_ *DefaultDialect) IndexSelectSql(databaseName string, tableName string, indexName string) (sql string, err error) {
+	err = errors.New("dialect [" + this_.DialectType().Name + "] not support index select")
 	return
 }
 func (this_ *DefaultDialect) IndexAddSql(param *GenerateParam, databaseName string, tableName string, index *IndexModel) (sqlList []string, err error) {

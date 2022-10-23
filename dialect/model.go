@@ -20,6 +20,7 @@ type TableModel struct {
 	TableType    string `json:"tableType,omitempty"`
 	CreateTime   int64  `json:"createTime,omitempty"`
 	UpdateTime   int64  `json:"updateTime,omitempty"`
+	Sql          string `json:"sql,omitempty"`
 }
 
 func (this_ *TableModel) FindColumnByName(name string) *ColumnModel {

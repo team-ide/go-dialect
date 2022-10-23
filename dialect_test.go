@@ -129,6 +129,7 @@ func testUpdate(dbContext context.Context, sqlList []string) {
 			fmt.Printf("%s\n", one)
 			_, err = zorm.UpdateFinder(ctx, finder)
 			if err != nil {
+				fmt.Println("error sql:" + one)
 				return
 			}
 
@@ -177,12 +178,39 @@ func testTables(dbContext context.Context, dialect2 dialect.Dialect, databaseNam
 	finder := zorm.NewFinder()
 	finder.InjectionCheck = false
 	finder.Append(sql)
+	fmt.Println("select tables sql:" + sql)
 
+	fmt.Println("--------database [" + databaseName + "] tables--------")
 	list, err := queryList(dbContext, finder)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("--------database [" + databaseName + "] tables--------")
+	for _, one := range list {
+
+		model, err := dialect2.TableModel(one)
+		if err != nil {
+			panic(err)
+		}
+		testTable(dbContext, dialect2, databaseName, model.Name)
+	}
+
+}
+
+func testTable(dbContext context.Context, dialect2 dialect.Dialect, databaseName string, tableName string) {
+	sql, err := dialect2.TableSelectSql(databaseName, tableName)
+	if err != nil {
+		panic(err)
+	}
+	finder := zorm.NewFinder()
+	finder.InjectionCheck = false
+	finder.Append(sql)
+	fmt.Println("select tables sql:" + sql)
+
+	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "]--------")
+	list, err := queryList(dbContext, finder)
+	if err != nil {
+		panic(err)
+	}
 	for _, one := range list {
 		bs, _ := json.Marshal(one)
 		fmt.Printf("data:%s\n", bs)
@@ -219,6 +247,7 @@ func testColumns(dbContext context.Context, dialect2 dialect.Dialect, databaseNa
 	finder := zorm.NewFinder()
 	finder.InjectionCheck = false
 	finder.Append(sql)
+	fmt.Println("select columns sql:" + sql)
 
 	list, err := queryList(dbContext, finder)
 	if err != nil {
@@ -252,6 +281,7 @@ func testPrimaryKeys(dbContext context.Context, dialect2 dialect.Dialect, databa
 	finder.InjectionCheck = false
 	finder.Append(sql)
 
+	fmt.Println("select primaryKeys sql:" + sql)
 	list, err := queryList(dbContext, finder)
 	if err != nil {
 		panic(err)
@@ -284,6 +314,7 @@ func testIndexes(dbContext context.Context, dialect2 dialect.Dialect, databaseNa
 	finder.InjectionCheck = false
 	finder.Append(sql)
 
+	fmt.Println("select indexes sql:" + sql)
 	list, err := queryList(dbContext, finder)
 	if err != nil {
 		panic(err)
