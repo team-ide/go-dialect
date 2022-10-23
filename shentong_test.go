@@ -1,8 +1,8 @@
 package go_dialect
 
 import (
-	"context"
-	"gitee.com/chunanyong/zorm"
+	"database/sql"
+	"fmt"
 	_ "github.com/mattn/go-oci8"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_shentong"
@@ -10,30 +10,25 @@ import (
 )
 
 var (
-	ShenTongContext context.Context
+	ShenTongDb *sql.DB
 )
 
 func initShenTong() {
-	if ShenTongContext != nil {
+	if ShenTongDb != nil {
 		return
 	}
-	dbConfig := db_shentong.NewDataSourceConfig("SYSDBA", "szoscar55", "127.0.0.1", 2003, "OSRDB")
-	dbDao, err := zorm.NewDBDao(&dbConfig)
+	connStr := fmt.Sprintf("%s/%s@%s:%d/%s", "SYSDBA", "szoscar55", "127.0.0.1", 2003, "OSRDB")
+	var err error
+	ShenTongDb, err = sql.Open(db_shentong.GetDriverName(), connStr)
 	if err != nil {
-		return
-	}
-
-	cxt := context.Background()
-	ShenTongContext, err = dbDao.BindContextDBConnection(cxt)
-	if err != nil {
-		return
+		panic(err)
 	}
 	return
 }
 
 func TestShenTong(t *testing.T) {
 	initShenTong()
-	testDatabases(ShenTongContext, dialect.ShenTong)
+	databases(ShenTongDb, dialect.ShenTong)
 }
 
 func TestShenTongTableCreate(t *testing.T) {
@@ -41,22 +36,22 @@ func TestShenTongTableCreate(t *testing.T) {
 	param := &dialect.GenerateParam{
 		AppendDatabase: true,
 	}
-	testTableDelete(ShenTongContext, dialect.ShenTong, param, "", getTable().Name)
-	testTableCreate(ShenTongContext, dialect.ShenTong, param, "", getTable())
+	testTableDelete(ShenTongDb, dialect.ShenTong, param, "", getTable().Name)
+	testTableCreate(ShenTongDb, dialect.ShenTong, param, "", getTable())
 
-	testColumnUpdate(ShenTongContext, dialect.ShenTong, param, "", getTable().Name, &dialect.ColumnModel{
+	testColumnUpdate(ShenTongDb, dialect.ShenTong, param, "", getTable().Name, &dialect.ColumnModel{
 		Name:    "name1",
 		Type:    "varchar",
 		Length:  500,
 		Comment: "name1注释",
 		OldName: "name",
 	})
-	testColumnDelete(ShenTongContext, dialect.ShenTong, param, "", getTable().Name, "detail3")
-	testColumnAdd(ShenTongContext, dialect.ShenTong, param, "", getTable().Name, &dialect.ColumnModel{
+	testColumnDelete(ShenTongDb, dialect.ShenTong, param, "", getTable().Name, "detail3")
+	testColumnAdd(ShenTongDb, dialect.ShenTong, param, "", getTable().Name, &dialect.ColumnModel{
 		Name:    "name2",
 		Type:    "varchar",
 		Length:  500,
 		Comment: "name2注释",
 	})
-	testTable(ShenTongContext, dialect.ShenTong, "", getTable().Name)
+	tableDetail(ShenTongDb, dialect.ShenTong, "", getTable().Name)
 }

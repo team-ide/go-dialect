@@ -3,7 +3,6 @@ package dialect
 import (
 	"errors"
 	"strings"
-	"time"
 )
 
 func NewMysqlDialect() *MysqlDialect {
@@ -175,12 +174,6 @@ func (this_ *MysqlDialect) TableModel(data map[string]interface{}) (table *Table
 	}
 	if data["TABLE_TYPE"] != nil {
 		table.TableType = data["TABLE_TYPE"].(string)
-	}
-	if data["CREATE_TIME"] != nil {
-		table.CreateTime = data["CREATE_TIME"].(time.Time).UnixNano() / 1e6
-	}
-	if data["UPDATE_TIME"] != nil {
-		table.UpdateTime = data["UPDATE_TIME"].(time.Time).UnixNano() / 1e6
 	}
 	return
 }
@@ -565,7 +558,7 @@ func (this_ *MysqlDialect) IndexAddSql(param *GenerateParam, databaseName string
 		return
 	}
 	if index.Name != "" {
-		sql += "" + formatStringValue("'", index.Name) + " "
+		sql += "" + param.packingCharacterColumn(index.Name) + " "
 	}
 	if len(index.Columns) > 0 {
 		sql += "(" + param.packingCharacterColumns(strings.Join(index.Columns, ",")) + ")"
@@ -587,9 +580,9 @@ func (this_ *MysqlDialect) IndexUpdateSql(param *GenerateParam, databaseName str
 	sql += "" + param.packingCharacterTable(tableName)
 
 	if index.OldName != "" {
-		sql += " DROP INDEX " + formatStringValue("'", index.OldName) + ","
+		sql += " DROP INDEX " + param.packingCharacterColumn(index.OldName) + ","
 	} else {
-		sql += " DROP INDEX " + formatStringValue("'", index.Name) + ","
+		sql += " DROP INDEX " + param.packingCharacterColumn(index.Name) + ","
 	}
 	switch strings.ToUpper(index.Type) {
 	case "PRIMARY":
@@ -604,7 +597,7 @@ func (this_ *MysqlDialect) IndexUpdateSql(param *GenerateParam, databaseName str
 		err = errors.New("dialect [" + this_.DialectType().Name + "] not support index type [" + index.Type + "]")
 		return
 	}
-	sql += " " + formatStringValue("'", index.Name) + "(" + param.packingCharacterColumns(strings.Join(index.Columns, ",")) + ")"
+	sql += " " + param.packingCharacterColumn(index.Name) + "(" + param.packingCharacterColumns(strings.Join(index.Columns, ",")) + ")"
 
 	if index.Comment != "" {
 		sql += " COMMENT " + formatStringValue("'", index.Comment)
@@ -620,7 +613,7 @@ func (this_ *MysqlDialect) IndexDeleteSql(param *GenerateParam, databaseName str
 	sql += "" + param.packingCharacterTable(tableName)
 
 	sql += ` DROP INDEX `
-	sql += "" + formatStringValue("'", indexName)
+	sql += "" + param.packingCharacterColumn(indexName)
 
 	sqlList = append(sqlList, sql)
 	return

@@ -1,8 +1,8 @@
 package go_dialect
 
 import (
-	"context"
-	"gitee.com/chunanyong/zorm"
+	"database/sql"
+	"fmt"
 	_ "github.com/mattn/go-oci8"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_dm"
@@ -10,30 +10,25 @@ import (
 )
 
 var (
-	DaMenContext context.Context
+	DaMenDb *sql.DB
 )
 
 func initDaMen() {
-	if DaMenContext != nil {
+	if DaMenDb != nil {
 		return
 	}
-	dbConfig := db_dm.NewDataSourceConfig("SYSDBA", "SYSDBA", "127.0.0.1", 5236)
-	dbDao, err := zorm.NewDBDao(&dbConfig)
+	connStr := fmt.Sprintf("dm://%s:%s@%s:%d?charset=utf8", "SYSDBA", "SYSDBA", "127.0.0.1", 5236)
+	var err error
+	DaMenDb, err = sql.Open(db_dm.GetDriverName(), connStr)
 	if err != nil {
-		return
-	}
-
-	cxt := context.Background()
-	DaMenContext, err = dbDao.BindContextDBConnection(cxt)
-	if err != nil {
-		return
+		panic(err)
 	}
 	return
 }
 
 func TestDaMen(t *testing.T) {
 	initDaMen()
-	testDatabases(DaMenContext, dialect.DaMen)
+	databases(DaMenDb, dialect.DaMen)
 }
 
 func TestDaMenTableCreate(t *testing.T) {
@@ -41,22 +36,22 @@ func TestDaMenTableCreate(t *testing.T) {
 	param := &dialect.GenerateParam{
 		AppendDatabase: true,
 	}
-	testTableDelete(DaMenContext, dialect.DaMen, param, "", getTable().Name)
-	testTableCreate(DaMenContext, dialect.DaMen, param, "", getTable())
+	testTableDelete(DaMenDb, dialect.DaMen, param, "", getTable().Name)
+	testTableCreate(DaMenDb, dialect.DaMen, param, "", getTable())
 
-	testColumnUpdate(DaMenContext, dialect.DaMen, param, "", getTable().Name, &dialect.ColumnModel{
+	testColumnUpdate(DaMenDb, dialect.DaMen, param, "", getTable().Name, &dialect.ColumnModel{
 		Name:    "name1",
 		Type:    "varchar",
 		Length:  500,
 		Comment: "name1注释",
 		OldName: "name",
 	})
-	testColumnDelete(DaMenContext, dialect.DaMen, param, "", getTable().Name, "detail3")
-	testColumnAdd(DaMenContext, dialect.DaMen, param, "", getTable().Name, &dialect.ColumnModel{
+	testColumnDelete(DaMenDb, dialect.DaMen, param, "", getTable().Name, "detail3")
+	testColumnAdd(DaMenDb, dialect.DaMen, param, "", getTable().Name, &dialect.ColumnModel{
 		Name:    "name2",
 		Type:    "varchar",
 		Length:  500,
 		Comment: "name2注释",
 	})
-	testTable(DaMenContext, dialect.DaMen, "", getTable().Name)
+	tableDetail(DaMenDb, dialect.DaMen, "", getTable().Name)
 }

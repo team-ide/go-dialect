@@ -190,14 +190,27 @@ func (this_ *ShenTongDialect) ColumnModel(data map[string]interface{}) (column *
 			return
 		}
 		column.Type = columnTypeInfo.Name
-		if data["DATA_LENGTH"] != nil {
-			column.Length = int(data["DATA_LENGTH"].(int64))
+
+		dataLength := GetStringValue(data["DATA_LENGTH"])
+		if dataLength != "" && dataLength != "0" {
+			column.Length, err = StringToInt(dataLength)
+			if err != nil {
+				return
+			}
 		}
-		if data["DATA_PRECISION"] != nil {
-			column.Length = int(data["DATA_PRECISION"].(int64))
+		dataPrecision := GetStringValue(data["DATA_PRECISION"])
+		if dataPrecision != "" && dataPrecision != "0" {
+			column.Length, err = StringToInt(dataPrecision)
+			if err != nil {
+				return
+			}
 		}
-		if data["DATA_SCALE"] != nil {
-			column.Decimal = int(data["DATA_SCALE"].(int64))
+		dataScale := GetStringValue(data["DATA_SCALE"])
+		if dataScale != "" && dataScale != "0" {
+			column.Decimal, err = StringToInt(dataScale)
+			if err != nil {
+				return
+			}
 		}
 	}
 	return

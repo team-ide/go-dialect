@@ -1,8 +1,10 @@
 package dialect
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -280,7 +282,16 @@ func (param *GenerateParam) formatColumnValue(dia Dialect, tableColumn *ColumnMo
 }
 
 func GetStringValue(value interface{}) string {
-
+	if value == nil {
+		return ""
+	}
+	vOf := reflect.ValueOf(value)
+	if vOf.Kind() == reflect.Ptr {
+		if vOf.IsNil() {
+			return ""
+		}
+		return GetStringValue(vOf.Elem().Index(0).Interface())
+	}
 	var valueString string
 	switch v := value.(type) {
 	case int:
@@ -314,7 +325,7 @@ func GetStringValue(value interface{}) string {
 		return "0"
 	case time.Time:
 		if v.IsZero() {
-			return "NULL"
+			return ""
 		}
 		valueString = v.Format("2006-01-02 15:04:05")
 		break
@@ -323,7 +334,10 @@ func GetStringValue(value interface{}) string {
 		break
 	case []byte:
 		valueString = string(v)
+	case sql.NullString:
+		valueString = v.String
 	default:
+		panic("value type [" + reflect.TypeOf(value).String() + "] not support")
 		newValue, _ := json.Marshal(value)
 		valueString = string(newValue)
 		break

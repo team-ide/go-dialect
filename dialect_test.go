@@ -1,24 +1,13 @@
 package go_dialect
 
 import (
-	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
-	"gitee.com/chunanyong/zorm"
 	"github.com/team-ide/go-dialect/dialect"
+	"github.com/team-ide/go-dialect/worker"
 )
 
-func init() {
-	zorm.FuncPrintSQL = func(ctx context.Context, sqlstr string, args []interface{}, execSQLMillis int64) {
-
-	}
-	zorm.FuncLogError = func(ctx context.Context, err error) {
-
-	}
-	zorm.FuncLogPanic = func(ctx context.Context, err error) {
-
-	}
-}
 func getTable() (table *dialect.TableModel) {
 	table = &dialect.TableModel{
 		Name:    "USER_INFO",
@@ -42,312 +31,149 @@ func getTable() (table *dialect.TableModel) {
 	}
 	return
 }
-func testDatabaseCreate(dbContext context.Context, dialect2 dialect.Dialect, param *dialect.GenerateParam, database *dialect.DatabaseModel) {
+
+func testDatabaseCreate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, database *dialect.DatabaseModel) {
 	sqlList, err := dialect2.DatabaseCreateSql(param, database)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("--------database [" + database.Name + "] create--------")
-	testUpdate(dbContext, sqlList)
+	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
 }
-func testDatabaseDelete(dbContext context.Context, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string) {
+
+func testDatabaseDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string) {
 	sqlList, err := dialect2.DatabaseDeleteSql(param, databaseName)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("--------database [" + databaseName + "] delete--------")
-	testUpdate(dbContext, sqlList)
+	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
 }
-func testTableCreate(dbContext context.Context, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, table *dialect.TableModel) {
+func testTableCreate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, table *dialect.TableModel) {
 	sqlList, err := dialect2.TableCreateSql(param, databaseName, table)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("--------database [" + databaseName + "] table [" + table.Name + "] create--------")
-	testUpdate(dbContext, sqlList)
+	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
 
 }
-func testTableDelete(dbContext context.Context, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string) {
+func testTableDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string) {
 	sqlList, err := dialect2.TableDeleteSql(param, databaseName, tableName)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] delete--------")
-	testUpdate(dbContext, sqlList)
+	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
 
 }
-func testColumnAdd(dbContext context.Context, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string, column *dialect.ColumnModel) {
+func testColumnAdd(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string, column *dialect.ColumnModel) {
 	sqlList, err := dialect2.ColumnAddSql(param, databaseName, tableName, column)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] column [" + column.Name + "] add--------")
-	testUpdate(dbContext, sqlList)
+	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
 
 }
-func testColumnUpdate(dbContext context.Context, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string, column *dialect.ColumnModel) {
+func testColumnUpdate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string, column *dialect.ColumnModel) {
 	sqlList, err := dialect2.ColumnUpdateSql(param, databaseName, tableName, column)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] column [" + column.Name + "] update--------")
-	testUpdate(dbContext, sqlList)
+	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
 
 }
-func testColumnDelete(dbContext context.Context, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string, columnName string) {
+func testColumnDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string, columnName string) {
 	sqlList, err := dialect2.ColumnDeleteSql(param, databaseName, tableName, columnName)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] column [" + columnName + "] delete--------")
-	testUpdate(dbContext, sqlList)
+	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
 
 }
 
-func testUpdate(dbContext context.Context, sqlList []string) {
+func exec(db *sql.DB, sqlList []string) {
 	if len(sqlList) == 0 {
 		return
 	}
+	for _, one := range sqlList {
 
-	_, err := zorm.Transaction(dbContext, func(ctx context.Context) (res interface{}, err error) {
-		for _, one := range sqlList {
-			finder := zorm.NewFinder()
-			finder.InjectionCheck = false
-			finder.Append(one)
-
-			fmt.Printf("%s\n", one)
-			_, err = zorm.UpdateFinder(ctx, finder)
-			if err != nil {
-				fmt.Println("error sql:" + one)
-				return
-			}
-
+		fmt.Printf("%s\n", one)
+		_, err := db.Exec(one)
+		if err != nil {
+			fmt.Println("error sql:" + one)
+			panic(err)
+			return
 		}
-		return
-	})
-	if err != nil {
-		panic(err)
+
 	}
 
 }
-func testDatabases(dbContext context.Context, dialect2 dialect.Dialect) {
-	sql, err := dialect2.DatabasesSelectSql()
-	if err != nil {
-		panic(err)
-	}
-	finder := zorm.NewFinder()
-	finder.InjectionCheck = false
-	finder.Append(sql)
 
-	list, err := queryList(dbContext, finder)
-	if err != nil {
-		panic(err)
-	}
+func databases(db *sql.DB, dia dialect.Dialect) {
 	fmt.Println("--------databases--------")
+	list, err := worker.DatabasesSelect(db, dia)
+	if err != nil {
+		panic(err)
+	}
 	for _, one := range list {
-		bs, _ := json.Marshal(one)
-		fmt.Printf("data:%s\n", bs)
-
-		model, err := dialect2.DatabaseModel(one)
-		if err != nil {
-			panic(err)
+		if one.Error != "" {
+			println("database error:" + one.Error)
+			continue
 		}
-		bs, _ = json.Marshal(model)
-		fmt.Printf("model:%s\n\n\n", bs)
-		testTables(dbContext, dialect2, model.Name)
+
+		bs, _ := json.Marshal(one)
+		fmt.Printf("%s\n", bs)
+		tables(db, dia, one.Name)
+
 	}
 
 }
 
-func testTables(dbContext context.Context, dialect2 dialect.Dialect, databaseName string) {
-	sql, err := dialect2.TablesSelectSql(databaseName)
-	if err != nil {
-		panic(err)
-	}
-	finder := zorm.NewFinder()
-	finder.InjectionCheck = false
-	finder.Append(sql)
-	fmt.Println("select tables sql:" + sql)
-
+func tables(db *sql.DB, dia dialect.Dialect, databaseName string) {
 	fmt.Println("--------database [" + databaseName + "] tables--------")
-	list, err := queryList(dbContext, finder)
+	list, err := worker.TablesSelect(db, dia, databaseName)
 	if err != nil {
 		panic(err)
 	}
 	for _, one := range list {
-
-		model, err := dialect2.TableModel(one)
-		if err != nil {
-			panic(err)
+		if one.Error != "" {
+			println("table error:" + one.Error)
+			continue
 		}
-		testTable(dbContext, dialect2, databaseName, model.Name)
-	}
 
-}
-
-func testTable(dbContext context.Context, dialect2 dialect.Dialect, databaseName string, tableName string) {
-	sql, err := dialect2.TableSelectSql(databaseName, tableName)
-	if err != nil {
-		panic(err)
-	}
-	finder := zorm.NewFinder()
-	finder.InjectionCheck = false
-	finder.Append(sql)
-	fmt.Println("select tables sql:" + sql)
-
-	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "]--------")
-	list, err := queryList(dbContext, finder)
-	if err != nil {
-		panic(err)
-	}
-	for _, one := range list {
 		bs, _ := json.Marshal(one)
-		fmt.Printf("data:%s\n", bs)
-
-		model, err := dialect2.TableModel(one)
-		if err != nil {
-			panic(err)
-		}
-
-		cs := testColumns(dbContext, dialect2, databaseName, model.Name)
-		model.ColumnList = cs
-		fmt.Println()
-		fmt.Println()
-		pks := testPrimaryKeys(dbContext, dialect2, databaseName, model.Name)
-		model.AddPrimaryKey(pks...)
-		fmt.Println()
-		fmt.Println()
-		is := testIndexes(dbContext, dialect2, databaseName, model.Name)
-		model.AddIndex(is...)
-		fmt.Println()
-		fmt.Println()
-
-		bs, _ = json.MarshalIndent(model, "", "  ")
-		fmt.Printf("table:%s\n\n\n", bs)
+		fmt.Printf("%s\n", bs)
+		tableDetail(db, dia, databaseName, one.Name)
 	}
 
 }
 
-func testColumns(dbContext context.Context, dialect2 dialect.Dialect, databaseName string, tableName string) (res []*dialect.ColumnModel) {
-	sql, err := dialect2.ColumnsSelectSql(databaseName, tableName)
-	if err != nil {
-		panic(err)
-	}
-	finder := zorm.NewFinder()
-	finder.InjectionCheck = false
-	finder.Append(sql)
-	fmt.Println("select columns sql:" + sql)
-
-	list, err := queryList(dbContext, finder)
-	if err != nil {
-		panic(err)
-	}
-	if len(list) > 0 {
-		fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] columns--------")
-		for _, one := range list {
-			bs, _ := json.Marshal(one)
-			fmt.Printf("data:%s\n", bs)
-
-			model, err := dialect2.ColumnModel(one)
-			if err != nil {
-				panic(err)
-			}
-			bs, _ = json.Marshal(model)
-			fmt.Printf("model:%s\n", bs)
-			res = append(res, model)
-		}
-	}
-	return
-
-}
-
-func testPrimaryKeys(dbContext context.Context, dialect2 dialect.Dialect, databaseName string, tableName string) (res []*dialect.PrimaryKeyModel) {
-	sql, err := dialect2.PrimaryKeysSelectSql(databaseName, tableName)
-	if err != nil {
-		panic(err)
-	}
-	finder := zorm.NewFinder()
-	finder.InjectionCheck = false
-	finder.Append(sql)
-
-	fmt.Println("select primaryKeys sql:" + sql)
-	list, err := queryList(dbContext, finder)
+func tableDetail(db *sql.DB, dia dialect.Dialect, databaseName string, tableName string) {
+	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] detail--------")
+	table, err := worker.TableDetail(db, dia, databaseName, tableName)
 	if err != nil {
 		panic(err)
 	}
 
-	if len(list) > 0 {
-		fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] primaryKeys--------")
-		for _, one := range list {
-			bs, _ := json.Marshal(one)
-			fmt.Printf("data:%s\n", bs)
+	bs, _ := json.MarshalIndent(table, "", "  ")
+	fmt.Printf("%s\n", bs)
 
-			model, err := dialect2.PrimaryKeyModel(one)
-			if err != nil {
-				panic(err)
-			}
-			bs, _ = json.Marshal(model)
-			fmt.Printf("model:%s\n", bs)
-			res = append(res, model)
-		}
-	}
-	return
-}
-
-func testIndexes(dbContext context.Context, dialect2 dialect.Dialect, databaseName string, tableName string) (res []*dialect.IndexModel) {
-	sql, err := dialect2.IndexesSelectSql(databaseName, tableName)
-	if err != nil {
-		panic(err)
-	}
-	finder := zorm.NewFinder()
-	finder.InjectionCheck = false
-	finder.Append(sql)
-
-	fmt.Println("select indexes sql:" + sql)
-	list, err := queryList(dbContext, finder)
-	if err != nil {
-		panic(err)
-	}
-
-	if len(list) > 0 {
-		fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] indexes--------")
-		for _, one := range list {
-			bs, _ := json.Marshal(one)
-			fmt.Printf("data:%s\n", bs)
-
-			model, err := dialect2.IndexModel(one)
-			if err != nil {
-				panic(err)
-			}
-			bs, _ = json.Marshal(model)
-			fmt.Printf("model:%s\n", bs)
-			res = append(res, model)
-		}
-	}
-	return
-
-}
-
-func queryList(dbContext context.Context, finder *zorm.Finder) (list []map[string]interface{}, err error) {
-
-	list, err = zorm.QueryMap(dbContext, finder, nil)
-	if err != nil {
-		return
-	}
-
-	return
 }

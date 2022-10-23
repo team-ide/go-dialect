@@ -7,6 +7,7 @@ type DatabaseModel struct {
 	DefaultCharacterSet  string `json:"defaultCharacterSet,omitempty"`
 	DefaultCollationName string `json:"defaultCollationName,omitempty"`
 	SchemaName           string `json:"schemaName,omitempty"`
+	Error                string `json:"error,omitempty"`
 }
 
 type TableModel struct {
@@ -18,9 +19,8 @@ type TableModel struct {
 	TableCatalog string `json:"tableCatalog,omitempty"`
 	TableSchema  string `json:"tableSchema,omitempty"`
 	TableType    string `json:"tableType,omitempty"`
-	CreateTime   int64  `json:"createTime,omitempty"`
-	UpdateTime   int64  `json:"updateTime,omitempty"`
 	Sql          string `json:"sql,omitempty"`
+	Error        string `json:"error,omitempty"`
 }
 
 func (this_ *TableModel) FindColumnByName(name string) *ColumnModel {
@@ -108,6 +108,7 @@ type ColumnModel struct {
 	TableCatalog     string      `json:"tableCatalog,omitempty"`
 	TableSchema      string      `json:"tableSchema,omitempty"`
 	TableName        string      `json:"tableName,omitempty"`
+	Error            string      `json:"error,omitempty"`
 }
 
 type PrimaryKeyModel struct {
@@ -116,6 +117,7 @@ type PrimaryKeyModel struct {
 	TableCatalog string   `json:"tableCatalog,omitempty"`
 	TableSchema  string   `json:"tableSchema,omitempty"`
 	TableName    string   `json:"tableName,omitempty"`
+	Error        string   `json:"error,omitempty"`
 }
 
 type IndexModel struct {
@@ -132,4 +134,5 @@ type IndexModel struct {
 	TableCatalog string   `json:"tableCatalog,omitempty"`
 	TableSchema  string   `json:"tableSchema,omitempty"`
 	TableName    string   `json:"tableName,omitempty"`
+	Error        string   `json:"error,omitempty"`
 }

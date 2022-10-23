@@ -1,7 +1,6 @@
 package dialect
 
 import (
-	"gitee.com/chunanyong/zorm/decimal"
 	"strings"
 )
 
@@ -157,14 +156,29 @@ func (this_ *DaMenDialect) ColumnModel(data map[string]interface{}) (column *Col
 			return
 		}
 		column.Type = columnTypeInfo.Name
-		if data["DATA_LENGTH"] != nil {
-			column.Length = int((data["DATA_LENGTH"].(decimal.Decimal)).CoefficientInt64())
+
+		//bs, _ := json.Marshal(data)
+		//println("data:", string(bs))
+		dataLength := GetStringValue(data["DATA_LENGTH"])
+		if dataLength != "" && dataLength != "0" {
+			column.Length, err = StringToInt(dataLength)
+			if err != nil {
+				return
+			}
 		}
-		if data["DATA_PRECISION"] != nil {
-			column.Length = int((data["DATA_PRECISION"].(decimal.Decimal)).CoefficientInt64())
+		dataPrecision := GetStringValue(data["DATA_PRECISION"])
+		if dataPrecision != "" && dataPrecision != "0" {
+			column.Length, err = StringToInt(dataPrecision)
+			if err != nil {
+				return
+			}
 		}
-		if data["DATA_SCALE"] != nil {
-			column.Decimal = int((data["DATA_SCALE"].(decimal.Decimal)).CoefficientInt64())
+		dataScale := GetStringValue(data["DATA_SCALE"])
+		if dataScale != "" && dataScale != "0" {
+			column.Decimal, err = StringToInt(dataScale)
+			if err != nil {
+				return
+			}
 		}
 	}
 	return

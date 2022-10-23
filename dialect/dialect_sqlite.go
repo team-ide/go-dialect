@@ -137,13 +137,9 @@ func (this_ *SqliteDialect) TablesSelectSql(databaseName string) (sql string, er
 	return
 }
 func (this_ *SqliteDialect) TableSelectSql(databaseName string, tableName string) (sql string, err error) {
-	sql = `SELECT * from information_schema.tables `
-	sql += `WHERE 1=1 `
-	if databaseName != "" {
-		sql += `AND TABLE_SCHEMA='` + databaseName + `' `
-	}
-	sql += `AND TABLE_NAME='` + tableName + `' `
-	sql += `ORDER BY TABLE_NAME`
+	sql = `SELECT * FROM sqlite_master WHERE type ='table' `
+	sql += `AND name='` + tableName + `' `
+	sql += `ORDER BY name`
 	return
 }
 func (this_ *SqliteDialect) TableCreateSql(param *GenerateParam, databaseName string, table *TableModel) (sqlList []string, err error) {

@@ -1,8 +1,8 @@
 package go_dialect
 
 import (
-	"context"
-	"gitee.com/chunanyong/zorm"
+	"database/sql"
+	"fmt"
 	_ "github.com/mattn/go-oci8"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_kingbase_v8r3"
@@ -10,30 +10,25 @@ import (
 )
 
 var (
-	KinBaseContext context.Context
+	KinBaseDb *sql.DB
 )
 
 func initKinBase() {
-	if KinBaseContext != nil {
+	if KinBaseDb != nil {
 		return
 	}
-	dbConfig := db_kingbase_v8r3.NewDataSourceConfig("SYSTEM", "123456", "127.0.0.1", 54321, "TEST")
-	dbDao, err := zorm.NewDBDao(&dbConfig)
+	connStr := fmt.Sprintf("user='%s' password='%s' host=%s port=%d dbname=%s sslmode=disable", "SYSTEM", "123456", "127.0.0.1", 54321, "TEST")
+	var err error
+	KinBaseDb, err = sql.Open(db_kingbase_v8r3.GetDriverName(), connStr)
 	if err != nil {
-		return
-	}
-
-	cxt := context.Background()
-	KinBaseContext, err = dbDao.BindContextDBConnection(cxt)
-	if err != nil {
-		return
+		panic(err)
 	}
 	return
 }
 
 func TestKinBase(t *testing.T) {
 	initKinBase()
-	testDatabases(KinBaseContext, dialect.KinBase)
+	databases(KinBaseDb, dialect.KinBase)
 }
 
 func TestKinBaseTableCreate(t *testing.T) {
@@ -41,22 +36,22 @@ func TestKinBaseTableCreate(t *testing.T) {
 	param := &dialect.GenerateParam{
 		AppendDatabase: true,
 	}
-	testTableDelete(KinBaseContext, dialect.KinBase, param, "", getTable().Name)
-	testTableCreate(KinBaseContext, dialect.KinBase, param, "", getTable())
+	testTableDelete(KinBaseDb, dialect.KinBase, param, "", getTable().Name)
+	testTableCreate(KinBaseDb, dialect.KinBase, param, "", getTable())
 
-	testColumnUpdate(KinBaseContext, dialect.KinBase, param, "", getTable().Name, &dialect.ColumnModel{
+	testColumnUpdate(KinBaseDb, dialect.KinBase, param, "", getTable().Name, &dialect.ColumnModel{
 		Name:    "name1",
 		Type:    "varchar",
 		Length:  500,
 		Comment: "name1注释",
 		OldName: "name",
 	})
-	testColumnDelete(KinBaseContext, dialect.KinBase, param, "", getTable().Name, "detail3")
-	testColumnAdd(KinBaseContext, dialect.KinBase, param, "", getTable().Name, &dialect.ColumnModel{
+	testColumnDelete(KinBaseDb, dialect.KinBase, param, "", getTable().Name, "detail3")
+	testColumnAdd(KinBaseDb, dialect.KinBase, param, "", getTable().Name, &dialect.ColumnModel{
 		Name:    "name2",
 		Type:    "varchar",
 		Length:  500,
 		Comment: "name2注释",
 	})
-	testTable(KinBaseContext, dialect.KinBase, "", getTable().Name)
+	tableDetail(KinBaseDb, dialect.KinBase, "", getTable().Name)
 }
