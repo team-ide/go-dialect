@@ -11,6 +11,7 @@ func NewDefaultDialect(dialectType *Type) *DefaultDialect {
 
 	return &DefaultDialect{
 		columnTypeInfoCache: make(map[string]*ColumnTypeInfo),
+		funcTypeInfoCache:   make(map[string]*FuncTypeInfo),
 		dialectType:         dialectType,
 	}
 }
@@ -19,7 +20,12 @@ type DefaultDialect struct {
 	columnTypeInfoList      []*ColumnTypeInfo
 	columnTypeInfoCache     map[string]*ColumnTypeInfo
 	columnTypeInfoCacheLock sync.Mutex
-	dialectType             *Type
+
+	funcTypeInfoList      []*FuncTypeInfo
+	funcTypeInfoCache     map[string]*FuncTypeInfo
+	funcTypeInfoCacheLock sync.Mutex
+
+	dialectType *Type
 }
 
 func (this_ *DefaultDialect) DialectType() (dialectType *Type) {
@@ -92,6 +98,58 @@ func (this_ *DefaultDialect) ToColumnTypeInfo(columnType string) (columnTypeInfo
 	if err != nil {
 		return
 	}
+	return
+}
+
+func (this_ *DefaultDialect) GeFuncTypeInfos() (funcTypeInfoList []*FuncTypeInfo) {
+	funcTypeInfoList = this_.funcTypeInfoList
+	return
+}
+
+func (this_ *DefaultDialect) AddFuncTypeInfo(funcTypeInfo *FuncTypeInfo) {
+	this_.funcTypeInfoCacheLock.Lock()
+	defer this_.funcTypeInfoCacheLock.Unlock()
+
+	key := strings.ToLower(funcTypeInfo.Name)
+	find := this_.funcTypeInfoCache[key]
+	this_.funcTypeInfoCache[key] = funcTypeInfo
+	if find == nil {
+		this_.funcTypeInfoList = append(this_.funcTypeInfoList, funcTypeInfo)
+	} else {
+		var list = this_.funcTypeInfoList
+		var newList []*FuncTypeInfo
+		for _, one := range list {
+			if one == find {
+				newList = append(newList, funcTypeInfo)
+			} else {
+				newList = append(newList, one)
+			}
+		}
+		this_.funcTypeInfoList = newList
+	}
+
+	return
+}
+func (this_ *DefaultDialect) GetFuncTypeInfo(funcName string) (funcTypeInfo *FuncTypeInfo, err error) {
+	this_.funcTypeInfoCacheLock.Lock()
+	defer this_.funcTypeInfoCacheLock.Unlock()
+
+	key := strings.ToLower(funcName)
+	funcTypeInfo = this_.funcTypeInfoCache[key]
+	if funcTypeInfo == nil {
+		err = errors.New("dialect [" + this_.DialectType().Name + "] not support func [" + funcName + "]")
+		return
+	}
+	return
+}
+func (this_ *DefaultDialect) FormatFunc(funcStr string) (res string, err error) {
+	funcName := funcStr[:strings.Index(funcStr, "(")]
+
+	funcTypeInfo, err := this_.GetFuncTypeInfo(funcName)
+	if err != nil {
+		return
+	}
+	res = funcTypeInfo.Format + funcStr[strings.Index(funcStr, "("):]
 	return
 }
 
@@ -472,6 +530,53 @@ func (this_ *DefaultDialect) IndexUpdateSql(param *GenerateParam, databaseName s
 func (this_ *DefaultDialect) IndexDeleteSql(param *GenerateParam, databaseName string, tableName string, indexName string) (sqlList []string, err error) {
 	sql := "DROP INDEX "
 	sql += "" + param.packingCharacterColumn(indexName)
+
+	sqlList = append(sqlList, sql)
+	return
+}
+
+func (this_ *DefaultDialect) InsertSql(param *GenerateParam, insert *InsertModel) (sqlList []string, err error) {
+
+	sql := "INSERT INTO "
+	if param.AppendDatabase && insert.DatabaseName != "" {
+		sql += param.packingCharacterDatabase(insert.DatabaseName) + "."
+	}
+	sql += "" + param.packingCharacterTable(insert.TableName)
+
+	sql += "(" + param.packingCharacterColumns(strings.Join(insert.Columns, ",")) + ")"
+	sql += ` VALUES `
+
+	for rowIndex, row := range insert.Rows {
+		if rowIndex > 0 {
+			sql += `, `
+		}
+		sql += `( `
+
+		for valueIndex, value := range row {
+			if valueIndex > 0 {
+				sql += `, `
+			}
+			switch value.Type {
+			case ValueTypeString:
+				sql += formatStringValue("'", value.Value)
+				break
+			case ValueTypeNumber:
+				sql += value.Value
+				break
+			case ValueTypeFunc:
+
+				var funcStr = value.Value
+				funcStr, err = this_.FormatFunc(funcStr)
+				if err != nil {
+					return
+				}
+				sql += funcStr
+				break
+			}
+		}
+
+		sql += `) `
+	}
 
 	sqlList = append(sqlList, sql)
 	return

@@ -23,6 +23,10 @@ type TableModel struct {
 	Error        string `json:"error,omitempty"`
 }
 
+func (this_ *TableModel) AddColumn(column *ColumnModel) *ColumnModel {
+	this_.ColumnList = append(this_.ColumnList, column)
+	return nil
+}
 func (this_ *TableModel) FindColumnByName(name string) *ColumnModel {
 	if len(this_.ColumnList) > 0 {
 		for _, one := range this_.ColumnList {
@@ -75,11 +79,21 @@ func (this_ *TableModel) AddPrimaryKey(models ...*PrimaryKeyModel) {
 }
 
 func (this_ *TableModel) AddIndex(models ...*IndexModel) {
+
 	for _, model := range models {
-		find := this_.FindIndexByName(model.ColumnName)
+		find := this_.FindIndexByName(model.Name)
+		columnNames := model.Columns
+		if model.ColumnName != "" && StringsIndex(columnNames, model.ColumnName) < 0 {
+			columnNames = append(columnNames, model.ColumnName)
+		}
 		if find != nil {
-			find.Columns = append(find.Columns, model.ColumnName)
+			for _, columnName := range columnNames {
+				if StringsIndex(find.Columns, columnName) < 0 {
+					find.Columns = append(find.Columns, columnName)
+				}
+			}
 		} else {
+			model.Columns = columnNames
 			this_.IndexList = append(this_.IndexList, model)
 		}
 	}

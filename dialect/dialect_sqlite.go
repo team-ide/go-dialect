@@ -108,6 +108,8 @@ func (this_ *SqliteDialect) init() {
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONGBLOB", TypeFormat: "LONGBLOB", HasLength: false, IsString: true})
 
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SET", TypeFormat: "SET($l)", HasLength: true, IsString: true})
+
+	this_.AddFuncTypeInfo(&FuncTypeInfo{Name: "md5", Format: "md5"})
 }
 
 func (this_ *SqliteDialect) DatabaseCreateSql(param *GenerateParam, database *DatabaseModel) (sqlList []string, err error) {

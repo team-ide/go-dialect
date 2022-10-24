@@ -3,6 +3,7 @@ package worker
 import (
 	"database/sql"
 	"gitee.com/chunanyong/zorm/decimal"
+	"github.com/team-ide/go-dialect/dialect"
 	"reflect"
 )
 
@@ -116,7 +117,13 @@ func GetSqlValue(columnType *sql.ColumnType, data interface{}) (value interface{
 	case []uint8:
 		value = string(v)
 		break
+		break
 	default:
+		numberV, is := dialect.GetGoDrorNumberValue(data)
+		if is {
+			value = numberV
+			break
+		}
 		value = v
 		//panic("GetSqlValue data [" + fmt.Sprint(data) + "] name [" + columnType.Name() + "] databaseType [" + columnType.DatabaseTypeName() + "] not support")
 		break

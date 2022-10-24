@@ -5,6 +5,11 @@ import (
 	"strings"
 )
 
+type FuncTypeInfo struct {
+	Name   string `json:"name,omitempty"`
+	Format string `json:"format,omitempty"`
+}
+
 type ColumnTypeInfo struct {
 	Name       string `json:"name,omitempty"`
 	TypeFormat string `json:"typeFormat,omitempty"`

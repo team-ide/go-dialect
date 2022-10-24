@@ -3,8 +3,9 @@ package go_dialect
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-oci8"
+	//_ "github.com/mattn/go-oci8"
 	"github.com/team-ide/go-dialect/dialect"
+	"github.com/team-ide/go-driver/db_oracle"
 	"testing"
 )
 
@@ -16,9 +17,10 @@ func initOracle() {
 	if OracleDb != nil {
 		return
 	}
-	connStr := fmt.Sprintf("%s/%s@%s:%d/%s", "root", "123456", "127.0.0.1", 1521, "xe")
+	//connStr := fmt.Sprintf("%s/%s@%s:%d/%s", "root", "123456", "127.0.0.1", 1521, "xe")
+	connStr := fmt.Sprintf(`user="%s" password="%s" connectString="%s:%d/%s"`, "root", "123456", "127.0.0.1", 1521, "xe")
 	var err error
-	OracleDb, err = sql.Open("oci8", connStr)
+	OracleDb, err = sql.Open(db_oracle.GetDriverName(), connStr)
 	if err != nil {
 		panic(err)
 	}

@@ -109,6 +109,7 @@ func (this_ *ShenTongDialect) init() {
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARBINARY", TypeFormat: "VARBINARY($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BFILE", TypeFormat: "BFILE", HasLength: true, IsString: true})
 
+	this_.AddFuncTypeInfo(&FuncTypeInfo{Name: "md5", Format: "md5"})
 }
 
 func (this_ *ShenTongDialect) DatabaseModel(data map[string]interface{}) (database *DatabaseModel, err error) {

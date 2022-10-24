@@ -75,6 +75,8 @@ func (this_ *DaMenDialect) init() {
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARBINARY", TypeFormat: "VARBINARY($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BYTE", TypeFormat: "BYTE($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BINARY", TypeFormat: "BINARY($l)", HasLength: true, IsString: true})
+
+	this_.AddFuncTypeInfo(&FuncTypeInfo{Name: "md5", Format: "md5"})
 }
 
 func (this_ *DaMenDialect) DatabaseModel(data map[string]interface{}) (database *DatabaseModel, err error) {

@@ -65,6 +65,8 @@ func (this_ *OracleDialect) init() {
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "XMLTYPE", TypeFormat: "XMLTYPE($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "RAW", TypeFormat: "RAW($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NVARCHAR2", TypeFormat: "NVARCHAR2($l)", HasLength: true, IsString: true})
+
+	this_.AddFuncTypeInfo(&FuncTypeInfo{Name: "md5", Format: "md5"})
 }
 
 func (this_ *OracleDialect) DatabaseModel(data map[string]interface{}) (database *DatabaseModel, err error) {

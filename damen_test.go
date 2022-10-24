@@ -3,7 +3,6 @@ package go_dialect
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-oci8"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_dm"
 	"testing"

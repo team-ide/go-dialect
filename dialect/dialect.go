@@ -52,6 +52,8 @@ type Dialect interface {
 	IndexAddSql(param *GenerateParam, databaseName string, tableName string, index *IndexModel) (sqlList []string, err error)
 	IndexUpdateSql(param *GenerateParam, databaseName string, tableName string, index *IndexModel) (sqlList []string, err error)
 	IndexDeleteSql(param *GenerateParam, databaseName string, tableName string, indexName string) (sqlList []string, err error)
+
+	InsertSql(param *GenerateParam, insert *InsertModel) (sqlList []string, err error)
 }
 
 var (
@@ -336,7 +338,13 @@ func GetStringValue(value interface{}) string {
 		valueString = string(v)
 	case sql.NullString:
 		valueString = v.String
+
 	default:
+		numberV, is := GetGoDrorNumberValue(value)
+		if is {
+			valueString = numberV
+			break
+		}
 		panic("value type [" + reflect.TypeOf(value).String() + "] not support")
 		newValue, _ := json.Marshal(value)
 		valueString = string(newValue)

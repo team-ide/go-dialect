@@ -108,6 +108,8 @@ func (this_ *MysqlDialect) init() {
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONGBLOB", TypeFormat: "LONGBLOB", HasLength: false, IsString: true})
 
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SET", TypeFormat: "SET($l)", HasLength: true, IsString: true})
+
+	this_.AddFuncTypeInfo(&FuncTypeInfo{Name: "md5", Format: "md5"})
 }
 
 func (this_ *MysqlDialect) DatabaseModel(data map[string]interface{}) (database *DatabaseModel, err error) {
