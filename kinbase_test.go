@@ -58,7 +58,7 @@ func TestKinBaseTableCreate(t *testing.T) {
 
 func TestKinBaseSql(t *testing.T) {
 	initKinBase()
-	sqlInfo := loadSql("sql_kinbase.sql")
+	sqlInfo := loadSql("temp/sql_kinbase.sql")
 	sqlList := strings.Split(sqlInfo, ";\n")
 	exec(KinBaseDb, sqlList)
 	tables(KinBaseDb, dialect.KinBase, "SYSTEM")

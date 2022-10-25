@@ -91,7 +91,7 @@ func TestOracleTableCreate(t *testing.T) {
 
 func TestOracleSql(t *testing.T) {
 	initOracle()
-	sqlInfo := loadSql("sql_oracle.sql")
+	sqlInfo := loadSql("temp/sql_oracle.sql")
 	sqlList := strings.Split(sqlInfo, ";\n")
 	exec(OracleDb, sqlList)
 	tables(OracleDb, dialect.Oracle, "ROOT")

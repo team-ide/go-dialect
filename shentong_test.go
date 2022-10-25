@@ -58,7 +58,7 @@ func TestShenTongTableCreate(t *testing.T) {
 
 func TestShenTongSql(t *testing.T) {
 	initShenTong()
-	sqlInfo := loadSql("sql_shentong.sql")
+	sqlInfo := loadSql("temp/sql_shentong.sql")
 	sqlList := strings.Split(sqlInfo, ";\n")
 	exec(ShenTongDb, sqlList)
 	tables(ShenTongDb, dialect.ShenTong, "SYSDBA")

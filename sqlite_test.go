@@ -17,7 +17,7 @@ func initSqlite() (dbContext context.Context) {
 	if SqliteDb != nil {
 		return
 	}
-	connStr := "test_sqlite"
+	connStr := "temp/test_sqlite"
 	var err error
 	SqliteDb, err = sql.Open(db_sqlite3.GetDriverName(), connStr)
 	if err != nil {
@@ -58,7 +58,7 @@ func TestSqliteTableCreate(t *testing.T) {
 
 func TestSqliteSql(t *testing.T) {
 	initSqlite()
-	sqlInfo := loadSql("sql_sqlite.sql")
+	sqlInfo := loadSql("temp/sql_sqlite.sql")
 	sqlList := strings.Split(sqlInfo, ";\n")
 	exec(SqliteDb, sqlList)
 	tables(SqliteDb, dialect.Sqlite, "")

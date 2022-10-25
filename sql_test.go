@@ -28,7 +28,7 @@ func TestSqlParse(t *testing.T) {
 	var err error
 	var convertParser *worker.ConvertParser
 
-	srcSql := loadSql(`sql_test.sql`)
+	srcSql := loadSql(`temp/sql_test.sql`)
 
 	convertParser = worker.NewConvertParser(srcSql, dialect.Mysql, &dialect.GenerateParam{
 		DatabasePackingCharacter: "`",
@@ -40,7 +40,7 @@ func TestSqlParse(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	saveSql(convertParser.GetDestSql(), "sql_mysql.sql")
+	saveSql(convertParser.GetDestSql(), "temp/sql_mysql.sql")
 
 	convertParser = worker.NewConvertParser(srcSql, dialect.Oracle, &dialect.GenerateParam{
 		DatabasePackingCharacter: "\"",
@@ -51,7 +51,7 @@ func TestSqlParse(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	saveSql(convertParser.GetDestSql(), "sql_oracle.sql")
+	saveSql(convertParser.GetDestSql(), "temp/sql_oracle.sql")
 
 	convertParser = worker.NewConvertParser(srcSql, dialect.ShenTong, &dialect.GenerateParam{
 		DatabasePackingCharacter: "\"",
@@ -62,7 +62,7 @@ func TestSqlParse(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	saveSql(convertParser.GetDestSql(), "sql_shentong.sql")
+	saveSql(convertParser.GetDestSql(), "temp/sql_shentong.sql")
 
 	convertParser = worker.NewConvertParser(srcSql, dialect.KinBase, &dialect.GenerateParam{
 		DatabasePackingCharacter: "\"",
@@ -73,7 +73,7 @@ func TestSqlParse(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	saveSql(convertParser.GetDestSql(), "sql_kinbase.sql")
+	saveSql(convertParser.GetDestSql(), "temp/sql_kinbase.sql")
 
 	convertParser = worker.NewConvertParser(srcSql, dialect.DaMen, &dialect.GenerateParam{
 		DatabasePackingCharacter: "\"",
@@ -84,7 +84,7 @@ func TestSqlParse(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	saveSql(convertParser.GetDestSql(), "sql_damen.sql")
+	saveSql(convertParser.GetDestSql(), "temp/sql_damen.sql")
 
 	convertParser = worker.NewConvertParser(srcSql, dialect.Sqlite, &dialect.GenerateParam{
 		DatabasePackingCharacter: "\"",
@@ -95,6 +95,6 @@ func TestSqlParse(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	saveSql(convertParser.GetDestSql(), "sql_sqlite.sql")
+	saveSql(convertParser.GetDestSql(), "temp/sql_sqlite.sql")
 
 }

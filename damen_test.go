@@ -60,7 +60,7 @@ func TestDaMenTableCreate(t *testing.T) {
 
 func TestDaMenSql(t *testing.T) {
 	initDaMen()
-	sqlInfo := loadSql("sql_damen.sql")
+	sqlInfo := loadSql("temp/sql_damen.sql")
 	sqlList := strings.Split(sqlInfo, ";\n")
 	exec(DaMenDb, sqlList)
 	tables(DaMenDb, dialect.DaMen, "SYSDBA")
