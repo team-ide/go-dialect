@@ -57,18 +57,20 @@ type Dialect interface {
 }
 
 var (
-	Mysql        = NewMysqlDialect()
-	MysqlType    = &Type{Name: "mysql"}
-	Sqlite       = NewSqliteDialect()
-	SqliteType   = &Type{Name: "sqlite"}
-	Oracle       = NewOracleDialect()
-	OracleType   = &Type{Name: "oracle"}
-	DaMen        = NewDaMenDialect()
-	DaMenType    = &Type{Name: "damen"}
-	KinBase      = NewKinBaseDialect()
-	KinBaseType  = &Type{Name: "kinbase"}
-	ShenTong     = NewShenTongDialect()
-	ShenTongType = &Type{Name: "shentong"}
+	Mysql          = NewMysqlDialect()
+	MysqlType      = &Type{Name: "mysql"}
+	Sqlite         = NewSqliteDialect()
+	SqliteType     = &Type{Name: "sqlite"}
+	Oracle         = NewOracleDialect()
+	OracleType     = &Type{Name: "oracle"}
+	DaMen          = NewDaMenDialect()
+	DaMenType      = &Type{Name: "damen"}
+	KinBase        = NewKinBaseDialect()
+	KinBaseType    = &Type{Name: "kinbase"}
+	ShenTong       = NewShenTongDialect()
+	ShenTongType   = &Type{Name: "shentong"}
+	Postgresql     = NewPostgresqlDialect()
+	PostgresqlType = &Type{Name: "postgresql"}
 )
 
 type GenerateParam struct {

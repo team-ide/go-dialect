@@ -15,6 +15,7 @@ require (
 	github.com/godror/godror v0.34.0 // indirect
 	github.com/godror/knownpb v0.1.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
+	github.com/lib/pq v1.10.7 // indirect
 	github.com/mattn/go-sqlite3 v1.14.15 // indirect
 	golang.org/x/text v0.3.2 // indirect
 )

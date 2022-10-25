@@ -36,7 +36,7 @@ func TestSqliteTableCreate(t *testing.T) {
 	param := &dialect.GenerateParam{
 		AppendDatabase: true,
 	}
-	testTableDelete(SqliteDb, dialect.Sqlite, param, "", getTable().Name)
+	//testTableDelete(SqliteDb, dialect.Sqlite, param, "", getTable().Name)
 	testTableCreate(SqliteDb, dialect.Sqlite, param, "", getTable())
 
 	testColumnUpdate(SqliteDb, dialect.Sqlite, param, "", getTable().Name, &dialect.ColumnModel{

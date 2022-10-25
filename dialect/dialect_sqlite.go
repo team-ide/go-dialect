@@ -112,6 +112,20 @@ func (this_ *SqliteDialect) init() {
 	this_.AddFuncTypeInfo(&FuncTypeInfo{Name: "md5", Format: "md5"})
 }
 
+func (this_ *SqliteDialect) DatabaseModel(data map[string]interface{}) (database *DatabaseModel, err error) {
+	if data == nil {
+		return
+	}
+	database = &DatabaseModel{}
+	if data["name"] != nil {
+		database.Name = data["name"].(string)
+	}
+	return
+}
+func (this_ *SqliteDialect) DatabasesSelectSql() (sql string, err error) {
+	sql = `select * from pragma_database_list as t_i ORDER BY name `
+	return
+}
 func (this_ *SqliteDialect) DatabaseCreateSql(param *GenerateParam, database *DatabaseModel) (sqlList []string, err error) {
 
 	return
