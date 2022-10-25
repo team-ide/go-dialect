@@ -3,8 +3,7 @@ module github.com/team-ide/go-dialect
 go 1.18
 
 require (
-	gitee.com/chunanyong/zorm v1.6.1
-	github.com/team-ide/go-driver v1.0.6
+	github.com/team-ide/go-driver v1.0.7
 	google.golang.org/protobuf v1.27.1
 )
 

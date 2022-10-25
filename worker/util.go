@@ -2,7 +2,6 @@ package worker
 
 import (
 	"database/sql"
-	"gitee.com/chunanyong/zorm/decimal"
 	"github.com/team-ide/go-dialect/dialect"
 	"reflect"
 )
@@ -110,9 +109,6 @@ func GetSqlValue(columnType *sql.ColumnType, data interface{}) (value interface{
 		break
 	case sql.RawBytes:
 		value = string(v)
-		break
-	case decimal.Decimal:
-		value = v
 		break
 	case []uint8:
 		value = string(v)
