@@ -211,11 +211,11 @@ func (this_ *DefaultDialect) TableCreateSql(param *GenerateParam, databaseName s
 			}
 			columnSql += " " + columnType
 
-			if column.NotNull {
-				columnSql += ` NOT NULL`
-			}
 			if column.Default != "" {
 				columnSql += ` DEFAULT ` + formatStringValue("'", column.Default)
+			}
+			if column.NotNull {
+				columnSql += ` NOT NULL`
 			}
 
 			if column.PrimaryKey {
@@ -321,11 +321,11 @@ func (this_ *DefaultDialect) ColumnAddSql(param *GenerateParam, databaseName str
 	sql += ` ADD (`
 	sql += param.packingCharacterColumn(column.Name)
 	sql += ` ` + columnType + ``
-	if column.NotNull {
-		sql += ` NOT NULL`
-	}
 	if column.Default != "" {
 		sql += ` DEFAULT ` + formatStringValue("'", GetStringValue(column.Default))
+	}
+	if column.NotNull {
+		sql += ` NOT NULL`
 	}
 	sql += `)`
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_shentong"
+	"strings"
 	"testing"
 )
 
@@ -53,4 +54,12 @@ func TestShenTongTableCreate(t *testing.T) {
 		Comment: "name2注释",
 	})
 	tableDetail(ShenTongDb, dialect.ShenTong, "", getTable().Name)
+}
+
+func TestShenTongSql(t *testing.T) {
+	initShenTong()
+	sqlInfo := loadSql("sql_shentong.sql")
+	sqlList := strings.Split(sqlInfo, ";\n")
+	exec(ShenTongDb, sqlList)
+	tables(ShenTongDb, dialect.ShenTong, "SYSDBA")
 }

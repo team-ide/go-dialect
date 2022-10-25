@@ -1,4 +1,4 @@
-package parser
+package worker
 
 import (
 	"github.com/team-ide/go-dialect/dialect"
@@ -41,8 +41,8 @@ func (this_ *ConvertParser) GetDestSql() (destSql string) {
 	return
 }
 
-func (this_ *ConvertParser) Parse() (err error) {
-	tokens := sqlparser.NewStringTokenizer(this_.srcSql)
+func GetStatements(sqlInfo string) (stmts []sqlparser.Statement, err error) {
+	tokens := sqlparser.NewStringTokenizer(sqlInfo)
 	for {
 		var stmt sqlparser.Statement
 		stmt, err = sqlparser.ParseNext(tokens)
@@ -56,6 +56,18 @@ func (this_ *ConvertParser) Parse() (err error) {
 		if stmt == nil {
 			break
 		}
+		stmts = append(stmts, stmt)
+	}
+	return
+}
+
+func (this_ *ConvertParser) Parse() (err error) {
+	stmts, err := GetStatements(this_.srcSql)
+	if err != nil {
+		return
+	}
+
+	for _, stmt := range stmts {
 		err = this_.parse(stmt)
 		if err != nil {
 			return
@@ -204,7 +216,8 @@ func parseInsert(stmt *sqlparser.Insert) (insert *dialect.InsertModel, err error
 	insert.DatabaseName = stmt.Table.Qualifier.String()
 	insert.TableName = stmt.Table.Name.String()
 	for _, c := range stmt.Columns {
-		insert.Columns = append(insert.Columns, c.String())
+		name := c.CompliantName()
+		insert.Columns = append(insert.Columns, name)
 	}
 	switch rows := stmt.Rows.(type) {
 	case sqlparser.Values:

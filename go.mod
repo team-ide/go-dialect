@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	gitee.com/chunanyong/zorm v1.6.1
-	github.com/team-ide/go-driver v1.0.3
+	github.com/team-ide/go-driver v1.0.6
 	google.golang.org/protobuf v1.27.1
 )
 

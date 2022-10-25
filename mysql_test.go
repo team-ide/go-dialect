@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_mysql"
+	"strings"
 	"testing"
 )
 
@@ -16,7 +17,7 @@ func initMysql() {
 	if MysqlDb != nil {
 		return
 	}
-	connStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=true", "root", "123456", "127.0.0.1", 3306, "")
+	connStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=true", "root", "123456", "localhost", 3306, "")
 	var err error
 	MysqlDb, err = sql.Open(db_mysql.GetDriverName(), connStr)
 	if err != nil {
@@ -58,4 +59,21 @@ func TestMysqlTableCreate(t *testing.T) {
 		Comment: "name2注释",
 	})
 	tableDetail(MysqlDb, dialect.Mysql, database.Name, getTable().Name)
+}
+
+func TestMysqlSql(t *testing.T) {
+	initMysql()
+	sqlInfo := loadSql("sql_mysql.sql")
+	param := &dialect.GenerateParam{
+		AppendDatabase: true,
+	}
+	database := &dialect.DatabaseModel{
+		Name: "TEST_DB",
+	}
+	testDatabaseDelete(MysqlDb, dialect.Mysql, param, database.Name)
+	testDatabaseCreate(MysqlDb, dialect.Mysql, param, database)
+	sqlInfo = "use " + database.Name + ";\n" + sqlInfo
+
+	sqlList := strings.Split(sqlInfo, ";\n")
+	exec(MysqlDb, sqlList)
 }

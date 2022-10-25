@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_kingbase_v8r3"
+	"strings"
 	"testing"
 )
 
@@ -53,4 +54,12 @@ func TestKinBaseTableCreate(t *testing.T) {
 		Comment: "name2注释",
 	})
 	tableDetail(KinBaseDb, dialect.KinBase, "", getTable().Name)
+}
+
+func TestKinBaseSql(t *testing.T) {
+	initKinBase()
+	sqlInfo := loadSql("sql_kinbase.sql")
+	sqlList := strings.Split(sqlInfo, ";\n")
+	exec(KinBaseDb, sqlList)
+	tables(KinBaseDb, dialect.KinBase, "SYSTEM")
 }

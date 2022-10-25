@@ -167,11 +167,11 @@ func (this_ *SqliteDialect) TableCreateSql(param *GenerateParam, databaseName st
 			}
 			columnSql += " " + columnType
 
-			if column.NotNull {
-				columnSql += ` NOT NULL`
-			}
 			if column.Default != "" {
 				columnSql += ` DEFAULT ` + formatStringValue("'", GetStringValue(column.Default))
+			}
+			if column.NotNull {
+				columnSql += ` NOT NULL`
 			}
 
 			if column.PrimaryKey {
@@ -270,11 +270,11 @@ func (this_ *SqliteDialect) ColumnAddSql(param *GenerateParam, databaseName stri
 	sql += ` ADD COLUMN `
 	sql += param.packingCharacterColumn(column.Name)
 	sql += ` ` + columnType + ``
-	if column.NotNull {
-		sql += ` NOT NULL`
-	}
 	if column.Default != "" {
 		sql += ` DEFAULT ` + formatStringValue("'", GetStringValue(column.Default))
+	}
+	if column.NotNull {
+		sql += ` NOT NULL`
 	}
 	sql += ``
 

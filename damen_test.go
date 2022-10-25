@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_dm"
+	"strings"
 	"testing"
 )
 
@@ -19,6 +20,8 @@ func initDaMen() {
 	connStr := fmt.Sprintf("dm://%s:%s@%s:%d?charset=utf8", "SYSDBA", "SYSDBA", "127.0.0.1", 5236)
 	var err error
 	DaMenDb, err = sql.Open(db_dm.GetDriverName(), connStr)
+	DaMenDb.SetMaxIdleConns(50)
+	DaMenDb.SetMaxOpenConns(50)
 	if err != nil {
 		panic(err)
 	}
@@ -53,4 +56,12 @@ func TestDaMenTableCreate(t *testing.T) {
 		Comment: "name2注释",
 	})
 	tableDetail(DaMenDb, dialect.DaMen, "", getTable().Name)
+}
+
+func TestDaMenSql(t *testing.T) {
+	initDaMen()
+	sqlInfo := loadSql("sql_damen.sql")
+	sqlList := strings.Split(sqlInfo, ";\n")
+	exec(DaMenDb, sqlList)
+	tables(DaMenDb, dialect.DaMen, "SYSDBA")
 }

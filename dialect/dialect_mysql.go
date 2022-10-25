@@ -223,11 +223,11 @@ func (this_ *MysqlDialect) TableCreateSql(param *GenerateParam, databaseName str
 		if column.CharacterSetName != "" {
 			columnSql += ` CHARACTER SET ` + column.CharacterSetName
 		}
-		if column.NotNull {
-			columnSql += ` NOT NULL`
-		}
 		if column.Default != "" {
 			columnSql += " DEFAULT " + formatStringValue("'", column.Default)
+		}
+		if column.NotNull {
+			columnSql += ` NOT NULL`
 		}
 		if column.Comment != "" {
 			columnSql += " COMMENT " + formatStringValue("'", column.Comment)
@@ -367,13 +367,11 @@ func (this_ *MysqlDialect) ColumnAddSql(param *GenerateParam, databaseName strin
 	sql += "" + param.packingCharacterTable(tableName)
 	sql += " ADD COLUMN " + param.packingCharacterColumn(column.Name)
 	sql += " " + columnType
+	if column.Default != "" {
+		sql += " DEFAULT " + formatStringValue("'", GetStringValue(column.Default))
+	}
 	if column.NotNull {
 		sql += " NOT NULL"
-	}
-	if column.Default == "" {
-		sql += " DEFAULT NULL"
-	} else {
-		sql += " DEFAULT " + formatStringValue("'", GetStringValue(column.Default))
 	}
 	sql += " COMMENT " + formatStringValue("'", column.Comment)
 	if column.BeforeColumn != "" {

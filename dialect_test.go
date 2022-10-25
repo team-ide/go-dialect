@@ -114,7 +114,9 @@ func exec(db *sql.DB, sqlList []string) {
 		return
 	}
 	for _, one := range sqlList {
-
+		if one == "" {
+			continue
+		}
 		fmt.Printf("%s\n", one)
 		_, err := db.Exec(one)
 		if err != nil {

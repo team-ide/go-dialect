@@ -2,13 +2,13 @@ package go_dialect
 
 import (
 	"github.com/team-ide/go-dialect/dialect"
-	"github.com/team-ide/go-dialect/parser"
+	"github.com/team-ide/go-dialect/worker"
 	"os"
 	"testing"
 )
 
-func loadSql() (srcSql string) {
-	bs, err := os.ReadFile(`sql_test.sql`)
+func loadSql(name string) (srcSql string) {
+	bs, err := os.ReadFile(name)
 	if err != nil {
 		panic(err)
 	}
@@ -26,14 +26,15 @@ func saveSql(destSql string, name string) {
 
 func TestSqlParse(t *testing.T) {
 	var err error
-	var convertParser *parser.ConvertParser
+	var convertParser *worker.ConvertParser
 
-	srcSql := loadSql()
+	srcSql := loadSql(`sql_test.sql`)
 
-	convertParser = parser.NewConvertParser(srcSql, dialect.Mysql, &dialect.GenerateParam{
+	convertParser = worker.NewConvertParser(srcSql, dialect.Mysql, &dialect.GenerateParam{
 		DatabasePackingCharacter: "`",
 		TablePackingCharacter:    "`",
 		ColumnPackingCharacter:   "`",
+		CharacterSet:             "utf8mb4",
 	})
 	err = convertParser.Parse()
 	if err != nil {
@@ -41,7 +42,7 @@ func TestSqlParse(t *testing.T) {
 	}
 	saveSql(convertParser.GetDestSql(), "sql_mysql.sql")
 
-	convertParser = parser.NewConvertParser(srcSql, dialect.Oracle, &dialect.GenerateParam{
+	convertParser = worker.NewConvertParser(srcSql, dialect.Oracle, &dialect.GenerateParam{
 		DatabasePackingCharacter: "\"",
 		TablePackingCharacter:    "\"",
 		ColumnPackingCharacter:   "\"",
@@ -52,7 +53,7 @@ func TestSqlParse(t *testing.T) {
 	}
 	saveSql(convertParser.GetDestSql(), "sql_oracle.sql")
 
-	convertParser = parser.NewConvertParser(srcSql, dialect.ShenTong, &dialect.GenerateParam{
+	convertParser = worker.NewConvertParser(srcSql, dialect.ShenTong, &dialect.GenerateParam{
 		DatabasePackingCharacter: "\"",
 		TablePackingCharacter:    "\"",
 		ColumnPackingCharacter:   "\"",
@@ -63,7 +64,7 @@ func TestSqlParse(t *testing.T) {
 	}
 	saveSql(convertParser.GetDestSql(), "sql_shentong.sql")
 
-	convertParser = parser.NewConvertParser(srcSql, dialect.KinBase, &dialect.GenerateParam{
+	convertParser = worker.NewConvertParser(srcSql, dialect.KinBase, &dialect.GenerateParam{
 		DatabasePackingCharacter: "\"",
 		TablePackingCharacter:    "\"",
 		ColumnPackingCharacter:   "\"",
@@ -74,7 +75,7 @@ func TestSqlParse(t *testing.T) {
 	}
 	saveSql(convertParser.GetDestSql(), "sql_kinbase.sql")
 
-	convertParser = parser.NewConvertParser(srcSql, dialect.DaMen, &dialect.GenerateParam{
+	convertParser = worker.NewConvertParser(srcSql, dialect.DaMen, &dialect.GenerateParam{
 		DatabasePackingCharacter: "\"",
 		TablePackingCharacter:    "\"",
 		ColumnPackingCharacter:   "\"",
@@ -85,7 +86,7 @@ func TestSqlParse(t *testing.T) {
 	}
 	saveSql(convertParser.GetDestSql(), "sql_damen.sql")
 
-	convertParser = parser.NewConvertParser(srcSql, dialect.Sqlite, &dialect.GenerateParam{
+	convertParser = worker.NewConvertParser(srcSql, dialect.Sqlite, &dialect.GenerateParam{
 		DatabasePackingCharacter: "\"",
 		TablePackingCharacter:    "\"",
 		ColumnPackingCharacter:   "\"",

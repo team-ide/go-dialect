@@ -3,6 +3,8 @@ package go_dialect
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+
 	//_ "github.com/mattn/go-oci8"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_oracle"
@@ -85,4 +87,12 @@ func TestOracleTableCreate(t *testing.T) {
 		Comment: "name2注释",
 	})
 	tableDetail(OracleDb, dialect.Oracle, "", getTable().Name)
+}
+
+func TestOracleSql(t *testing.T) {
+	initOracle()
+	sqlInfo := loadSql("sql_oracle.sql")
+	sqlList := strings.Split(sqlInfo, ";\n")
+	exec(OracleDb, sqlList)
+	tables(OracleDb, dialect.Oracle, "ROOT")
 }

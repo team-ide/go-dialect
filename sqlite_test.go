@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_sqlite3"
+	"strings"
 	"testing"
 )
 
@@ -53,4 +54,12 @@ func TestSqliteTableCreate(t *testing.T) {
 		Comment: "name2注释",
 	})
 	tableDetail(SqliteDb, dialect.Sqlite, "", getTable().Name)
+}
+
+func TestSqliteSql(t *testing.T) {
+	initSqlite()
+	sqlInfo := loadSql("sql_sqlite.sql")
+	sqlList := strings.Split(sqlInfo, ";\n")
+	exec(SqliteDb, sqlList)
+	tables(SqliteDb, dialect.Sqlite, "")
 }
