@@ -111,13 +111,13 @@ func (this_ *PostgresqlDialect) DatabaseModel(data map[string]interface{}) (data
 		return
 	}
 	database = &DatabaseModel{}
-	if data["USERNAME"] != nil {
-		database.Name = data["USERNAME"].(string)
+	if data["nspname"] != nil {
+		database.Name = data["nspname"].(string)
 	}
 	return
 }
 func (this_ *PostgresqlDialect) DatabasesSelectSql() (sql string, err error) {
-	sql = `SELECT * FROM dba_users ORDER BY USERNAME`
+	sql = `select * from pg_catalog.pg_namespace ORDER BY nspname`
 	return
 }
 
@@ -126,27 +126,27 @@ func (this_ *PostgresqlDialect) TableModel(data map[string]interface{}) (table *
 		return
 	}
 	table = &TableModel{}
-	if data["TABLE_NAME"] != nil {
-		table.Name = data["TABLE_NAME"].(string)
+	if data["tablename"] != nil {
+		table.Name = data["tablename"].(string)
 	}
 	return
 }
 func (this_ *PostgresqlDialect) TablesSelectSql(databaseName string) (sql string, err error) {
-	sql = `SELECT * FROM all_tables  `
+	sql = `SELECT * FROM pg_catalog.pg_tables   `
 	if databaseName != "" {
-		sql += `WHERE OWNER ='` + databaseName + `' `
+		sql += `WHERE schemaname ='` + databaseName + `' `
 	}
-	sql += `ORDER BY TABLE_NAME`
+	sql += `ORDER BY tablename`
 	return
 }
 func (this_ *PostgresqlDialect) TableSelectSql(databaseName string, tableName string) (sql string, err error) {
-	sql = `SELECT * FROM all_tables `
+	sql = `SELECT * FROM pg_catalog.pg_tables `
 	sql += `WHERE 1=1 `
 	if databaseName != "" {
-		sql += `AND owner='` + databaseName + `' `
+		sql += `AND schemaname='` + databaseName + `' `
 	}
-	sql += `AND TABLE_NAME='` + tableName + `' `
-	sql += `ORDER BY TABLE_NAME`
+	sql += `AND tablename='` + tableName + `' `
+	sql += `ORDER BY tablename`
 	return
 }
 
