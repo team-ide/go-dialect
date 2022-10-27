@@ -2,7 +2,6 @@ package go_dialect
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_dm"
 	"strings"
@@ -17,11 +16,9 @@ func initDaMen() {
 	if DaMenDb != nil {
 		return
 	}
-	connStr := fmt.Sprintf("dm://%s:%s@%s:%d?charset=utf8", "SYSDBA", "SYSDBA", "127.0.0.1", 5236)
+	dsn := db_dm.GetDSN("SYSDBA", "SYSDBA", "127.0.0.1", 5236)
 	var err error
-	DaMenDb, err = sql.Open(db_dm.GetDriverName(), connStr)
-	DaMenDb.SetMaxIdleConns(50)
-	DaMenDb.SetMaxOpenConns(50)
+	DaMenDb, err = db_dm.Open(dsn)
 	if err != nil {
 		panic(err)
 	}
@@ -30,15 +27,15 @@ func initDaMen() {
 
 func TestDaMen(t *testing.T) {
 	initDaMen()
-	databases(DaMenDb, dialect.DaMen)
+	owners(DaMenDb, dialect.DaMen)
 }
 
 func TestDaMenTableCreate(t *testing.T) {
 	initDaMen()
 	param := &dialect.GenerateParam{
-		AppendDatabase: true,
+		AppendOwner: true,
 	}
-	testTableDelete(DaMenDb, dialect.DaMen, param, "", getTable().Name)
+	//testTableDelete(DaMenDb, dialect.DaMen, param, "", getTable().Name)
 	testTableCreate(DaMenDb, dialect.DaMen, param, "", getTable())
 
 	testColumnUpdate(DaMenDb, dialect.DaMen, param, "", getTable().Name, &dialect.ColumnModel{
@@ -56,6 +53,7 @@ func TestDaMenTableCreate(t *testing.T) {
 		Comment: "name2注释",
 	})
 	tableDetail(DaMenDb, dialect.DaMen, "", getTable().Name)
+	testTableDelete(DaMenDb, dialect.DaMen, param, "", getTable().Name)
 }
 
 func TestDaMenSql(t *testing.T) {

@@ -69,18 +69,18 @@ func (this_ *OracleDialect) init() {
 	this_.AddFuncTypeInfo(&FuncTypeInfo{Name: "md5", Format: "md5"})
 }
 
-func (this_ *OracleDialect) DatabaseModel(data map[string]interface{}) (database *DatabaseModel, err error) {
+func (this_ *OracleDialect) OwnerModel(data map[string]interface{}) (owner *OwnerModel, err error) {
 	if data == nil {
 		return
 	}
-	database = &DatabaseModel{}
+	owner = &OwnerModel{}
 	if data["USERNAME"] != nil {
-		database.Name = data["USERNAME"].(string)
+		owner.Name = data["USERNAME"].(string)
 	}
 	return
 }
-func (this_ *OracleDialect) DatabasesSelectSql() (sql string, err error) {
-	sql = `SELECT * FROM dba_users ORDER BY USERNAME`
+func (this_ *OracleDialect) OwnersSelectSql() (sql string, err error) {
+	sql = `SELECT USERNAME FROM DBA_USERS ORDER BY USERNAME`
 	return
 }
 
@@ -92,21 +92,24 @@ func (this_ *OracleDialect) TableModel(data map[string]interface{}) (table *Tabl
 	if data["TABLE_NAME"] != nil {
 		table.Name = data["TABLE_NAME"].(string)
 	}
+	if data["OWNER"] != nil {
+		table.OwnerName = data["OWNER"].(string)
+	}
 	return
 }
-func (this_ *OracleDialect) TablesSelectSql(databaseName string) (sql string, err error) {
-	sql = `SELECT * FROM all_tables  `
-	if databaseName != "" {
-		sql += `WHERE OWNER ='` + databaseName + `' `
+func (this_ *OracleDialect) TablesSelectSql(ownerName string) (sql string, err error) {
+	sql = `SELECT TABLE_NAME,OWNER FROM ALL_TABLES  `
+	if ownerName != "" {
+		sql += `WHERE OWNER ='` + ownerName + `' `
 	}
 	sql += `ORDER BY TABLE_NAME`
 	return
 }
-func (this_ *OracleDialect) TableSelectSql(databaseName string, tableName string) (sql string, err error) {
-	sql = `SELECT * FROM all_tables `
+func (this_ *OracleDialect) TableSelectSql(ownerName string, tableName string) (sql string, err error) {
+	sql = `SELECT TABLE_NAME,OWNER FROM ALL_TABLES `
 	sql += `WHERE 1=1 `
-	if databaseName != "" {
-		sql += `AND owner='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND owner='` + ownerName + `' `
 	}
 	sql += `AND TABLE_NAME='` + tableName + `' `
 	sql += `ORDER BY TABLE_NAME`
@@ -149,6 +152,8 @@ func (this_ *OracleDialect) ColumnModel(data map[string]interface{}) (column *Co
 		}
 		column.Type = columnTypeInfo.Name
 
+		//bs, _ := json.Marshal(data)
+		//println("data:", string(bs))
 		dataLength := GetStringValue(data["DATA_LENGTH"])
 		if dataLength != "" && dataLength != "0" {
 			column.Length, err = StringToInt(dataLength)
@@ -173,12 +178,12 @@ func (this_ *OracleDialect) ColumnModel(data map[string]interface{}) (column *Co
 	}
 	return
 }
-func (this_ *OracleDialect) ColumnsSelectSql(databaseName string, tableName string) (sql string, err error) {
-	sql = `SELECT t.*,tc.COMMENTS from all_tab_columns t `
-	sql += "LEFT JOIN all_col_comments tc ON(tc.OWNER=t.OWNER AND tc.TABLE_NAME=t.TABLE_NAME AND tc.COLUMN_NAME=t.COLUMN_NAME)"
+func (this_ *OracleDialect) ColumnsSelectSql(ownerName string, tableName string) (sql string, err error) {
+	sql = `SELECT t.COLUMN_NAME,t.DATA_DEFAULT,t.TABLE_NAME,t.CHARACTER_SET_NAME,t.NULLABLE,t.DATA_TYPE,t.DATA_LENGTH,t.DATA_PRECISION,t.DATA_SCALE,tc.COMMENTS from ALL_TAB_COLUMNS t `
+	sql += "LEFT JOIN ALL_COL_COMMENTS tc ON(tc.OWNER=t.OWNER AND tc.TABLE_NAME=t.TABLE_NAME AND tc.COLUMN_NAME=t.COLUMN_NAME)"
 	sql += `WHERE 1=1 `
-	if databaseName != "" {
-		sql += `AND t.OWNER='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND t.OWNER='` + ownerName + `' `
 	}
 	sql += `AND t.TABLE_NAME='` + tableName + `' `
 	return
@@ -195,19 +200,16 @@ func (this_ *OracleDialect) PrimaryKeyModel(data map[string]interface{}) (primar
 	if data["TABLE_NAME"] != nil {
 		primaryKey.TableName = data["TABLE_NAME"].(string)
 	}
-	if data["TABLE_SCHEMA"] != nil {
-		primaryKey.TableSchema = data["TABLE_SCHEMA"].(string)
-	}
-	if data["TABLE_CATALOG"] != nil {
-		primaryKey.TableCatalog = data["TABLE_CATALOG"].(string)
+	if data["OWNER"] != nil {
+		primaryKey.OwnerName = data["OWNER"].(string)
 	}
 	return
 }
-func (this_ *OracleDialect) PrimaryKeysSelectSql(databaseName string, tableName string) (sql string, err error) {
-	sql = `SELECT cu.* FROM all_cons_columns cu, all_constraints au `
+func (this_ *OracleDialect) PrimaryKeysSelectSql(ownerName string, tableName string) (sql string, err error) {
+	sql = `SELECT cu.COLUMN_NAME,au.TABLE_NAME,au.OWNER FROM ALL_CONS_COLUMNS cu, ALL_CONSTRAINTS au `
 	sql += `WHERE cu.constraint_name = au.constraint_name and au.constraint_type = 'P' `
-	if databaseName != "" {
-		sql += `AND au.OWNER='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND au.OWNER='` + ownerName + `' `
 	}
 	sql += `AND au.TABLE_NAME='` + tableName + `' `
 	return
@@ -233,20 +235,23 @@ func (this_ *OracleDialect) IndexModel(data map[string]interface{}) (index *Inde
 	if data["TABLE_NAME"] != nil {
 		index.TableName = data["TABLE_NAME"].(string)
 	}
+	if data["TABLE_OWNER"] != nil {
+		index.OwnerName = data["TABLE_OWNER"].(string)
+	}
 	return
 }
-func (this_ *OracleDialect) IndexesSelectSql(databaseName string, tableName string) (sql string, err error) {
-	sql = `SELECT t.*,i.index_type,i.UNIQUENESS FROM all_ind_columns t,all_indexes i  `
+func (this_ *OracleDialect) IndexesSelectSql(ownerName string, tableName string) (sql string, err error) {
+	sql = `SELECT t.INDEX_NAME,t.COLUMN_NAME,t.TABLE_OWNER,t.TABLE_NAME,i.index_type,i.UNIQUENESS FROM ALL_IND_COLUMNS t,ALL_INDEXES i  `
 	sql += `WHERE t.index_name = i.index_name `
-	if databaseName != "" {
-		sql += `AND t.TABLE_OWNER='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND t.TABLE_OWNER='` + ownerName + `' `
 	}
 	sql += `AND t.TABLE_NAME='` + tableName + `' `
 	sql += `AND t.COLUMN_NAME NOT IN( `
 	sql += `SELECT cu.COLUMN_NAME FROM all_cons_columns cu, all_constraints au `
 	sql += `WHERE cu.constraint_name = au.constraint_name and au.constraint_type = 'P' `
-	if databaseName != "" {
-		sql += `AND au.OWNER='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND au.OWNER='` + ownerName + `' `
 	}
 	sql += `AND au.TABLE_NAME='` + tableName + `' `
 

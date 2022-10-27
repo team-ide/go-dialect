@@ -106,17 +106,17 @@ func (this_ *PostgresqlDialect) init() {
 	this_.AddFuncTypeInfo(&FuncTypeInfo{Name: "md5", Format: "md5"})
 }
 
-func (this_ *PostgresqlDialect) DatabaseModel(data map[string]interface{}) (database *DatabaseModel, err error) {
+func (this_ *PostgresqlDialect) OwnerModel(data map[string]interface{}) (owner *OwnerModel, err error) {
 	if data == nil {
 		return
 	}
-	database = &DatabaseModel{}
+	owner = &OwnerModel{}
 	if data["nspname"] != nil {
-		database.Name = data["nspname"].(string)
+		owner.Name = data["nspname"].(string)
 	}
 	return
 }
-func (this_ *PostgresqlDialect) DatabasesSelectSql() (sql string, err error) {
+func (this_ *PostgresqlDialect) OwnersSelectSql() (sql string, err error) {
 	sql = `select * from pg_catalog.pg_namespace ORDER BY nspname`
 	return
 }
@@ -131,19 +131,19 @@ func (this_ *PostgresqlDialect) TableModel(data map[string]interface{}) (table *
 	}
 	return
 }
-func (this_ *PostgresqlDialect) TablesSelectSql(databaseName string) (sql string, err error) {
+func (this_ *PostgresqlDialect) TablesSelectSql(ownerName string) (sql string, err error) {
 	sql = `SELECT * FROM pg_catalog.pg_tables   `
-	if databaseName != "" {
-		sql += `WHERE schemaname ='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `WHERE schemaname ='` + ownerName + `' `
 	}
 	sql += `ORDER BY tablename`
 	return
 }
-func (this_ *PostgresqlDialect) TableSelectSql(databaseName string, tableName string) (sql string, err error) {
+func (this_ *PostgresqlDialect) TableSelectSql(ownerName string, tableName string) (sql string, err error) {
 	sql = `SELECT * FROM pg_catalog.pg_tables `
 	sql += `WHERE 1=1 `
-	if databaseName != "" {
-		sql += `AND schemaname='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND schemaname='` + ownerName + `' `
 	}
 	sql += `AND tablename='` + tableName + `' `
 	sql += `ORDER BY tablename`
@@ -212,22 +212,22 @@ func (this_ *PostgresqlDialect) ColumnModel(data map[string]interface{}) (column
 	}
 	return
 }
-func (this_ *PostgresqlDialect) ColumnsSelectSql(databaseName string, tableName string) (sql string, err error) {
+func (this_ *PostgresqlDialect) ColumnsSelectSql(ownerName string, tableName string) (sql string, err error) {
 	sql = `SELECT t.*,tc.COMMENTS from all_tab_columns t `
 	sql += "LEFT JOIN all_col_comments tc ON(tc.OWNER=t.OWNER AND tc.TABLE_NAME=t.TABLE_NAME AND tc.COLUMN_NAME=t.COLUMN_NAME)"
 	sql += `WHERE 1=1 `
-	if databaseName != "" {
-		sql += `AND t.OWNER='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND t.OWNER='` + ownerName + `' `
 	}
 	sql += `AND t.TABLE_NAME='` + tableName + `' `
 	return
 }
-func (this_ *PostgresqlDialect) ColumnUpdateSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
+func (this_ *PostgresqlDialect) ColumnUpdateSql(param *GenerateParam, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
 
 	var sqlList_ []string
 
 	if column.OldName != "" && column.OldName != column.Name {
-		sqlList_, err = this_.columnRenameSql(param, databaseName, tableName, column.OldName, column.Name)
+		sqlList_, err = this_.columnRenameSql(param, ownerName, tableName, column.OldName, column.Name)
 		if err != nil {
 			return
 		}
@@ -235,7 +235,7 @@ func (this_ *PostgresqlDialect) ColumnUpdateSql(param *GenerateParam, databaseNa
 	}
 
 	if column.Comment != column.OldComment {
-		sqlList_, err = this_.ColumnCommentSql(param, databaseName, tableName, column.Name, column.Comment)
+		sqlList_, err = this_.ColumnCommentSql(param, ownerName, tableName, column.Name, column.Comment)
 		if err != nil {
 			return
 		}
@@ -255,19 +255,13 @@ func (this_ *PostgresqlDialect) PrimaryKeyModel(data map[string]interface{}) (pr
 	if data["TABLE_NAME"] != nil {
 		primaryKey.TableName = data["TABLE_NAME"].(string)
 	}
-	if data["TABLE_SCHEMA"] != nil {
-		primaryKey.TableSchema = data["TABLE_SCHEMA"].(string)
-	}
-	if data["TABLE_CATALOG"] != nil {
-		primaryKey.TableCatalog = data["TABLE_CATALOG"].(string)
-	}
 	return
 }
-func (this_ *PostgresqlDialect) PrimaryKeysSelectSql(databaseName string, tableName string) (sql string, err error) {
+func (this_ *PostgresqlDialect) PrimaryKeysSelectSql(ownerName string, tableName string) (sql string, err error) {
 	sql = `SELECT cu.* FROM all_cons_columns cu, all_constraints au `
 	sql += `WHERE cu.constraint_name = au.constraint_name and au.constraint_type = 'P' `
-	if databaseName != "" {
-		sql += `AND au.OWNER='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND au.OWNER='` + ownerName + `' `
 	}
 	sql += `AND au.TABLE_NAME='` + tableName + `' `
 	return
@@ -295,18 +289,18 @@ func (this_ *PostgresqlDialect) IndexModel(data map[string]interface{}) (index *
 	}
 	return
 }
-func (this_ *PostgresqlDialect) IndexesSelectSql(databaseName string, tableName string) (sql string, err error) {
+func (this_ *PostgresqlDialect) IndexesSelectSql(ownerName string, tableName string) (sql string, err error) {
 	sql = `SELECT t.*,i.index_type,i.UNIQUENESS FROM all_ind_columns t,all_indexes i  `
 	sql += `WHERE t.index_name = i.index_name `
-	if databaseName != "" {
-		sql += `AND t.TABLE_OWNER='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND t.TABLE_OWNER='` + ownerName + `' `
 	}
 	sql += `AND t.TABLE_NAME='` + tableName + `' `
 	sql += `AND t.COLUMN_NAME NOT IN( `
 	sql += `SELECT cu.COLUMN_NAME FROM all_cons_columns cu, all_constraints au `
 	sql += `WHERE cu.constraint_name = au.constraint_name and au.constraint_type = 'P' `
-	if databaseName != "" {
-		sql += `AND au.OWNER='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND au.OWNER='` + ownerName + `' `
 	}
 	sql += `AND au.TABLE_NAME='` + tableName + `' `
 

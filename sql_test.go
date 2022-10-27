@@ -31,10 +31,10 @@ func TestSqlParse(t *testing.T) {
 	srcSql := loadSql(`temp/sql_test.sql`)
 
 	convertParser = worker.NewConvertParser(srcSql, dialect.Mysql, &dialect.GenerateParam{
-		DatabasePackingCharacter: "`",
-		TablePackingCharacter:    "`",
-		ColumnPackingCharacter:   "`",
-		CharacterSet:             "utf8mb4",
+		OwnerPackingCharacter:  "`",
+		TablePackingCharacter:  "`",
+		ColumnPackingCharacter: "`",
+		CharacterSetName:       "utf8mb4",
 	})
 	err = convertParser.Parse()
 	if err != nil {
@@ -43,9 +43,9 @@ func TestSqlParse(t *testing.T) {
 	saveSql(convertParser.GetDestSql(), "temp/sql_mysql.sql")
 
 	convertParser = worker.NewConvertParser(srcSql, dialect.Oracle, &dialect.GenerateParam{
-		DatabasePackingCharacter: "\"",
-		TablePackingCharacter:    "\"",
-		ColumnPackingCharacter:   "\"",
+		OwnerPackingCharacter:  "\"",
+		TablePackingCharacter:  "\"",
+		ColumnPackingCharacter: "\"",
 	})
 	err = convertParser.Parse()
 	if err != nil {
@@ -54,9 +54,9 @@ func TestSqlParse(t *testing.T) {
 	saveSql(convertParser.GetDestSql(), "temp/sql_oracle.sql")
 
 	convertParser = worker.NewConvertParser(srcSql, dialect.ShenTong, &dialect.GenerateParam{
-		DatabasePackingCharacter: "\"",
-		TablePackingCharacter:    "\"",
-		ColumnPackingCharacter:   "\"",
+		OwnerPackingCharacter:  "\"",
+		TablePackingCharacter:  "\"",
+		ColumnPackingCharacter: "\"",
 	})
 	err = convertParser.Parse()
 	if err != nil {
@@ -65,9 +65,9 @@ func TestSqlParse(t *testing.T) {
 	saveSql(convertParser.GetDestSql(), "temp/sql_shentong.sql")
 
 	convertParser = worker.NewConvertParser(srcSql, dialect.KinBase, &dialect.GenerateParam{
-		DatabasePackingCharacter: "\"",
-		TablePackingCharacter:    "\"",
-		ColumnPackingCharacter:   "\"",
+		OwnerPackingCharacter:  "\"",
+		TablePackingCharacter:  "\"",
+		ColumnPackingCharacter: "\"",
 	})
 	err = convertParser.Parse()
 	if err != nil {
@@ -76,9 +76,9 @@ func TestSqlParse(t *testing.T) {
 	saveSql(convertParser.GetDestSql(), "temp/sql_kinbase.sql")
 
 	convertParser = worker.NewConvertParser(srcSql, dialect.DaMen, &dialect.GenerateParam{
-		DatabasePackingCharacter: "\"",
-		TablePackingCharacter:    "\"",
-		ColumnPackingCharacter:   "\"",
+		OwnerPackingCharacter:  "\"",
+		TablePackingCharacter:  "\"",
+		ColumnPackingCharacter: "\"",
 	})
 	err = convertParser.Parse()
 	if err != nil {
@@ -87,9 +87,9 @@ func TestSqlParse(t *testing.T) {
 	saveSql(convertParser.GetDestSql(), "temp/sql_damen.sql")
 
 	convertParser = worker.NewConvertParser(srcSql, dialect.Sqlite, &dialect.GenerateParam{
-		DatabasePackingCharacter: "\"",
-		TablePackingCharacter:    "\"",
-		ColumnPackingCharacter:   "\"",
+		OwnerPackingCharacter:  "\"",
+		TablePackingCharacter:  "\"",
+		ColumnPackingCharacter: "\"",
 	})
 	err = convertParser.Parse()
 	if err != nil {

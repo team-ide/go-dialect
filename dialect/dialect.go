@@ -1,8 +1,6 @@
 package dialect
 
 import (
-	"database/sql"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -21,37 +19,36 @@ type Dialect interface {
 	FormatColumnType(typeName string, length, decimal int) (columnType string, err error)
 	ToColumnTypeInfo(columnType string) (columnTypeInfo *ColumnTypeInfo, length, decimal int, err error)
 
-	DatabaseModel(data map[string]interface{}) (database *DatabaseModel, err error)
-	DatabasesSelectSql() (sql string, err error)
-	DatabaseCreateSql(param *GenerateParam, database *DatabaseModel) (sqlList []string, err error)
-	DatabaseDeleteSql(param *GenerateParam, databaseName string) (sqlList []string, err error)
+	OwnerModel(data map[string]interface{}) (database *OwnerModel, err error)
+	OwnersSelectSql() (sql string, err error)
+	OwnerCreateSql(param *GenerateParam, database *OwnerModel) (sqlList []string, err error)
+	OwnerDeleteSql(param *GenerateParam, ownerName string) (sqlList []string, err error)
 
 	TableModel(data map[string]interface{}) (table *TableModel, err error)
-	TablesSelectSql(databaseName string) (sql string, err error)
-	TableSelectSql(databaseName string, tableName string) (sql string, err error)
-	TableCreateSql(param *GenerateParam, databaseName string, table *TableModel) (sqlList []string, err error)
-	TableCommentSql(param *GenerateParam, databaseName string, tableName string, comment string) (sqlList []string, err error)
-	TableDeleteSql(param *GenerateParam, databaseName string, tableName string) (sqlList []string, err error)
+	TablesSelectSql(ownerName string) (sql string, err error)
+	TableSelectSql(ownerName string, tableName string) (sql string, err error)
+	TableCreateSql(param *GenerateParam, ownerName string, table *TableModel) (sqlList []string, err error)
+	TableCommentSql(param *GenerateParam, ownerName string, tableName string, comment string) (sqlList []string, err error)
+	TableDeleteSql(param *GenerateParam, ownerName string, tableName string) (sqlList []string, err error)
 
 	ColumnModel(data map[string]interface{}) (table *ColumnModel, err error)
-	ColumnsSelectSql(databaseName string, tableName string) (sql string, err error)
-	ColumnSelectSql(databaseName string, tableName string, columnName string) (sql string, err error)
-	ColumnAddSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error)
-	ColumnCommentSql(param *GenerateParam, databaseName string, tableName string, columnName string, comment string) (sqlList []string, err error)
-	ColumnUpdateSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error)
-	ColumnDeleteSql(param *GenerateParam, databaseName string, tableName string, columnName string) (sqlList []string, err error)
+	ColumnsSelectSql(ownerName string, tableName string) (sql string, err error)
+	ColumnSelectSql(ownerName string, tableName string, columnName string) (sql string, err error)
+	ColumnAddSql(param *GenerateParam, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error)
+	ColumnCommentSql(param *GenerateParam, ownerName string, tableName string, columnName string, comment string) (sqlList []string, err error)
+	ColumnUpdateSql(param *GenerateParam, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error)
+	ColumnDeleteSql(param *GenerateParam, ownerName string, tableName string, columnName string) (sqlList []string, err error)
 
 	PrimaryKeyModel(data map[string]interface{}) (primaryKey *PrimaryKeyModel, err error)
-	PrimaryKeysSelectSql(databaseName string, tableName string) (sql string, err error)
-	PrimaryKeyAddSql(param *GenerateParam, databaseName string, tableName string, primaryKeys []string) (sqlList []string, err error)
-	PrimaryKeyDeleteSql(param *GenerateParam, databaseName string, tableName string) (sqlList []string, err error)
+	PrimaryKeysSelectSql(ownerName string, tableName string) (sql string, err error)
+	PrimaryKeyAddSql(param *GenerateParam, ownerName string, tableName string, primaryKeys []string) (sqlList []string, err error)
+	PrimaryKeyDeleteSql(param *GenerateParam, ownerName string, tableName string) (sqlList []string, err error)
 
 	IndexModel(data map[string]interface{}) (index *IndexModel, err error)
-	IndexesSelectSql(databaseName string, tableName string) (sql string, err error)
-	IndexSelectSql(databaseName string, tableName string, indexName string) (sql string, err error)
-	IndexAddSql(param *GenerateParam, databaseName string, tableName string, index *IndexModel) (sqlList []string, err error)
-	IndexUpdateSql(param *GenerateParam, databaseName string, tableName string, index *IndexModel) (sqlList []string, err error)
-	IndexDeleteSql(param *GenerateParam, databaseName string, tableName string, indexName string) (sqlList []string, err error)
+	IndexesSelectSql(ownerName string, tableName string) (sql string, err error)
+	IndexAddSql(param *GenerateParam, ownerName string, tableName string, index *IndexModel) (sqlList []string, err error)
+	IndexUpdateSql(param *GenerateParam, ownerName string, tableName string, index *IndexModel) (sqlList []string, err error)
+	IndexDeleteSql(param *GenerateParam, ownerName string, tableName string, indexName string) (sqlList []string, err error)
 
 	InsertSql(param *GenerateParam, insert *InsertModel) (sqlList []string, err error)
 }
@@ -74,83 +71,93 @@ var (
 )
 
 type GenerateParam struct {
-	DatabaseType             string `json:"databaseType" column:"databaseType"`
-	GenerateDatabase         bool   `json:"generateDatabase" column:"generateDatabase"`
-	AppendDatabase           bool   `json:"appendDatabase" column:"appendDatabase"`
-	CharacterSet             string `json:"characterSet" column:"characterSet"`
-	Collate                  string `json:"collate" column:"collate"`
-	DatabasePackingCharacter string `json:"databasePackingCharacter" column:"databasePackingCharacter"`
-	TablePackingCharacter    string `json:"tablePackingCharacter" column:"tablePackingCharacter"`
-	ColumnPackingCharacter   string `json:"columnPackingCharacter" column:"columnPackingCharacter"`
-	StringPackingCharacter   string `json:"stringPackingCharacter" column:"stringPackingCharacter"`
-	AppendSqlValue           bool   `json:"appendSqlValue" column:"appendSqlValue"`
-	DateFunction             string `json:"dateFunction" column:"dateFunction"`
-	OpenTransaction          bool   `json:"openTransaction"`
-	ErrorContinue            bool   `json:"errorContinue"`
+	AppendOwner            bool   `json:"appendOwner"`
+	CharacterSetName       string `json:"characterSetName"`
+	CollationName          string `json:"collationName"`
+	OwnerPackingCharacter  string `json:"ownerPackingCharacter"`
+	TablePackingCharacter  string `json:"tablePackingCharacter"`
+	ColumnPackingCharacter string `json:"columnPackingCharacter"`
+	StringPackingCharacter string `json:"stringPackingCharacter"`
+	AppendSqlValue         bool   `json:"appendSqlValue"`
+	DateFunction           string `json:"dateFunction"`
+	OpenTransaction        bool   `json:"openTransaction"`
+	ErrorContinue          bool   `json:"errorContinue"`
 }
 
-func (param *GenerateParam) PackingCharacterDatabase(value string) string {
-	return param.packingCharacterDatabase(value)
+func (this_ *GenerateParam) PackingCharacterOwner(value string) string {
+	return this_.packingCharacterOwner(value)
 }
 
-func (param *GenerateParam) packingCharacterDatabase(value string) string {
-	if param.DatabasePackingCharacter == "" {
+func (this_ *GenerateParam) packingCharacterOwner(value string) string {
+	if this_.OwnerPackingCharacter == "" {
 		return value
 	}
-	return param.DatabasePackingCharacter + value + param.DatabasePackingCharacter
+	return this_.OwnerPackingCharacter + value + this_.OwnerPackingCharacter
 }
 
-func (param *GenerateParam) PackingCharacterTable(value string) string {
-	return param.packingCharacterTable(value)
+func (this_ *GenerateParam) PackingCharacterTable(value string) string {
+	return this_.packingCharacterTable(value)
 }
 
-func (param *GenerateParam) packingCharacterTable(value string) string {
-	if param.TablePackingCharacter == "" {
+func (this_ *GenerateParam) packingCharacterTable(value string) string {
+	if this_.TablePackingCharacter == "" {
 		return value
 	}
-	return param.TablePackingCharacter + value + param.TablePackingCharacter
+	return this_.TablePackingCharacter + value + this_.TablePackingCharacter
 }
 
-func (param *GenerateParam) PackingCharacterColumn(value string) string {
-	return param.packingCharacterColumn(value)
+func (this_ *GenerateParam) PackingCharacterColumn(value string) string {
+	return this_.packingCharacterColumn(value)
 }
 
-func (param *GenerateParam) packingCharacterColumn(value string) string {
-	if param.ColumnPackingCharacter == "" {
+func (this_ *GenerateParam) packingCharacterColumn(value string) string {
+	if this_.ColumnPackingCharacter == "" {
 		return value
 	}
 	value = strings.ReplaceAll(value, `""`, "")
 	value = strings.ReplaceAll(value, `'`, "")
 	value = strings.ReplaceAll(value, "`", "")
-	return param.ColumnPackingCharacter + value + param.ColumnPackingCharacter
+	return this_.ColumnPackingCharacter + value + this_.ColumnPackingCharacter
 }
 
-func (param *GenerateParam) PackingCharacterColumns(value string) string {
-	return param.packingCharacterColumns(value)
+func (this_ *GenerateParam) PackingCharacterColumns(value string) string {
+	return this_.packingCharacterColumns(value)
 }
 
-func (param *GenerateParam) packingCharacterColumns(columns string) string {
-	if param.ColumnPackingCharacter == "" {
+func (this_ *GenerateParam) packingCharacterColumns(columns string) string {
+	if this_.ColumnPackingCharacter == "" {
 		return columns
 	}
 	res := ""
 	columnList := strings.Split(columns, ",")
 
 	for _, column := range columnList {
-		res += param.packingCharacterColumn(column) + ","
+		res += this_.packingCharacterColumn(column) + ","
 	}
 	res = strings.TrimSuffix(res, ",")
 	return res
 }
 
-func (param *GenerateParam) PackingCharacterColumnStringValue(dia Dialect, tableColumn *ColumnModel, value interface{}) string {
-	return param.packingCharacterColumnStringValue(dia, tableColumn, value)
+func (this_ *GenerateParam) PackingCharacterColumnStringValue(dia Dialect, tableColumn *ColumnModel, value interface{}) string {
+	return this_.packingCharacterColumnStringValue(dia, tableColumn, value)
 }
 
-func (param *GenerateParam) packingCharacterColumnStringValue(dia Dialect, tableColumn *ColumnModel, value interface{}) string {
-	var formatColumnValue = param.formatColumnValue(dia, tableColumn, value)
+func (this_ *GenerateParam) packingCharacterColumnStringValue(dia Dialect, tableColumn *ColumnModel, value interface{}) string {
+	var formatColumnValue = this_.formatColumnValue(dia, tableColumn, value)
 	if formatColumnValue == nil {
 		return "NULL"
+	}
+	vOf := reflect.ValueOf(value)
+	if vOf.Kind() == reflect.Ptr {
+		if vOf.IsNil() {
+			return "NULL"
+		}
+		return this_.packingCharacterColumnStringValue(dia, tableColumn, vOf.Elem().Interface())
+	}
+
+	baseValue, isBaseValue := GetBaseTypeValue(value)
+	if isBaseValue {
+		value = baseValue
 	}
 	var valueString string
 	switch v := formatColumnValue.(type) {
@@ -188,8 +195,8 @@ func (param *GenerateParam) packingCharacterColumnStringValue(dia Dialect, table
 			return "NULL"
 		}
 		valueString = v.Format("2006-01-02 15:04:05")
-		if param.DateFunction != "" {
-			return strings.ReplaceAll(param.DateFunction, "$value", valueString)
+		if this_.DateFunction != "" {
+			return strings.ReplaceAll(this_.DateFunction, "$value", valueString)
 		}
 		break
 	case string:
@@ -198,20 +205,19 @@ func (param *GenerateParam) packingCharacterColumnStringValue(dia Dialect, table
 	case []byte:
 		valueString = string(v)
 	default:
-		newValue, _ := json.Marshal(value)
-		valueString = string(newValue)
+		valueString = GetStringValue(value)
 		break
 	}
-	if param.StringPackingCharacter == "" {
+	if this_.StringPackingCharacter == "" {
 		return valueString
 	}
-	return formatStringValue(param.StringPackingCharacter, valueString)
+	return formatStringValue(this_.StringPackingCharacter, valueString)
 }
 
-func (param *GenerateParam) FormatColumnValue(dia Dialect, tableColumn *ColumnModel, value interface{}) interface{} {
-	return param.formatColumnValue(dia, tableColumn, value)
+func (this_ *GenerateParam) FormatColumnValue(dia Dialect, tableColumn *ColumnModel, value interface{}) interface{} {
+	return this_.formatColumnValue(dia, tableColumn, value)
 }
-func (param *GenerateParam) formatColumnValue(dia Dialect, tableColumn *ColumnModel, value interface{}) interface{} {
+func (this_ *GenerateParam) formatColumnValue(dia Dialect, tableColumn *ColumnModel, value interface{}) interface{} {
 
 	var IsDateTime bool
 	var IsNumber bool
@@ -283,76 +289,6 @@ func (param *GenerateParam) formatColumnValue(dia Dialect, tableColumn *ColumnMo
 		return timeValue
 	}
 	return value
-}
-
-func GetStringValue(value interface{}) string {
-	if value == nil {
-		return ""
-	}
-	vOf := reflect.ValueOf(value)
-	if vOf.Kind() == reflect.Ptr {
-		if vOf.IsNil() {
-			return ""
-		}
-		return GetStringValue(vOf.Elem().Index(0).Interface())
-	}
-	var valueString string
-	switch v := value.(type) {
-	case int:
-		return strconv.FormatInt(int64(v), 10)
-	case uint:
-		return strconv.FormatInt(int64(v), 10)
-	case int8:
-		return strconv.FormatInt(int64(v), 10)
-	case uint8:
-		return strconv.FormatInt(int64(v), 10)
-	case int16:
-		return strconv.FormatInt(int64(v), 10)
-	case uint16:
-		return strconv.FormatInt(int64(v), 10)
-	case int32:
-		return strconv.FormatInt(int64(v), 10)
-	case uint32:
-		return strconv.FormatInt(int64(v), 10)
-	case int64:
-		return strconv.FormatInt(v, 10)
-	case uint64:
-		return strconv.FormatInt(int64(v), 10)
-	case float32:
-		return strconv.FormatFloat(float64(v), 'f', -1, 64)
-	case float64:
-		return strconv.FormatFloat(v, 'f', -1, 64)
-	case bool:
-		if v {
-			return "1"
-		}
-		return "0"
-	case time.Time:
-		if v.IsZero() {
-			return ""
-		}
-		valueString = v.Format("2006-01-02 15:04:05")
-		break
-	case string:
-		valueString = v
-		break
-	case []byte:
-		valueString = string(v)
-	case sql.NullString:
-		valueString = v.String
-
-	default:
-		numberV, is := GetGoDrorNumberValue(value)
-		if is {
-			valueString = numberV
-			break
-		}
-		panic("value type [" + reflect.TypeOf(value).String() + "] not support")
-		newValue, _ := json.Marshal(value)
-		valueString = string(newValue)
-		break
-	}
-	return valueString
 }
 
 func formatStringValue(packingCharacter string, valueString string) string {

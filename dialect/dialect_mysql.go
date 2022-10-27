@@ -112,46 +112,46 @@ func (this_ *MysqlDialect) init() {
 	this_.AddFuncTypeInfo(&FuncTypeInfo{Name: "md5", Format: "md5"})
 }
 
-func (this_ *MysqlDialect) DatabaseModel(data map[string]interface{}) (database *DatabaseModel, err error) {
+func (this_ *MysqlDialect) OwnerModel(data map[string]interface{}) (owner *OwnerModel, err error) {
 	if data == nil {
 		return
 	}
-	database = &DatabaseModel{}
+	owner = &OwnerModel{}
 	if data["SCHEMA_NAME"] != nil {
-		database.Name = data["SCHEMA_NAME"].(string)
-		database.SchemaName = data["SCHEMA_NAME"].(string)
-	}
-	if data["CATALOG_NAME"] != nil {
-		database.CatalogName = data["CATALOG_NAME"].(string)
+		owner.Name = data["SCHEMA_NAME"].(string)
 	}
 	if data["DEFAULT_CHARACTER_SET_NAME"] != nil {
-		database.DefaultCharacterSet = data["DEFAULT_CHARACTER_SET_NAME"].(string)
+		owner.CharacterSetName = data["DEFAULT_CHARACTER_SET_NAME"].(string)
 	}
 	if data["DEFAULT_COLLATION_NAME"] != nil {
-		database.DefaultCollationName = data["DEFAULT_COLLATION_NAME"].(string)
+		owner.CollationName = data["DEFAULT_COLLATION_NAME"].(string)
 	}
 	return
 }
-func (this_ *MysqlDialect) DatabasesSelectSql() (sql string, err error) {
-	sql = `SELECT * from information_schema.SCHEMATA ORDER BY SCHEMA_NAME`
+func (this_ *MysqlDialect) OwnersSelectSql() (sql string, err error) {
+	sql = `SELECT SCHEMA_NAME,DEFAULT_CHARACTER_SET_NAME,DEFAULT_COLLATION_NAME from information_schema.schemata ORDER BY SCHEMA_NAME`
 	return
 }
-func (this_ *MysqlDialect) DatabaseCreateSql(param *GenerateParam, database *DatabaseModel) (sqlList []string, err error) {
+func (this_ *MysqlDialect) OwnerCreateSql(param *GenerateParam, owner *OwnerModel) (sqlList []string, err error) {
 	var sql string
-	sql = `CREATE DATABASE ` + param.packingCharacterDatabase(database.Name)
-	if database.DefaultCharacterSet != "" {
-		sql += ` CHARACTER SET ` + database.DefaultCharacterSet
+	sql = `CREATE DATABASE ` + param.packingCharacterOwner(owner.Name)
+	if owner.CharacterSetName != "" {
+		sql += ` CHARACTER SET ` + owner.CharacterSetName
+	} else if param.CharacterSetName != "" {
+		sql += ` CHARACTER SET ` + param.CharacterSetName
 	}
-	if database.DefaultCollationName != "" {
-		sql += ` COLLATE '` + database.DefaultCollationName + "'"
+	if owner.CollationName != "" {
+		sql += ` COLLATE '` + owner.CollationName + "'"
+	} else if param.CollationName != "" {
+		sql += ` COLLATE '` + param.CollationName + "'"
 	}
 
 	sqlList = append(sqlList, sql)
 	return
 }
-func (this_ *MysqlDialect) DatabaseDeleteSql(param *GenerateParam, databaseName string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) OwnerDeleteSql(param *GenerateParam, ownerName string) (sqlList []string, err error) {
 	var sql string
-	sql = `DROP DATABASE IF EXISTS ` + param.packingCharacterDatabase(databaseName)
+	sql = `DROP DATABASE IF EXISTS ` + param.packingCharacterOwner(ownerName)
 
 	sqlList = append(sqlList, sql)
 	return
@@ -168,42 +168,36 @@ func (this_ *MysqlDialect) TableModel(data map[string]interface{}) (table *Table
 	if data["TABLE_COMMENT"] != nil {
 		table.Comment = data["TABLE_COMMENT"].(string)
 	}
-	if data["TABLE_CATALOG"] != nil {
-		table.TableCatalog = data["TABLE_CATALOG"].(string)
-	}
 	if data["TABLE_SCHEMA"] != nil {
-		table.TableSchema = data["TABLE_SCHEMA"].(string)
-	}
-	if data["TABLE_TYPE"] != nil {
-		table.TableType = data["TABLE_TYPE"].(string)
+		table.OwnerName = data["TABLE_SCHEMA"].(string)
 	}
 	return
 }
-func (this_ *MysqlDialect) TablesSelectSql(databaseName string) (sql string, err error) {
-	sql = `SELECT * from information_schema.tables `
-	if databaseName != "" {
-		sql += `WHERE TABLE_SCHEMA='` + databaseName + `' `
+func (this_ *MysqlDialect) TablesSelectSql(ownerName string) (sql string, err error) {
+	sql = `SELECT TABLE_NAME,TABLE_COMMENT,TABLE_SCHEMA from information_schema.tables `
+	if ownerName != "" {
+		sql += `WHERE TABLE_SCHEMA='` + ownerName + `' `
 	}
 	sql += `ORDER BY TABLE_NAME`
 	return
 }
-func (this_ *MysqlDialect) TableSelectSql(databaseName string, tableName string) (sql string, err error) {
-	sql = `SELECT * from information_schema.tables `
+func (this_ *MysqlDialect) TableSelectSql(ownerName string, tableName string) (sql string, err error) {
+	sql = `SELECT TABLE_NAME,TABLE_COMMENT,TABLE_SCHEMA from information_schema.tables `
 	sql += `WHERE 1=1 `
-	if databaseName != "" {
-		sql += `AND TABLE_SCHEMA='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND TABLE_SCHEMA='` + ownerName + `' `
 	}
 	sql += `AND TABLE_NAME='` + tableName + `' `
 	sql += `ORDER BY TABLE_NAME`
 	return
 }
-func (this_ *MysqlDialect) TableCreateSql(param *GenerateParam, databaseName string, table *TableModel) (sqlList []string, err error) {
+func (this_ *MysqlDialect) TableCreateSql(param *GenerateParam, ownerName string, table *TableModel) (sqlList []string, err error) {
 	sqlList = []string{}
 
 	createTableSql := `CREATE TABLE `
 
-	if param.AppendDatabase && databaseName != "" {
-		createTableSql += param.packingCharacterDatabase(databaseName) + "."
+	if param.AppendOwner && ownerName != "" {
+		createTableSql += param.packingCharacterOwner(ownerName) + "."
 	}
 	createTableSql += param.packingCharacterTable(table.Name)
 
@@ -248,8 +242,8 @@ func (this_ *MysqlDialect) TableCreateSql(param *GenerateParam, databaseName str
 	createTableSql += "\n"
 
 	createTableSql += `)`
-	if param.CharacterSet != "" {
-		createTableSql += ` DEFAULT CHARSET ` + param.CharacterSet
+	if param.CharacterSetName != "" {
+		createTableSql += ` DEFAULT CHARSET ` + param.CharacterSetName
 	}
 
 	sqlList = append(sqlList, createTableSql)
@@ -257,7 +251,7 @@ func (this_ *MysqlDialect) TableCreateSql(param *GenerateParam, databaseName str
 	var sqlList_ []string
 	// 添加注释
 	if table.Comment != "" {
-		sqlList_, err = this_.TableCommentSql(param, databaseName, table.Name, table.Comment)
+		sqlList_, err = this_.TableCommentSql(param, ownerName, table.Name, table.Comment)
 		if err != nil {
 			return
 		}
@@ -265,7 +259,7 @@ func (this_ *MysqlDialect) TableCreateSql(param *GenerateParam, databaseName str
 	}
 
 	for _, one := range table.IndexList {
-		sqlList_, err = this_.IndexAddSql(param, databaseName, table.Name, one)
+		sqlList_, err = this_.IndexAddSql(param, ownerName, table.Name, one)
 		if err != nil {
 			return
 		}
@@ -274,10 +268,10 @@ func (this_ *MysqlDialect) TableCreateSql(param *GenerateParam, databaseName str
 	}
 	return
 }
-func (this_ *MysqlDialect) TableCommentSql(param *GenerateParam, databaseName string, tableName string, comment string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) TableCommentSql(param *GenerateParam, ownerName string, tableName string, comment string) (sqlList []string, err error) {
 	sql := "ALTER TABLE "
-	if param.AppendDatabase && databaseName != "" {
-		sql += param.packingCharacterDatabase(databaseName) + "."
+	if param.AppendOwner && ownerName != "" {
+		sql += param.packingCharacterOwner(ownerName) + "."
 	}
 	sql += "" + param.packingCharacterTable(tableName)
 	sql += " COMMENT " + formatStringValue("'", comment)
@@ -285,12 +279,12 @@ func (this_ *MysqlDialect) TableCommentSql(param *GenerateParam, databaseName st
 	sqlList = append(sqlList, sql)
 	return
 }
-func (this_ *MysqlDialect) TableDeleteSql(param *GenerateParam, databaseName string, tableName string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) TableDeleteSql(param *GenerateParam, ownerName string, tableName string) (sqlList []string, err error) {
 	var sql string
 	sql = `DROP TABLE IF EXISTS `
 
-	if param.AppendDatabase && databaseName != "" {
-		sql += param.packingCharacterDatabase(databaseName) + "."
+	if param.AppendOwner && ownerName != "" {
+		sql += param.packingCharacterOwner(ownerName) + "."
 	}
 	sql += param.packingCharacterTable(tableName)
 
@@ -315,10 +309,7 @@ func (this_ *MysqlDialect) ColumnModel(data map[string]interface{}) (column *Col
 		column.TableName = data["TABLE_NAME"].(string)
 	}
 	if data["TABLE_SCHEMA"] != nil {
-		column.TableSchema = data["TABLE_SCHEMA"].(string)
-	}
-	if data["TABLE_CATALOG"] != nil {
-		column.TableCatalog = data["TABLE_CATALOG"].(string)
+		column.OwnerName = data["TABLE_SCHEMA"].(string)
 	}
 	if data["CHARACTER_SET_NAME"] != nil {
 		column.CharacterSetName = data["CHARACTER_SET_NAME"].(string)
@@ -344,16 +335,16 @@ func (this_ *MysqlDialect) ColumnModel(data map[string]interface{}) (column *Col
 	}
 	return
 }
-func (this_ *MysqlDialect) ColumnsSelectSql(databaseName string, tableName string) (sql string, err error) {
-	sql = `SELECT * from information_schema.columns `
+func (this_ *MysqlDialect) ColumnsSelectSql(ownerName string, tableName string) (sql string, err error) {
+	sql = `SELECT COLUMN_NAME,COLUMN_COMMENT,COLUMN_DEFAULT,TABLE_NAME,TABLE_SCHEMA,CHARACTER_SET_NAME,IS_NULLABLE,COLUMN_TYPE,DATA_TYPE from information_schema.columns `
 	sql += `WHERE 1=1 `
-	if databaseName != "" {
-		sql += `AND TABLE_SCHEMA='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND TABLE_SCHEMA='` + ownerName + `' `
 	}
 	sql += `AND TABLE_NAME='` + tableName + `' `
 	return
 }
-func (this_ *MysqlDialect) ColumnAddSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
+func (this_ *MysqlDialect) ColumnAddSql(param *GenerateParam, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
 	var columnType string
 	columnType, err = this_.FormatColumnType(column.Type, column.Length, column.Decimal)
 	if err != nil {
@@ -361,8 +352,8 @@ func (this_ *MysqlDialect) ColumnAddSql(param *GenerateParam, databaseName strin
 	}
 
 	sql := "ALTER TABLE "
-	if param.AppendDatabase && databaseName != "" {
-		sql += param.packingCharacterDatabase(databaseName) + "."
+	if param.AppendOwner && ownerName != "" {
+		sql += param.packingCharacterOwner(ownerName) + "."
 	}
 	sql += "" + param.packingCharacterTable(tableName)
 	sql += " ADD COLUMN " + param.packingCharacterColumn(column.Name)
@@ -381,7 +372,7 @@ func (this_ *MysqlDialect) ColumnAddSql(param *GenerateParam, databaseName strin
 	sqlList = append(sqlList, sql)
 	return
 }
-func (this_ *MysqlDialect) ColumnUpdateSql(param *GenerateParam, databaseName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
+func (this_ *MysqlDialect) ColumnUpdateSql(param *GenerateParam, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
 	var columnType string
 	columnType, err = this_.FormatColumnType(column.Type, column.Length, column.Decimal)
 	if err != nil {
@@ -389,8 +380,8 @@ func (this_ *MysqlDialect) ColumnUpdateSql(param *GenerateParam, databaseName st
 	}
 
 	sql := "ALTER TABLE "
-	if param.AppendDatabase && databaseName != "" {
-		sql += param.packingCharacterDatabase(databaseName) + "."
+	if param.AppendOwner && ownerName != "" {
+		sql += param.packingCharacterOwner(ownerName) + "."
 	}
 	sql += "" + param.packingCharacterTable(tableName)
 	if column.OldName != "" && column.Name != column.OldName {
@@ -417,12 +408,12 @@ func (this_ *MysqlDialect) ColumnUpdateSql(param *GenerateParam, databaseName st
 
 	return
 }
-func (this_ *MysqlDialect) ColumnDeleteSql(param *GenerateParam, databaseName string, tableName string, columnName string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) ColumnDeleteSql(param *GenerateParam, ownerName string, tableName string, columnName string) (sqlList []string, err error) {
 	var sql string
 	sql = `ALTER TABLE `
 
-	if param.AppendDatabase && databaseName != "" {
-		sql += param.packingCharacterDatabase(databaseName) + "."
+	if param.AppendOwner && ownerName != "" {
+		sql += param.packingCharacterOwner(ownerName) + "."
 	}
 	sql += param.packingCharacterTable(tableName)
 
@@ -444,28 +435,25 @@ func (this_ *MysqlDialect) PrimaryKeyModel(data map[string]interface{}) (primary
 		primaryKey.TableName = data["TABLE_NAME"].(string)
 	}
 	if data["TABLE_SCHEMA"] != nil {
-		primaryKey.TableSchema = data["TABLE_SCHEMA"].(string)
-	}
-	if data["TABLE_CATALOG"] != nil {
-		primaryKey.TableCatalog = data["TABLE_CATALOG"].(string)
+		primaryKey.OwnerName = data["TABLE_SCHEMA"].(string)
 	}
 	return
 }
-func (this_ *MysqlDialect) PrimaryKeysSelectSql(databaseName string, tableName string) (sql string, err error) {
-	sql = `SELECT * from information_schema.table_constraints t `
+func (this_ *MysqlDialect) PrimaryKeysSelectSql(ownerName string, tableName string) (sql string, err error) {
+	sql = `SELECT k.COLUMN_NAME,t.TABLE_NAME,t.TABLE_SCHEMA from information_schema.table_constraints t `
 	sql += `JOIN information_schema.key_column_usage k USING (CONSTRAINT_NAME,TABLE_SCHEMA,TABLE_NAME) `
 	sql += `WHERE 1=1 `
-	if databaseName != "" {
-		sql += `AND t.TABLE_SCHEMA='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND t.TABLE_SCHEMA='` + ownerName + `' `
 	}
 	sql += `AND t.TABLE_NAME='` + tableName + `' `
 	sql += `AND t.CONSTRAINT_TYPE='PRIMARY KEY' `
 	return
 }
-func (this_ *MysqlDialect) PrimaryKeyAddSql(param *GenerateParam, databaseName string, tableName string, primaryKeys []string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) PrimaryKeyAddSql(param *GenerateParam, ownerName string, tableName string, primaryKeys []string) (sqlList []string, err error) {
 	sql := "ALTER TABLE "
-	if param.AppendDatabase && databaseName != "" {
-		sql += param.packingCharacterDatabase(databaseName) + "."
+	if param.AppendOwner && ownerName != "" {
+		sql += param.packingCharacterOwner(ownerName) + "."
 	}
 	sql += "" + param.packingCharacterTable(tableName)
 
@@ -476,10 +464,10 @@ func (this_ *MysqlDialect) PrimaryKeyAddSql(param *GenerateParam, databaseName s
 	sqlList = append(sqlList, sql)
 	return
 }
-func (this_ *MysqlDialect) PrimaryKeyDeleteSql(param *GenerateParam, databaseName string, tableName string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) PrimaryKeyDeleteSql(param *GenerateParam, ownerName string, tableName string) (sqlList []string, err error) {
 	sql := "ALTER TABLE "
-	if param.AppendDatabase && databaseName != "" {
-		sql += param.packingCharacterDatabase(databaseName) + "."
+	if param.AppendOwner && ownerName != "" {
+		sql += param.packingCharacterOwner(ownerName) + "."
 	}
 	sql += "" + param.packingCharacterTable(tableName)
 
@@ -510,26 +498,23 @@ func (this_ *MysqlDialect) IndexModel(data map[string]interface{}) (index *Index
 		index.TableName = data["TABLE_NAME"].(string)
 	}
 	if data["TABLE_SCHEMA"] != nil {
-		index.TableSchema = data["TABLE_SCHEMA"].(string)
-	}
-	if data["TABLE_CATALOG"] != nil {
-		index.TableCatalog = data["TABLE_CATALOG"].(string)
+		index.OwnerName = data["TABLE_SCHEMA"].(string)
 	}
 	return
 }
-func (this_ *MysqlDialect) IndexesSelectSql(databaseName string, tableName string) (sql string, err error) {
-	sql = `SELECT * from information_schema.statistics `
+func (this_ *MysqlDialect) IndexesSelectSql(ownerName string, tableName string) (sql string, err error) {
+	sql = `SELECT INDEX_NAME,COLUMN_NAME,INDEX_COMMENT,NON_UNIQUE,TABLE_NAME,TABLE_SCHEMA from information_schema.statistics `
 	sql += `WHERE 1=1 `
-	if databaseName != "" {
-		sql += `AND TABLE_SCHEMA='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND TABLE_SCHEMA='` + ownerName + `' `
 	}
 	sql += `AND TABLE_NAME='` + tableName + `' `
 	sql += `AND INDEX_NAME NOT IN(`
 	sql += `SELECT t.CONSTRAINT_NAME from information_schema.table_constraints t `
 	sql += `JOIN information_schema.key_column_usage k USING (CONSTRAINT_NAME,TABLE_SCHEMA,TABLE_NAME) `
 	sql += `WHERE 1=1 `
-	if databaseName != "" {
-		sql += `AND t.TABLE_SCHEMA='` + databaseName + `' `
+	if ownerName != "" {
+		sql += `AND t.TABLE_SCHEMA='` + ownerName + `' `
 	}
 	sql += `AND t.TABLE_NAME='` + tableName + `' `
 	sql += `AND t.CONSTRAINT_TYPE='PRIMARY KEY' `
@@ -537,10 +522,10 @@ func (this_ *MysqlDialect) IndexesSelectSql(databaseName string, tableName strin
 	return
 }
 
-func (this_ *MysqlDialect) IndexAddSql(param *GenerateParam, databaseName string, tableName string, index *IndexModel) (sqlList []string, err error) {
+func (this_ *MysqlDialect) IndexAddSql(param *GenerateParam, ownerName string, tableName string, index *IndexModel) (sqlList []string, err error) {
 	sql := "ALTER TABLE "
-	if param.AppendDatabase && databaseName != "" {
-		sql += param.packingCharacterDatabase(databaseName) + "."
+	if param.AppendOwner && ownerName != "" {
+		sql += param.packingCharacterOwner(ownerName) + "."
 	}
 	sql += "" + param.packingCharacterTable(tableName)
 
@@ -572,10 +557,10 @@ func (this_ *MysqlDialect) IndexAddSql(param *GenerateParam, databaseName string
 	return
 }
 
-func (this_ *MysqlDialect) IndexUpdateSql(param *GenerateParam, databaseName string, tableName string, index *IndexModel) (sqlList []string, err error) {
+func (this_ *MysqlDialect) IndexUpdateSql(param *GenerateParam, ownerName string, tableName string, index *IndexModel) (sqlList []string, err error) {
 	sql := "ALTER TABLE "
-	if param.AppendDatabase && databaseName != "" {
-		sql += param.packingCharacterDatabase(databaseName) + "."
+	if param.AppendOwner && ownerName != "" {
+		sql += param.packingCharacterOwner(ownerName) + "."
 	}
 	sql += "" + param.packingCharacterTable(tableName)
 
@@ -605,10 +590,10 @@ func (this_ *MysqlDialect) IndexUpdateSql(param *GenerateParam, databaseName str
 	sqlList = append(sqlList, sql)
 	return
 }
-func (this_ *MysqlDialect) IndexDeleteSql(param *GenerateParam, databaseName string, tableName string, indexName string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) IndexDeleteSql(param *GenerateParam, ownerName string, tableName string, indexName string) (sqlList []string, err error) {
 	sql := "ALTER TABLE "
-	if param.AppendDatabase && databaseName != "" {
-		sql += param.packingCharacterDatabase(databaseName) + "."
+	if param.AppendOwner && ownerName != "" {
+		sql += param.packingCharacterOwner(ownerName) + "."
 	}
 	sql += "" + param.packingCharacterTable(tableName)
 

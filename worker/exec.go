@@ -1,33 +1,6 @@
 package worker
 
-import (
-	"database/sql"
-	"github.com/team-ide/go-dialect/dialect"
-)
-
-func DatabasesSelect(db *sql.DB, dia dialect.Dialect) (list []*dialect.DatabaseModel, err error) {
-	sqlInfo, err := dia.DatabasesSelectSql()
-	if err != nil {
-		return
-	}
-	if sqlInfo == "" {
-		return
-	}
-	dataList, err := DoQuery(db, sqlInfo)
-	if err != nil {
-		return
-	}
-	for _, data := range dataList {
-		model, e := dia.DatabaseModel(data)
-		if e != nil {
-			model = &dialect.DatabaseModel{
-				Error: e.Error(),
-			}
-		}
-		list = append(list, model)
-	}
-	return
-}
+import "database/sql"
 
 func DoQuery(db *sql.DB, sqlInfo string, args ...interface{}) ([]map[string]interface{}, error) {
 	rows, err := db.Query(sqlInfo, args...)

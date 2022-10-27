@@ -1,10 +1,10 @@
 package dialect
 
 type InsertModel struct {
-	DatabaseName string          `json:"databaseName"`
-	TableName    string          `json:"tableName"`
-	Columns      []string        `json:"columns"`
-	Rows         [][]*ValueModel `json:"rows"`
+	OwnerName string          `json:"ownerName"`
+	TableName string          `json:"tableName"`
+	Columns   []string        `json:"columns"`
+	Rows      [][]*ValueModel `json:"rows"`
 }
 
 type ValueModel struct {

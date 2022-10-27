@@ -26,13 +26,13 @@ func initPostgresql() {
 
 func TestPostgresql(t *testing.T) {
 	initPostgresql()
-	databases(PostgresqlDb, dialect.Postgresql)
+	owners(PostgresqlDb, dialect.Postgresql)
 }
 
 func TestPostgresqlTableCreate(t *testing.T) {
 	initPostgresql()
 	param := &dialect.GenerateParam{
-		AppendDatabase: true,
+		AppendOwner: true,
 	}
 	//testTableDelete(PostgresqlDb, dialect.Postgresql, param, "", getTable().Name)
 	testTableCreate(PostgresqlDb, dialect.Postgresql, param, "", getTable())

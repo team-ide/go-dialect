@@ -17,9 +17,9 @@ func initSqlite() (dbContext context.Context) {
 	if SqliteDb != nil {
 		return
 	}
-	connStr := "temp/test_sqlite"
+	dsn := db_sqlite3.GetDSN("temp/test_sqlite")
 	var err error
-	SqliteDb, err = sql.Open(db_sqlite3.GetDriverName(), connStr)
+	SqliteDb, err = db_sqlite3.Open(dsn)
 	if err != nil {
 		panic(err)
 	}
@@ -28,15 +28,14 @@ func initSqlite() (dbContext context.Context) {
 
 func TestSqlite(t *testing.T) {
 	initSqlite()
-	databases(SqliteDb, dialect.Sqlite)
+	owners(SqliteDb, dialect.Sqlite)
 }
 
 func TestSqliteTableCreate(t *testing.T) {
 	initSqlite()
 	param := &dialect.GenerateParam{
-		AppendDatabase: true,
+		AppendOwner: true,
 	}
-	//testTableDelete(SqliteDb, dialect.Sqlite, param, "", getTable().Name)
 	testTableCreate(SqliteDb, dialect.Sqlite, param, "", getTable())
 
 	testColumnUpdate(SqliteDb, dialect.Sqlite, param, "", getTable().Name, &dialect.ColumnModel{
@@ -54,6 +53,7 @@ func TestSqliteTableCreate(t *testing.T) {
 		Comment: "name2注释",
 	})
 	tableDetail(SqliteDb, dialect.Sqlite, "", getTable().Name)
+	testTableDelete(SqliteDb, dialect.Sqlite, param, "", getTable().Name)
 }
 
 func TestSqliteSql(t *testing.T) {

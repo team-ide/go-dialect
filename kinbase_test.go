@@ -2,7 +2,6 @@ package go_dialect
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_kingbase_v8r3"
 	"strings"
@@ -17,9 +16,9 @@ func initKinBase() {
 	if KinBaseDb != nil {
 		return
 	}
-	connStr := fmt.Sprintf("user='%s' password='%s' host=%s port=%d dbname=%s sslmode=disable", "SYSTEM", "123456", "127.0.0.1", 54321, "TEST")
+	dsn := db_kingbase_v8r3.GetDSN("SYSTEM", "123456", "127.0.0.1", 54321, "TEST")
 	var err error
-	KinBaseDb, err = sql.Open(db_kingbase_v8r3.GetDriverName(), connStr)
+	KinBaseDb, err = db_kingbase_v8r3.Open(dsn)
 	if err != nil {
 		panic(err)
 	}
@@ -28,15 +27,14 @@ func initKinBase() {
 
 func TestKinBase(t *testing.T) {
 	initKinBase()
-	databases(KinBaseDb, dialect.KinBase)
+	owners(KinBaseDb, dialect.KinBase)
 }
 
 func TestKinBaseTableCreate(t *testing.T) {
 	initKinBase()
 	param := &dialect.GenerateParam{
-		AppendDatabase: true,
+		AppendOwner: true,
 	}
-	testTableDelete(KinBaseDb, dialect.KinBase, param, "", getTable().Name)
 	testTableCreate(KinBaseDb, dialect.KinBase, param, "", getTable())
 
 	testColumnUpdate(KinBaseDb, dialect.KinBase, param, "", getTable().Name, &dialect.ColumnModel{
@@ -54,6 +52,7 @@ func TestKinBaseTableCreate(t *testing.T) {
 		Comment: "name2注释",
 	})
 	tableDetail(KinBaseDb, dialect.KinBase, "", getTable().Name)
+	testTableDelete(KinBaseDb, dialect.KinBase, param, "", getTable().Name)
 }
 
 func TestKinBaseSql(t *testing.T) {

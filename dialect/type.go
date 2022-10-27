@@ -21,9 +21,13 @@ type ColumnTypeInfo struct {
 	IsBytes    bool   `json:"isBytes,omitempty"`
 	MinLength  int    `json:"minLength,omitempty"`
 	MaxLength  int    `json:"maxLength,omitempty"`
+	FormatFunc func(length int, decimal int) (columnType string)
 }
 
 func (this_ *ColumnTypeInfo) FormatColumnType(length int, decimal int) (columnType string) {
+	if this_.FormatFunc != nil {
+		return this_.FormatFunc(length, decimal)
+	}
 	if this_.TypeFormat == "VARCHAR2($l)" {
 		if length <= 0 {
 			length = 4000

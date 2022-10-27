@@ -5,8 +5,8 @@ import (
 	"github.com/team-ide/go-dialect/dialect"
 )
 
-func TablesSelect(db *sql.DB, dia dialect.Dialect, databaseName string) (list []*dialect.TableModel, err error) {
-	sqlInfo, err := dia.TablesSelectSql(databaseName)
+func TablesSelect(db *sql.DB, dia dialect.Dialect, ownerName string) (list []*dialect.TableModel, err error) {
+	sqlInfo, err := dia.TablesSelectSql(ownerName)
 	if err != nil {
 		return
 	}
@@ -30,8 +30,8 @@ func TablesSelect(db *sql.DB, dia dialect.Dialect, databaseName string) (list []
 	return
 }
 
-func TableDetail(db *sql.DB, dia dialect.Dialect, databaseName string, tableName string) (table *dialect.TableModel, err error) {
-	sqlInfo, err := dia.TableSelectSql(databaseName, tableName)
+func TableDetail(db *sql.DB, dia dialect.Dialect, ownerName string, tableName string) (table *dialect.TableModel, err error) {
+	sqlInfo, err := dia.TableSelectSql(ownerName, tableName)
 	if err != nil {
 		return
 	}
@@ -49,16 +49,16 @@ func TableDetail(db *sql.DB, dia dialect.Dialect, databaseName string, tableName
 				Error: e.Error(),
 			}
 		} else {
-			model.ColumnList, e = ColumnsSelect(db, dia, databaseName, model.Name)
+			model.ColumnList, e = ColumnsSelect(db, dia, ownerName, model.Name)
 			if e != nil {
 				model.Error = e.Error()
 			} else {
-				ps, e := PrimaryKeysSelect(db, dia, databaseName, model.Name)
+				ps, e := PrimaryKeysSelect(db, dia, ownerName, model.Name)
 				if e != nil {
 					model.Error = e.Error()
 				} else {
 					model.AddPrimaryKey(ps...)
-					is, e := IndexesSelect(db, dia, databaseName, model.Name)
+					is, e := IndexesSelect(db, dia, ownerName, model.Name)
 					if e != nil {
 						model.Error = e.Error()
 					} else {
@@ -73,8 +73,8 @@ func TableDetail(db *sql.DB, dia dialect.Dialect, databaseName string, tableName
 	return
 }
 
-func ColumnsSelect(db *sql.DB, dia dialect.Dialect, databaseName string, tableName string) (list []*dialect.ColumnModel, err error) {
-	sqlInfo, err := dia.ColumnsSelectSql(databaseName, tableName)
+func ColumnsSelect(db *sql.DB, dia dialect.Dialect, ownerName string, tableName string) (list []*dialect.ColumnModel, err error) {
+	sqlInfo, err := dia.ColumnsSelectSql(ownerName, tableName)
 	if err != nil {
 		return
 	}
@@ -97,8 +97,8 @@ func ColumnsSelect(db *sql.DB, dia dialect.Dialect, databaseName string, tableNa
 	return
 }
 
-func PrimaryKeysSelect(db *sql.DB, dia dialect.Dialect, databaseName string, tableName string) (list []*dialect.PrimaryKeyModel, err error) {
-	sqlInfo, err := dia.PrimaryKeysSelectSql(databaseName, tableName)
+func PrimaryKeysSelect(db *sql.DB, dia dialect.Dialect, ownerName string, tableName string) (list []*dialect.PrimaryKeyModel, err error) {
+	sqlInfo, err := dia.PrimaryKeysSelectSql(ownerName, tableName)
 	if err != nil {
 		return
 	}
@@ -121,8 +121,8 @@ func PrimaryKeysSelect(db *sql.DB, dia dialect.Dialect, databaseName string, tab
 	return
 }
 
-func IndexesSelect(db *sql.DB, dia dialect.Dialect, databaseName string, tableName string) (list []*dialect.IndexModel, err error) {
-	sqlInfo, err := dia.IndexesSelectSql(databaseName, tableName)
+func IndexesSelect(db *sql.DB, dia dialect.Dialect, ownerName string, tableName string) (list []*dialect.IndexModel, err error) {
+	sqlInfo, err := dia.IndexesSelectSql(ownerName, tableName)
 	if err != nil {
 		return
 	}

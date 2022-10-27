@@ -1,13 +1,11 @@
 package dialect
 
-type DatabaseModel struct {
-	Name                 string `json:"name,omitempty"`
-	Comment              string `json:"comment,omitempty"`
-	CatalogName          string `json:"catalogName,omitempty"`
-	DefaultCharacterSet  string `json:"defaultCharacterSet,omitempty"`
-	DefaultCollationName string `json:"defaultCollationName,omitempty"`
-	SchemaName           string `json:"schemaName,omitempty"`
-	Error                string `json:"error,omitempty"`
+type OwnerModel struct {
+	Name             string `json:"name,omitempty"`
+	Comment          string `json:"comment,omitempty"`
+	CharacterSetName string `json:"characterSetName,omitempty"`
+	CollationName    string `json:"collationName,omitempty"`
+	Error            string `json:"error,omitempty"`
 }
 
 type TableModel struct {
@@ -16,11 +14,9 @@ type TableModel struct {
 	ColumnList []*ColumnModel `json:"columnList,omitempty"`
 	IndexList  []*IndexModel  `json:"indexList,omitempty"`
 
-	TableCatalog string `json:"tableCatalog,omitempty"`
-	TableSchema  string `json:"tableSchema,omitempty"`
-	TableType    string `json:"tableType,omitempty"`
-	Sql          string `json:"sql,omitempty"`
-	Error        string `json:"error,omitempty"`
+	OwnerName string `json:"ownerName,omitempty"`
+	Sql       string `json:"sql,omitempty"`
+	Error     string `json:"error,omitempty"`
 }
 
 func (this_ *TableModel) AddColumn(column *ColumnModel) *ColumnModel {
@@ -119,34 +115,34 @@ type ColumnModel struct {
 	BeforeColumn     string      `json:"beforeColumn,omitempty"`
 	Deleted          bool        `json:"deleted,omitempty"`
 	CharacterSetName string      `json:"characterSetName,omitempty"`
-	TableCatalog     string      `json:"tableCatalog,omitempty"`
-	TableSchema      string      `json:"tableSchema,omitempty"`
-	TableName        string      `json:"tableName,omitempty"`
-	Error            string      `json:"error,omitempty"`
+
+	OwnerName string `json:"ownerName,omitempty"`
+	TableName string `json:"tableName,omitempty"`
+	Error     string `json:"error,omitempty"`
 }
 
 type PrimaryKeyModel struct {
-	Columns      []string `json:"columns,omitempty"`
-	ColumnName   string   `json:"columnName,omitempty"`
-	TableCatalog string   `json:"tableCatalog,omitempty"`
-	TableSchema  string   `json:"tableSchema,omitempty"`
-	TableName    string   `json:"tableName,omitempty"`
-	Error        string   `json:"error,omitempty"`
+	Columns    []string `json:"columns,omitempty"`
+	ColumnName string   `json:"columnName,omitempty"`
+
+	OwnerName string `json:"ownerName,omitempty"`
+	TableName string `json:"tableName,omitempty"`
+	Error     string `json:"error,omitempty"`
 }
 
 type IndexModel struct {
-	Name         string   `json:"name,omitempty"`
-	Type         string   `json:"type,omitempty"`
-	ColumnName   string   `json:"columnName,omitempty"`
-	Columns      []string `json:"columns,omitempty"`
-	Comment      string   `json:"comment,omitempty"`
-	OldName      string   `json:"oldName,omitempty"`
-	OldComment   string   `json:"oldComment,omitempty"`
-	OldType      string   `json:"oldType,omitempty"`
-	OldColumns   []string `json:"oldColumns,omitempty"`
-	Deleted      bool     `json:"deleted,omitempty"`
-	TableCatalog string   `json:"tableCatalog,omitempty"`
-	TableSchema  string   `json:"tableSchema,omitempty"`
-	TableName    string   `json:"tableName,omitempty"`
-	Error        string   `json:"error,omitempty"`
+	Name       string   `json:"name,omitempty"`
+	Type       string   `json:"type,omitempty"`
+	ColumnName string   `json:"columnName,omitempty"`
+	Columns    []string `json:"columns,omitempty"`
+	Comment    string   `json:"comment,omitempty"`
+	OldName    string   `json:"oldName,omitempty"`
+	OldComment string   `json:"oldComment,omitempty"`
+	OldType    string   `json:"oldType,omitempty"`
+	OldColumns []string `json:"oldColumns,omitempty"`
+	Deleted    bool     `json:"deleted,omitempty"`
+
+	OwnerName string `json:"ownerName,omitempty"`
+	TableName string `json:"tableName,omitempty"`
+	Error     string `json:"error,omitempty"`
 }

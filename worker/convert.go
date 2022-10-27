@@ -213,7 +213,7 @@ func parseSelect(stmt *sqlparser.Select) (err error) {
 }
 func parseInsert(stmt *sqlparser.Insert) (insert *dialect.InsertModel, err error) {
 	insert = &dialect.InsertModel{}
-	insert.DatabaseName = stmt.Table.Qualifier.String()
+	insert.OwnerName = stmt.Table.Qualifier.String()
 	insert.TableName = stmt.Table.Name.String()
 	for _, c := range stmt.Columns {
 		name := c.CompliantName()

@@ -32,77 +32,77 @@ func getTable() (table *dialect.TableModel) {
 	return
 }
 
-func testDatabaseCreate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, database *dialect.DatabaseModel) {
-	sqlList, err := dialect2.DatabaseCreateSql(param, database)
+func testOwnerCreate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, owner *dialect.OwnerModel) {
+	sqlList, err := dialect2.OwnerCreateSql(param, owner)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("--------database [" + database.Name + "] create--------")
+	fmt.Println("--------owner [" + owner.Name + "] create--------")
 	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
 }
 
-func testDatabaseDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string) {
-	sqlList, err := dialect2.DatabaseDeleteSql(param, databaseName)
+func testOwnerDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, ownerName string) {
+	sqlList, err := dialect2.OwnerDeleteSql(param, ownerName)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("--------database [" + databaseName + "] delete--------")
+	fmt.Println("--------owner [" + ownerName + "] delete--------")
 	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
 }
-func testTableCreate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, table *dialect.TableModel) {
-	sqlList, err := dialect2.TableCreateSql(param, databaseName, table)
+func testTableCreate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, ownerName string, table *dialect.TableModel) {
+	sqlList, err := dialect2.TableCreateSql(param, ownerName, table)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("--------database [" + databaseName + "] table [" + table.Name + "] create--------")
-	exec(db, sqlList)
-	fmt.Println()
-	fmt.Println()
-
-}
-func testTableDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string) {
-	sqlList, err := dialect2.TableDeleteSql(param, databaseName, tableName)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] delete--------")
+	fmt.Println("--------owner [" + ownerName + "] table [" + table.Name + "] create--------")
 	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
 
 }
-func testColumnAdd(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string, column *dialect.ColumnModel) {
-	sqlList, err := dialect2.ColumnAddSql(param, databaseName, tableName, column)
+func testTableDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, ownerName string, tableName string) {
+	sqlList, err := dialect2.TableDeleteSql(param, ownerName, tableName)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] column [" + column.Name + "] add--------")
+	fmt.Println("--------owner [" + ownerName + "] table [" + tableName + "] delete--------")
 	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
 
 }
-func testColumnUpdate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string, column *dialect.ColumnModel) {
-	sqlList, err := dialect2.ColumnUpdateSql(param, databaseName, tableName, column)
+func testColumnAdd(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, ownerName string, tableName string, column *dialect.ColumnModel) {
+	sqlList, err := dialect2.ColumnAddSql(param, ownerName, tableName, column)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] column [" + column.Name + "] update--------")
+	fmt.Println("--------owner [" + ownerName + "] table [" + tableName + "] column [" + column.Name + "] add--------")
 	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
 
 }
-func testColumnDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, databaseName string, tableName string, columnName string) {
-	sqlList, err := dialect2.ColumnDeleteSql(param, databaseName, tableName, columnName)
+func testColumnUpdate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, ownerName string, tableName string, column *dialect.ColumnModel) {
+	sqlList, err := dialect2.ColumnUpdateSql(param, ownerName, tableName, column)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] column [" + columnName + "] delete--------")
+	fmt.Println("--------owner [" + ownerName + "] table [" + tableName + "] column [" + column.Name + "] update--------")
+	exec(db, sqlList)
+	fmt.Println()
+	fmt.Println()
+
+}
+func testColumnDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, ownerName string, tableName string, columnName string) {
+	sqlList, err := dialect2.ColumnDeleteSql(param, ownerName, tableName, columnName)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("--------owner [" + ownerName + "] table [" + tableName + "] column [" + columnName + "] delete--------")
 	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
@@ -129,15 +129,15 @@ func exec(db *sql.DB, sqlList []string) {
 
 }
 
-func databases(db *sql.DB, dia dialect.Dialect) {
-	fmt.Println("--------databases--------")
-	list, err := worker.DatabasesSelect(db, dia)
+func owners(db *sql.DB, dia dialect.Dialect) {
+	fmt.Println("--------owners--------")
+	list, err := worker.OwnersSelect(db, dia)
 	if err != nil {
 		panic(err)
 	}
 	for _, one := range list {
 		if one.Error != "" {
-			println("database error:" + one.Error)
+			println("owner error:" + one.Error)
 			continue
 		}
 
@@ -149,9 +149,9 @@ func databases(db *sql.DB, dia dialect.Dialect) {
 
 }
 
-func tables(db *sql.DB, dia dialect.Dialect, databaseName string) {
-	fmt.Println("--------database [" + databaseName + "] tables--------")
-	list, err := worker.TablesSelect(db, dia, databaseName)
+func tables(db *sql.DB, dia dialect.Dialect, ownerName string) {
+	fmt.Println("--------owner [" + ownerName + "] tables--------")
+	list, err := worker.TablesSelect(db, dia, ownerName)
 	if err != nil {
 		panic(err)
 	}
@@ -163,14 +163,14 @@ func tables(db *sql.DB, dia dialect.Dialect, databaseName string) {
 
 		bs, _ := json.Marshal(one)
 		fmt.Printf("%s\n", bs)
-		tableDetail(db, dia, databaseName, one.Name)
+		tableDetail(db, dia, ownerName, one.Name)
 	}
 
 }
 
-func tableDetail(db *sql.DB, dia dialect.Dialect, databaseName string, tableName string) {
-	fmt.Println("--------database [" + databaseName + "] table [" + tableName + "] detail--------")
-	table, err := worker.TableDetail(db, dia, databaseName, tableName)
+func tableDetail(db *sql.DB, dia dialect.Dialect, ownerName string, tableName string) {
+	fmt.Println("--------owner [" + ownerName + "] table [" + tableName + "] detail--------")
+	table, err := worker.TableDetail(db, dia, ownerName, tableName)
 	if err != nil {
 		panic(err)
 	}

@@ -2,7 +2,6 @@ package go_dialect
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_shentong"
 	"strings"
@@ -17,9 +16,9 @@ func initShenTong() {
 	if ShenTongDb != nil {
 		return
 	}
-	connStr := fmt.Sprintf("%s/%s@%s:%d/%s", "SYSDBA", "szoscar55", "127.0.0.1", 2003, "OSRDB")
+	dsn := db_shentong.GetDSN("SYSDBA", "szoscar55", "127.0.0.1", 2003, "OSRDB")
 	var err error
-	ShenTongDb, err = sql.Open(db_shentong.GetDriverName(), connStr)
+	ShenTongDb, err = db_shentong.Open(dsn)
 	if err != nil {
 		panic(err)
 	}
@@ -28,15 +27,14 @@ func initShenTong() {
 
 func TestShenTong(t *testing.T) {
 	initShenTong()
-	databases(ShenTongDb, dialect.ShenTong)
+	owners(ShenTongDb, dialect.ShenTong)
 }
 
 func TestShenTongTableCreate(t *testing.T) {
 	initShenTong()
 	param := &dialect.GenerateParam{
-		AppendDatabase: true,
+		AppendOwner: true,
 	}
-	testTableDelete(ShenTongDb, dialect.ShenTong, param, "", getTable().Name)
 	testTableCreate(ShenTongDb, dialect.ShenTong, param, "", getTable())
 
 	testColumnUpdate(ShenTongDb, dialect.ShenTong, param, "", getTable().Name, &dialect.ColumnModel{
@@ -54,6 +52,7 @@ func TestShenTongTableCreate(t *testing.T) {
 		Comment: "name2注释",
 	})
 	tableDetail(ShenTongDb, dialect.ShenTong, "", getTable().Name)
+	testTableDelete(ShenTongDb, dialect.ShenTong, param, "", getTable().Name)
 }
 
 func TestShenTongSql(t *testing.T) {

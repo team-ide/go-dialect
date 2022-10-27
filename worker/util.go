@@ -6,24 +6,6 @@ import (
 	"reflect"
 )
 
-func GetRefValue(bean interface{}) reflect.Value {
-	if IsPtr(bean) {
-		return reflect.ValueOf(bean).Elem()
-	}
-	return reflect.ValueOf(bean)
-}
-
-func GetRefType(bean interface{}) reflect.Type {
-	if IsPtr(bean) {
-		return reflect.TypeOf(bean).Elem()
-	}
-	return reflect.TypeOf(bean)
-}
-
-func IsPtr(v interface{}) bool {
-	return reflect.ValueOf(v).Kind() == reflect.Ptr
-}
-
 func GetSqlValueCache(columnTypes []*sql.ColumnType) (cache []interface{}) {
 	cache = make([]interface{}, len(columnTypes)) //临时存储每行数据
 	for index, _ := range cache {
@@ -113,11 +95,10 @@ func GetSqlValue(columnType *sql.ColumnType, data interface{}) (value interface{
 	case []uint8:
 		value = string(v)
 		break
-		break
 	default:
-		numberV, is := dialect.GetGoDrorNumberValue(data)
-		if is {
-			value = numberV
+		baseValue, isBaseType := dialect.GetBaseTypeValue(value)
+		if isBaseType {
+			value = baseValue
 			break
 		}
 		value = v
