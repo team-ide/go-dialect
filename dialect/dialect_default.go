@@ -397,11 +397,11 @@ func (this_ *DefaultDialect) ColumnUpdateSql(param *GenerateParam, ownerName str
 		sql += ` MODIFY (`
 		sql += param.packingCharacterColumn(column.Name)
 		sql += ` ` + columnType + ``
-		if column.NotNull {
-			sql += ` NOT NULL`
-		}
 		if column.Default != "" {
 			sql += ` DEFAULT ` + formatStringValue("'", GetStringValue(column.Default))
+		}
+		if column.NotNull {
+			sql += ` NOT NULL`
 		}
 		sql += `)`
 
