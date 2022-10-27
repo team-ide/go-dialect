@@ -109,7 +109,7 @@ func (this_ *OracleDialect) TableSelectSql(ownerName string, tableName string) (
 	sql = `SELECT TABLE_NAME,OWNER FROM ALL_TABLES `
 	sql += `WHERE 1=1 `
 	if ownerName != "" {
-		sql += `AND owner='` + ownerName + `' `
+		sql += `AND OWNER='` + ownerName + `' `
 	}
 	sql += `AND TABLE_NAME='` + tableName + `' `
 	sql += `ORDER BY TABLE_NAME`
@@ -207,7 +207,7 @@ func (this_ *OracleDialect) PrimaryKeyModel(data map[string]interface{}) (primar
 }
 func (this_ *OracleDialect) PrimaryKeysSelectSql(ownerName string, tableName string) (sql string, err error) {
 	sql = `SELECT cu.COLUMN_NAME,au.TABLE_NAME,au.OWNER FROM ALL_CONS_COLUMNS cu, ALL_CONSTRAINTS au `
-	sql += `WHERE cu.constraint_name = au.constraint_name and au.constraint_type = 'P' `
+	sql += `WHERE cu.CONSTRAINT_NAME = au.CONSTRAINT_NAME and au.CONSTRAINT_TYPE = 'P' `
 	if ownerName != "" {
 		sql += `AND au.OWNER='` + ownerName + `' `
 	}
@@ -241,15 +241,15 @@ func (this_ *OracleDialect) IndexModel(data map[string]interface{}) (index *Inde
 	return
 }
 func (this_ *OracleDialect) IndexesSelectSql(ownerName string, tableName string) (sql string, err error) {
-	sql = `SELECT t.INDEX_NAME,t.COLUMN_NAME,t.TABLE_OWNER,t.TABLE_NAME,i.index_type,i.UNIQUENESS FROM ALL_IND_COLUMNS t,ALL_INDEXES i  `
-	sql += `WHERE t.index_name = i.index_name `
+	sql = `SELECT t.INDEX_NAME,t.COLUMN_NAME,t.TABLE_OWNER,t.TABLE_NAME,i.INDEX_TYPE,i.UNIQUENESS FROM ALL_IND_COLUMNS t,ALL_INDEXES i  `
+	sql += `WHERE t.INDEX_NAME = i.INDEX_NAME `
 	if ownerName != "" {
 		sql += `AND t.TABLE_OWNER='` + ownerName + `' `
 	}
 	sql += `AND t.TABLE_NAME='` + tableName + `' `
 	sql += `AND t.COLUMN_NAME NOT IN( `
-	sql += `SELECT cu.COLUMN_NAME FROM all_cons_columns cu, all_constraints au `
-	sql += `WHERE cu.constraint_name = au.constraint_name and au.constraint_type = 'P' `
+	sql += `SELECT cu.COLUMN_NAME FROM ALL_CONS_COLUMNS cu, ALL_CONSTRAINTS au `
+	sql += `WHERE cu.CONSTRAINT_NAME = au.CONSTRAINT_NAME and au.CONSTRAINT_TYPE = 'P' `
 	if ownerName != "" {
 		sql += `AND au.OWNER='` + ownerName + `' `
 	}
