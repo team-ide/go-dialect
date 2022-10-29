@@ -14,6 +14,8 @@ type TableModel struct {
 	ColumnList []*ColumnModel `json:"columnList,omitempty"`
 	IndexList  []*IndexModel  `json:"indexList,omitempty"`
 
+	CharacterSetName string `json:"characterSetName,omitempty"`
+
 	OwnerName string `json:"ownerName,omitempty"`
 	Sql       string `json:"sql,omitempty"`
 	Error     string `json:"error,omitempty"`
@@ -33,31 +35,11 @@ func (this_ *TableModel) FindColumnByName(name string) *ColumnModel {
 	}
 	return nil
 }
-func (this_ *TableModel) FindColumnByOldName(oldName string) *ColumnModel {
-	if len(this_.ColumnList) > 0 {
-		for _, one := range this_.ColumnList {
-			if one.OldName == oldName {
-				return one
-			}
-		}
-	}
-	return nil
-}
 
 func (this_ *TableModel) FindIndexByName(name string) *IndexModel {
 	if len(this_.IndexList) > 0 {
 		for _, one := range this_.IndexList {
 			if one.Name == name {
-				return one
-			}
-		}
-	}
-	return nil
-}
-func (this_ *TableModel) FindIndexByOldName(oldName string) *IndexModel {
-	if len(this_.IndexList) > 0 {
-		for _, one := range this_.IndexList {
-			if one.OldName == oldName {
 				return one
 			}
 		}
@@ -96,29 +78,24 @@ func (this_ *TableModel) AddIndex(models ...*IndexModel) {
 }
 
 type ColumnModel struct {
-	Name             string      `json:"name,omitempty"`
-	Comment          string      `json:"comment,omitempty"`
-	Type             string      `json:"type,omitempty"`
-	Length           int         `json:"length,omitempty"`
-	Decimal          int         `json:"decimal,omitempty"`
-	PrimaryKey       bool        `json:"primaryKey,omitempty"`
-	NotNull          bool        `json:"notNull,omitempty"`
-	Default          string      `json:"default,omitempty"`
-	OldName          string      `json:"oldName,omitempty"`
-	OldComment       string      `json:"oldComment,omitempty"`
-	OldType          string      `json:"oldType,omitempty"`
-	OldLength        int         `json:"oldLength,omitempty"`
-	OldDecimal       int         `json:"oldDecimal,omitempty"`
-	OldPrimaryKey    bool        `json:"oldPrimaryKey,omitempty"`
-	OldNotNull       bool        `json:"oldNotNull,omitempty"`
-	OldDefault       interface{} `json:"oldDefault,omitempty"`
-	BeforeColumn     string      `json:"beforeColumn,omitempty"`
-	Deleted          bool        `json:"deleted,omitempty"`
-	CharacterSetName string      `json:"characterSetName,omitempty"`
+	Name             string `json:"name,omitempty"`
+	Comment          string `json:"comment,omitempty"`
+	Type             string `json:"type,omitempty"`
+	Length           int    `json:"length,omitempty"`
+	Decimal          int    `json:"decimal,omitempty"`
+	PrimaryKey       bool   `json:"primaryKey,omitempty"`
+	NotNull          bool   `json:"notNull,omitempty"`
+	Default          string `json:"default,omitempty"`
+	BeforeColumn     string `json:"beforeColumn,omitempty"`
+	CharacterSetName string `json:"characterSetName,omitempty"`
 
-	OwnerName string `json:"ownerName,omitempty"`
-	TableName string `json:"tableName,omitempty"`
-	Error     string `json:"error,omitempty"`
+	Defaults                 []string `json:"defaults,omitempty"`
+	DefaultCurrentTimestamp  bool     `json:"defaultCurrentTimestamp"`
+	OnUpdateCurrentTimestamp bool     `json:"onUpdateCurrentTimestamp"`
+	Extra                    string   `json:"extra,omitempty"`
+	OwnerName                string   `json:"ownerName,omitempty"`
+	TableName                string   `json:"tableName,omitempty"`
+	Error                    string   `json:"error,omitempty"`
 }
 
 type PrimaryKeyModel struct {
@@ -136,11 +113,6 @@ type IndexModel struct {
 	ColumnName string   `json:"columnName,omitempty"`
 	Columns    []string `json:"columns,omitempty"`
 	Comment    string   `json:"comment,omitempty"`
-	OldName    string   `json:"oldName,omitempty"`
-	OldComment string   `json:"oldComment,omitempty"`
-	OldType    string   `json:"oldType,omitempty"`
-	OldColumns []string `json:"oldColumns,omitempty"`
-	Deleted    bool     `json:"deleted,omitempty"`
 
 	OwnerName string `json:"ownerName,omitempty"`
 	TableName string `json:"tableName,omitempty"`

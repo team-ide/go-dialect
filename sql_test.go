@@ -30,67 +30,42 @@ func TestSqlParse(t *testing.T) {
 
 	srcSql := loadSql(`temp/sql_test.sql`)
 
-	convertParser = worker.NewConvertParser(srcSql, dialect.Mysql, &dialect.GenerateParam{
-		OwnerPackingCharacter:  "`",
-		TablePackingCharacter:  "`",
-		ColumnPackingCharacter: "`",
-		CharacterSetName:       "utf8mb4",
-	})
+	convertParser = worker.NewConvertParser(srcSql, dialect.Mysql)
 	err = convertParser.Parse()
 	if err != nil {
 		panic(err)
 	}
 	saveSql(convertParser.GetDestSql(), "temp/sql_mysql.sql")
 
-	convertParser = worker.NewConvertParser(srcSql, dialect.Oracle, &dialect.GenerateParam{
-		OwnerPackingCharacter:  "\"",
-		TablePackingCharacter:  "\"",
-		ColumnPackingCharacter: "\"",
-	})
+	convertParser = worker.NewConvertParser(srcSql, dialect.Oracle)
 	err = convertParser.Parse()
 	if err != nil {
 		panic(err)
 	}
 	saveSql(convertParser.GetDestSql(), "temp/sql_oracle.sql")
 
-	convertParser = worker.NewConvertParser(srcSql, dialect.ShenTong, &dialect.GenerateParam{
-		OwnerPackingCharacter:  "\"",
-		TablePackingCharacter:  "\"",
-		ColumnPackingCharacter: "\"",
-	})
+	convertParser = worker.NewConvertParser(srcSql, dialect.ShenTong)
 	err = convertParser.Parse()
 	if err != nil {
 		panic(err)
 	}
 	saveSql(convertParser.GetDestSql(), "temp/sql_shentong.sql")
 
-	convertParser = worker.NewConvertParser(srcSql, dialect.KinBase, &dialect.GenerateParam{
-		OwnerPackingCharacter:  "\"",
-		TablePackingCharacter:  "\"",
-		ColumnPackingCharacter: "\"",
-	})
+	convertParser = worker.NewConvertParser(srcSql, dialect.KinBase)
 	err = convertParser.Parse()
 	if err != nil {
 		panic(err)
 	}
 	saveSql(convertParser.GetDestSql(), "temp/sql_kinbase.sql")
 
-	convertParser = worker.NewConvertParser(srcSql, dialect.DaMen, &dialect.GenerateParam{
-		OwnerPackingCharacter:  "\"",
-		TablePackingCharacter:  "\"",
-		ColumnPackingCharacter: "\"",
-	})
+	convertParser = worker.NewConvertParser(srcSql, dialect.DaMen)
 	err = convertParser.Parse()
 	if err != nil {
 		panic(err)
 	}
 	saveSql(convertParser.GetDestSql(), "temp/sql_damen.sql")
 
-	convertParser = worker.NewConvertParser(srcSql, dialect.Sqlite, &dialect.GenerateParam{
-		OwnerPackingCharacter:  "\"",
-		TablePackingCharacter:  "\"",
-		ColumnPackingCharacter: "\"",
-	})
+	convertParser = worker.NewConvertParser(srcSql, dialect.Sqlite)
 	err = convertParser.Parse()
 	if err != nil {
 		panic(err)

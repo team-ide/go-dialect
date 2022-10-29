@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_postgresql"
-	"strings"
 	"testing"
 )
 
@@ -24,40 +23,19 @@ func initPostgresql() {
 	return
 }
 
-func TestPostgresql(t *testing.T) {
+func TestPostgresqlLoad(t *testing.T) {
 	initPostgresql()
 	owners(PostgresqlDb, dialect.Postgresql)
 }
 
-func TestPostgresqlTableCreate(t *testing.T) {
+func TestPostgresqlDDL(t *testing.T) {
 	initPostgresql()
-	param := &dialect.GenerateParam{
-		AppendOwner: true,
-	}
 	//testTableDelete(PostgresqlDb, dialect.Postgresql, param, "", getTable().Name)
-	testTableCreate(PostgresqlDb, dialect.Postgresql, param, "", getTable())
-
-	testColumnUpdate(PostgresqlDb, dialect.Postgresql, param, "", getTable().Name, &dialect.ColumnModel{
-		Name:    "name1",
-		Type:    "varchar",
-		Length:  500,
-		Comment: "name1注释",
-		OldName: "name",
-	})
-	testColumnDelete(PostgresqlDb, dialect.Postgresql, param, "", getTable().Name, "detail3")
-	testColumnAdd(PostgresqlDb, dialect.Postgresql, param, "", getTable().Name, &dialect.ColumnModel{
-		Name:    "name2",
-		Type:    "varchar",
-		Length:  500,
-		Comment: "name2注释",
-	})
-	tableDetail(PostgresqlDb, dialect.Postgresql, "", getTable().Name)
+	testDLL(PostgresqlDb, dialect.Postgresql, "")
 }
 
 func TestPostgresqlSql(t *testing.T) {
 	initPostgresql()
 	sqlInfo := loadSql("temp/sql_kinbase.sql")
-	sqlList := strings.Split(sqlInfo, ";\n")
-	exec(PostgresqlDb, sqlList)
-	tables(PostgresqlDb, dialect.Postgresql, "SYSTEM")
+	testSql(PostgresqlDb, dialect.Postgresql, "ROOT", sqlInfo)
 }

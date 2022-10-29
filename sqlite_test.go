@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_sqlite3"
-	"strings"
 	"testing"
 )
 
@@ -26,40 +25,18 @@ func initSqlite() (dbContext context.Context) {
 	return
 }
 
-func TestSqlite(t *testing.T) {
+func TestSqliteLoad(t *testing.T) {
 	initSqlite()
 	owners(SqliteDb, dialect.Sqlite)
 }
 
-func TestSqliteTableCreate(t *testing.T) {
+func TestSqliteDDL(t *testing.T) {
 	initSqlite()
-	param := &dialect.GenerateParam{
-		AppendOwner: true,
-	}
-	testTableCreate(SqliteDb, dialect.Sqlite, param, "", getTable())
-
-	testColumnUpdate(SqliteDb, dialect.Sqlite, param, "", getTable().Name, &dialect.ColumnModel{
-		Name:    "name1",
-		Type:    "varchar",
-		Length:  500,
-		Comment: "name1注释",
-		OldName: "name",
-	})
-	testColumnDelete(SqliteDb, dialect.Sqlite, param, "", getTable().Name, "detail3")
-	testColumnAdd(SqliteDb, dialect.Sqlite, param, "", getTable().Name, &dialect.ColumnModel{
-		Name:    "name2",
-		Type:    "varchar",
-		Length:  500,
-		Comment: "name2注释",
-	})
-	tableDetail(SqliteDb, dialect.Sqlite, "", getTable().Name)
-	testTableDelete(SqliteDb, dialect.Sqlite, param, "", getTable().Name)
+	testDLL(SqliteDb, dialect.Sqlite, "")
 }
 
 func TestSqliteSql(t *testing.T) {
 	initSqlite()
 	sqlInfo := loadSql("temp/sql_sqlite.sql")
-	sqlList := strings.Split(sqlInfo, ";\n")
-	exec(SqliteDb, sqlList)
-	tables(SqliteDb, dialect.Sqlite, "")
+	testSql(SqliteDb, dialect.Sqlite, "SYSDBA", sqlInfo)
 }

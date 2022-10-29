@@ -3,6 +3,7 @@ package dialect
 import (
 	"database/sql"
 	"reflect"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -37,6 +38,14 @@ func StringsIndex(array []string, val string) (index int) {
 		}
 	}
 	return
+}
+
+func ReplaceStringByRegex(str, rule, replace string) string {
+	reg, err := regexp.Compile(rule)
+	if reg == nil || err != nil {
+		return str
+	}
+	return reg.ReplaceAllString(str, replace)
 }
 
 func GetStringValue(value interface{}) string {

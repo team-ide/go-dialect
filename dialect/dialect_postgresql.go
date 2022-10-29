@@ -120,6 +120,11 @@ func (this_ *PostgresqlDialect) OwnersSelectSql() (sql string, err error) {
 	sql = `select * from pg_catalog.pg_namespace ORDER BY nspname`
 	return
 }
+func (this_ *PostgresqlDialect) OwnerSelectSql(ownerName string) (sql string, err error) {
+	sql = `select * from pg_catalog.pg_namespace `
+	sql += `WHERE nspname ='` + ownerName + `' `
+	return
+}
 
 func (this_ *PostgresqlDialect) TableModel(data map[string]interface{}) (table *TableModel, err error) {
 	if data == nil {
@@ -222,25 +227,8 @@ func (this_ *PostgresqlDialect) ColumnsSelectSql(ownerName string, tableName str
 	sql += `AND t.TABLE_NAME='` + tableName + `' `
 	return
 }
-func (this_ *PostgresqlDialect) ColumnUpdateSql(param *GenerateParam, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
+func (this_ *PostgresqlDialect) ColumnUpdateSql(ownerName string, tableName string, oldColumn *ColumnModel, newColumn *ColumnModel) (sqlList []string, err error) {
 
-	var sqlList_ []string
-
-	if column.OldName != "" && column.OldName != column.Name {
-		sqlList_, err = this_.columnRenameSql(param, ownerName, tableName, column.OldName, column.Name)
-		if err != nil {
-			return
-		}
-		sqlList = append(sqlList, sqlList_...)
-	}
-
-	if column.Comment != column.OldComment {
-		sqlList_, err = this_.ColumnCommentSql(param, ownerName, tableName, column.Name, column.Comment)
-		if err != nil {
-			return
-		}
-		sqlList = append(sqlList, sqlList_...)
-	}
 	return
 }
 

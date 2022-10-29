@@ -2,9 +2,10 @@ package go_dialect
 
 import (
 	"database/sql"
+	"encoding/json"
 	"github.com/team-ide/go-dialect/dialect"
+	"github.com/team-ide/go-dialect/worker"
 	"github.com/team-ide/go-driver/db_mysql"
-	"strings"
 	"testing"
 )
 
@@ -25,54 +26,74 @@ func initMysql() {
 	return
 }
 
-func TestMysql(t *testing.T) {
+func TestMysqlLoad(t *testing.T) {
 	initMysql()
 	owners(MysqlDb, dialect.Mysql)
 }
 
-func TestMysqlTableCreate(t *testing.T) {
+func TestMysqlDDL(t *testing.T) {
 	initMysql()
-	param := &dialect.GenerateParam{
-		AppendOwner: true,
-	}
 	owner := &dialect.OwnerModel{
 		Name: "TEST_DB",
 	}
-	testOwnerDelete(MysqlDb, dialect.Mysql, param, owner.Name)
-	testOwnerCreate(MysqlDb, dialect.Mysql, param, owner)
-	testTableDelete(MysqlDb, dialect.Mysql, param, owner.Name, getTable().Name)
-	testTableCreate(MysqlDb, dialect.Mysql, param, owner.Name, getTable())
+	testOwnerDelete(MysqlDb, dialect.Mysql, owner.Name)
+	testOwnerCreate(MysqlDb, dialect.Mysql, owner)
 
-	testColumnUpdate(MysqlDb, dialect.Mysql, param, owner.Name, getTable().Name, &dialect.ColumnModel{
-		Name:    "name1",
-		Type:    "varchar",
-		Length:  500,
-		Comment: "name1注释",
-		OldName: "name",
-	})
-	testColumnDelete(MysqlDb, dialect.Mysql, param, owner.Name, getTable().Name, "detail3")
-	testColumnAdd(MysqlDb, dialect.Mysql, param, owner.Name, getTable().Name, &dialect.ColumnModel{
-		Name:    "name2",
-		Type:    "varchar",
-		Length:  500,
-		Comment: "name2注释",
-	})
-	tableDetail(MysqlDb, dialect.Mysql, owner.Name, getTable().Name)
+	testDLL(MysqlDb, dialect.Mysql, owner.Name)
 }
 
 func TestMysqlSql(t *testing.T) {
 	initMysql()
 	sqlInfo := loadSql("sql_mysql.sql")
-	param := &dialect.GenerateParam{
-		AppendOwner: true,
-	}
 	owner := &dialect.OwnerModel{
 		Name: "TEST_DB",
 	}
-	testOwnerDelete(MysqlDb, dialect.Mysql, param, owner.Name)
-	testOwnerCreate(MysqlDb, dialect.Mysql, param, owner)
+	testOwnerDelete(MysqlDb, dialect.Mysql, owner.Name)
+	testOwnerCreate(MysqlDb, dialect.Mysql, owner)
 	sqlInfo = "use " + owner.Name + ";\n" + sqlInfo
 
-	sqlList := strings.Split(sqlInfo, ";\n")
-	exec(MysqlDb, sqlList)
+	testSql(MysqlDb, dialect.Mysql, owner.Name, sqlInfo)
+}
+
+func TestMysqlSyncMysql(t *testing.T) {
+	initMysql()
+	task := worker.NewTaskSync(MysqlDb, dialect.Mysql, MysqlDb, dialect.Mysql, &worker.TaskSyncParam{
+		Owners: []*worker.TaskSyncOwner{
+			{SourceName: "information_schema", TargetName: "XXX1"},
+			{SourceName: "mysql", TargetName: "XXX2"},
+			{SourceName: "performance_schema", TargetName: "XXX3"},
+		},
+		SyncStructure: true,
+		SyncData:      true,
+		//FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
+		//	return tableName + "_" + index.Name
+		//},
+	})
+	err := task.Start()
+	if err != nil {
+		panic(err)
+	}
+	bs, _ := json.Marshal(task)
+	println(string(bs))
+}
+
+func TestMysqlSyncSqlite(t *testing.T) {
+	initMysql()
+	initSqlite()
+	task := worker.NewTaskSync(MysqlDb, dialect.Mysql, SqliteDb, dialect.Sqlite, &worker.TaskSyncParam{
+		Owners: []*worker.TaskSyncOwner{
+			{SourceName: "mysql", TargetName: "main"},
+		},
+		SyncStructure: true,
+		SyncData:      true,
+		FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
+			return tableName + "_" + index.Name
+		},
+	})
+	err := task.Start()
+	if err != nil {
+		panic(err)
+	}
+	bs, _ := json.Marshal(task)
+	println(string(bs))
 }

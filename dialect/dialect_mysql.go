@@ -112,6 +112,63 @@ func (this_ *MysqlDialect) init() {
 	this_.AddFuncTypeInfo(&FuncTypeInfo{Name: "md5", Format: "md5"})
 }
 
+func (this_ *MysqlDialect) PackOwner(ownerName string) string {
+	return packingName("`", ownerName)
+}
+
+func (this_ *MysqlDialect) PackTable(tableName string) string {
+	return packingName("`", tableName)
+}
+
+func (this_ *MysqlDialect) PackColumn(columnName string) string {
+	return packingName("`", columnName)
+}
+
+func (this_ *MysqlDialect) PackColumns(columnNames []string) string {
+	return packingNames("`", columnNames)
+}
+
+func (this_ *MysqlDialect) PackValue(column *ColumnModel, value interface{}) string {
+	var columnTypeInfo *ColumnTypeInfo
+	if column != nil {
+		if strings.EqualFold(column.Type, "ENUM") {
+			if value == nil || value == "" {
+				if !column.NotNull {
+					return "NULL"
+				}
+			}
+		}
+		columnTypeInfo, _ = this_.GetColumnTypeInfo(column.Type)
+	}
+	return packingValue(columnTypeInfo, `'`, `\`, value)
+}
+
+func (this_ *MysqlDialect) FormatColumnType(column *ColumnModel) (columnType string, err error) {
+	if strings.EqualFold(column.Type, "SET") || strings.EqualFold(column.Type, "ENUM") {
+		columnType = column.Type + "(" + packingValues("'", column.Defaults) + ")"
+		return
+	}
+	columnTypeInfo, err := this_.GetColumnTypeInfo(column.Type)
+	if err != nil {
+		return
+	}
+	columnType = columnTypeInfo.FormatColumnType(column.Length, column.Decimal)
+	return
+}
+func (this_ *MysqlDialect) FormatDefaultValue(column *ColumnModel) (defaultValue string) {
+	defaultValue = "DEFAULT "
+	if column.DefaultCurrentTimestamp || column.OnUpdateCurrentTimestamp {
+		if column.DefaultCurrentTimestamp {
+			defaultValue += " CURRENT_TIMESTAMP "
+		}
+		if column.OnUpdateCurrentTimestamp {
+			defaultValue += " ON UPDATE CURRENT_TIMESTAMP "
+		}
+		return
+	}
+	defaultValue += this_.PackValue(nil, column.Default)
+	return
+}
 func (this_ *MysqlDialect) OwnerModel(data map[string]interface{}) (owner *OwnerModel, err error) {
 	if data == nil {
 		return
@@ -132,26 +189,27 @@ func (this_ *MysqlDialect) OwnersSelectSql() (sql string, err error) {
 	sql = `SELECT SCHEMA_NAME,DEFAULT_CHARACTER_SET_NAME,DEFAULT_COLLATION_NAME from information_schema.schemata ORDER BY SCHEMA_NAME`
 	return
 }
-func (this_ *MysqlDialect) OwnerCreateSql(param *GenerateParam, owner *OwnerModel) (sqlList []string, err error) {
+func (this_ *MysqlDialect) OwnerSelectSql(ownerName string) (sql string, err error) {
+	sql = `SELECT SCHEMA_NAME,DEFAULT_CHARACTER_SET_NAME,DEFAULT_COLLATION_NAME from information_schema.schemata `
+	sql += ` WHERE SCHEMA_NAME='` + ownerName + `'`
+	return
+}
+func (this_ *MysqlDialect) OwnerCreateSql(owner *OwnerModel) (sqlList []string, err error) {
 	var sql string
-	sql = `CREATE DATABASE ` + param.packingCharacterOwner(owner.Name)
+	sql = `CREATE DATABASE ` + this_.PackOwner(owner.Name)
 	if owner.CharacterSetName != "" {
 		sql += ` CHARACTER SET ` + owner.CharacterSetName
-	} else if param.CharacterSetName != "" {
-		sql += ` CHARACTER SET ` + param.CharacterSetName
 	}
 	if owner.CollationName != "" {
 		sql += ` COLLATE '` + owner.CollationName + "'"
-	} else if param.CollationName != "" {
-		sql += ` COLLATE '` + param.CollationName + "'"
 	}
 
 	sqlList = append(sqlList, sql)
 	return
 }
-func (this_ *MysqlDialect) OwnerDeleteSql(param *GenerateParam, ownerName string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) OwnerDeleteSql(ownerName string) (sqlList []string, err error) {
 	var sql string
-	sql = `DROP DATABASE IF EXISTS ` + param.packingCharacterOwner(ownerName)
+	sql = `DROP DATABASE IF EXISTS ` + this_.PackOwner(ownerName)
 
 	sqlList = append(sqlList, sql)
 	return
@@ -191,23 +249,23 @@ func (this_ *MysqlDialect) TableSelectSql(ownerName string, tableName string) (s
 	sql += `ORDER BY TABLE_NAME`
 	return
 }
-func (this_ *MysqlDialect) TableCreateSql(param *GenerateParam, ownerName string, table *TableModel) (sqlList []string, err error) {
+func (this_ *MysqlDialect) TableCreateSql(ownerName string, table *TableModel) (sqlList []string, err error) {
 	sqlList = []string{}
 
 	createTableSql := `CREATE TABLE `
 
-	if param.AppendOwner && ownerName != "" {
-		createTableSql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		createTableSql += this_.PackOwner(ownerName) + "."
 	}
-	createTableSql += param.packingCharacterTable(table.Name)
+	createTableSql += this_.PackTable(table.Name)
 
 	createTableSql += `(`
 	createTableSql += "\n"
 	primaryKeys := ""
 	for _, column := range table.ColumnList {
-		var columnSql = param.packingCharacterColumn(column.Name)
+		var columnSql = this_.PackColumn(column.Name)
 		var columnType string
-		columnType, err = this_.FormatColumnType(column.Type, column.Length, column.Decimal)
+		columnType, err = this_.FormatColumnType(column)
 		if err != nil {
 			return
 		}
@@ -218,13 +276,13 @@ func (this_ *MysqlDialect) TableCreateSql(param *GenerateParam, ownerName string
 			columnSql += ` CHARACTER SET ` + column.CharacterSetName
 		}
 		if column.Default != "" {
-			columnSql += " DEFAULT " + formatStringValue("'", column.Default)
+			columnSql += " " + this_.FormatDefaultValue(column)
 		}
 		if column.NotNull {
 			columnSql += ` NOT NULL`
 		}
 		if column.Comment != "" {
-			columnSql += " COMMENT " + formatStringValue("'", column.Comment)
+			columnSql += " COMMENT " + this_.PackValue(nil, column.Comment)
 		}
 
 		if column.PrimaryKey {
@@ -235,15 +293,15 @@ func (this_ *MysqlDialect) TableCreateSql(param *GenerateParam, ownerName string
 	}
 	if primaryKeys != "" {
 		primaryKeys = strings.TrimSuffix(primaryKeys, ",")
-		createTableSql += "\tPRIMARY KEY (" + param.packingCharacterColumns(primaryKeys) + ")"
+		createTableSql += "\tPRIMARY KEY (" + this_.PackColumns(strings.Split(primaryKeys, ",")) + ")"
 	}
 
 	createTableSql = strings.TrimSuffix(createTableSql, ",\n")
 	createTableSql += "\n"
 
 	createTableSql += `)`
-	if param.CharacterSetName != "" {
-		createTableSql += ` DEFAULT CHARSET ` + param.CharacterSetName
+	if table.CharacterSetName != "" {
+		createTableSql += ` DEFAULT CHARSET ` + table.CharacterSetName
 	}
 
 	sqlList = append(sqlList, createTableSql)
@@ -251,7 +309,7 @@ func (this_ *MysqlDialect) TableCreateSql(param *GenerateParam, ownerName string
 	var sqlList_ []string
 	// 添加注释
 	if table.Comment != "" {
-		sqlList_, err = this_.TableCommentSql(param, ownerName, table.Name, table.Comment)
+		sqlList_, err = this_.TableCommentSql(ownerName, table.Name, table.Comment)
 		if err != nil {
 			return
 		}
@@ -259,7 +317,7 @@ func (this_ *MysqlDialect) TableCreateSql(param *GenerateParam, ownerName string
 	}
 
 	for _, one := range table.IndexList {
-		sqlList_, err = this_.IndexAddSql(param, ownerName, table.Name, one)
+		sqlList_, err = this_.IndexAddSql(ownerName, table.Name, one)
 		if err != nil {
 			return
 		}
@@ -268,25 +326,36 @@ func (this_ *MysqlDialect) TableCreateSql(param *GenerateParam, ownerName string
 	}
 	return
 }
-func (this_ *MysqlDialect) TableCommentSql(param *GenerateParam, ownerName string, tableName string, comment string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) TableCommentSql(ownerName string, tableName string, comment string) (sqlList []string, err error) {
 	sql := "ALTER TABLE "
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		sql += this_.PackOwner(ownerName) + "."
 	}
-	sql += "" + param.packingCharacterTable(tableName)
-	sql += " COMMENT " + formatStringValue("'", comment)
+	sql += "" + this_.PackTable(tableName)
+	sql += " COMMENT " + this_.PackValue(nil, comment)
 
 	sqlList = append(sqlList, sql)
 	return
 }
-func (this_ *MysqlDialect) TableDeleteSql(param *GenerateParam, ownerName string, tableName string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) TableRenameSql(ownerName string, oldTableName string, newTableName string) (sqlList []string, err error) {
+	sql := "ALTER TABLE  "
+	if ownerName != "" {
+		sql += this_.PackOwner(ownerName) + "."
+	}
+	sql += "" + this_.PackTable(oldTableName)
+	sql += " RENAME AS  "
+	sql += "" + this_.PackTable(newTableName)
+	sqlList = append(sqlList, sql)
+	return
+}
+func (this_ *MysqlDialect) TableDeleteSql(ownerName string, tableName string) (sqlList []string, err error) {
 	var sql string
 	sql = `DROP TABLE IF EXISTS `
 
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		sql += this_.PackOwner(ownerName) + "."
 	}
-	sql += param.packingCharacterTable(tableName)
+	sql += this_.PackTable(tableName)
 
 	sqlList = append(sqlList, sql)
 	return
@@ -304,6 +373,11 @@ func (this_ *MysqlDialect) ColumnModel(data map[string]interface{}) (column *Col
 	}
 	if data["COLUMN_DEFAULT"] != nil {
 		column.Default = GetStringValue(data["COLUMN_DEFAULT"])
+		if strings.Contains(strings.ToLower(column.Default), "current_timestamp") {
+			column.DefaultCurrentTimestamp = true
+		} else if strings.Contains(strings.ToLower(column.Default), "0000-00-00 00:00:00") {
+			column.DefaultCurrentTimestamp = true
+		}
 	}
 	if data["TABLE_NAME"] != nil {
 		column.TableName = data["TABLE_NAME"].(string)
@@ -313,6 +387,12 @@ func (this_ *MysqlDialect) ColumnModel(data map[string]interface{}) (column *Col
 	}
 	if data["CHARACTER_SET_NAME"] != nil {
 		column.CharacterSetName = data["CHARACTER_SET_NAME"].(string)
+	}
+	if data["EXTRA"] != nil {
+		column.Extra = data["EXTRA"].(string)
+		if strings.Contains(strings.ToLower(column.Extra), "on update current_timestamp") {
+			column.OnUpdateCurrentTimestamp = true
+		}
 	}
 
 	if GetStringValue(data["IS_NULLABLE"]) == "NO" {
@@ -327,6 +407,13 @@ func (this_ *MysqlDialect) ColumnModel(data map[string]interface{}) (column *Col
 		}
 		column.Type = columnTypeInfo.Name
 
+		if strings.EqualFold(column.Type, "SET") || strings.EqualFold(column.Type, "ENUM") {
+			if strings.Contains(columnType, "(") {
+				setStr := columnType[strings.Index(columnType, "(")+1 : strings.Index(columnType, ")")]
+				setStr = strings.ReplaceAll(setStr, "'", "")
+				column.Defaults = strings.Split(setStr, ",")
+			}
+		}
 		dataType := data["DATA_TYPE"].(string)
 		if !strings.EqualFold(dataType, column.Type) {
 			err = errors.New("column type [" + columnType + "] not eq data type [" + dataType + "]")
@@ -336,7 +423,7 @@ func (this_ *MysqlDialect) ColumnModel(data map[string]interface{}) (column *Col
 	return
 }
 func (this_ *MysqlDialect) ColumnsSelectSql(ownerName string, tableName string) (sql string, err error) {
-	sql = `SELECT COLUMN_NAME,COLUMN_COMMENT,COLUMN_DEFAULT,TABLE_NAME,TABLE_SCHEMA,CHARACTER_SET_NAME,IS_NULLABLE,COLUMN_TYPE,DATA_TYPE from information_schema.columns `
+	sql = `SELECT COLUMN_NAME,COLUMN_COMMENT,COLUMN_DEFAULT,EXTRA,TABLE_NAME,TABLE_SCHEMA,CHARACTER_SET_NAME,IS_NULLABLE,COLUMN_TYPE,DATA_TYPE from information_schema.columns `
 	sql += `WHERE 1=1 `
 	if ownerName != "" {
 		sql += `AND TABLE_SCHEMA='` + ownerName + `' `
@@ -344,81 +431,80 @@ func (this_ *MysqlDialect) ColumnsSelectSql(ownerName string, tableName string) 
 	sql += `AND TABLE_NAME='` + tableName + `' `
 	return
 }
-func (this_ *MysqlDialect) ColumnAddSql(param *GenerateParam, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
+func (this_ *MysqlDialect) ColumnAddSql(ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
 	var columnType string
-	columnType, err = this_.FormatColumnType(column.Type, column.Length, column.Decimal)
+	columnType, err = this_.FormatColumnType(column)
 	if err != nil {
 		return
 	}
 
 	sql := "ALTER TABLE "
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		sql += this_.PackOwner(ownerName) + "."
 	}
-	sql += "" + param.packingCharacterTable(tableName)
-	sql += " ADD COLUMN " + param.packingCharacterColumn(column.Name)
+	sql += "" + this_.PackTable(tableName)
+	sql += " ADD COLUMN " + this_.PackColumn(column.Name)
 	sql += " " + columnType
 	if column.Default != "" {
-		sql += " DEFAULT " + formatStringValue("'", GetStringValue(column.Default))
+		sql += " " + this_.FormatDefaultValue(column)
 	}
 	if column.NotNull {
 		sql += " NOT NULL"
 	}
-	sql += " COMMENT " + formatStringValue("'", column.Comment)
+	sql += " COMMENT " + this_.PackValue(nil, column.Comment)
 	if column.BeforeColumn != "" {
-		sql += " AFTER " + param.packingCharacterColumn(column.BeforeColumn)
+		sql += " AFTER " + this_.PackColumn(column.BeforeColumn)
 	}
 
 	sqlList = append(sqlList, sql)
 	return
 }
-func (this_ *MysqlDialect) ColumnUpdateSql(param *GenerateParam, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
+func (this_ *MysqlDialect) ColumnUpdateSql(ownerName string, tableName string, oldColumn *ColumnModel, newColumn *ColumnModel) (sqlList []string, err error) {
 	var columnType string
-	columnType, err = this_.FormatColumnType(column.Type, column.Length, column.Decimal)
+	columnType, err = this_.FormatColumnType(newColumn)
 	if err != nil {
 		return
 	}
 
 	sql := "ALTER TABLE "
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		sql += this_.PackOwner(ownerName) + "."
 	}
-	sql += "" + param.packingCharacterTable(tableName)
-	if column.OldName != "" && column.Name != column.OldName {
-		sql += " CHANGE COLUMN " + param.packingCharacterColumn(column.OldName)
-	} else {
-		sql += " MODIFY COLUMN"
-	}
-	sql += " " + param.packingCharacterColumn(column.Name)
+	sql += "" + this_.PackTable(tableName)
+
+	sql += " CHANGE COLUMN"
+	sql += " " + this_.PackColumn(oldColumn.Name)
+	sql += " " + this_.PackColumn(newColumn.Name)
 	sql += " " + columnType
-	if column.NotNull {
-		sql += " NOT NULL"
-	}
-	if column.Default == "" {
+
+	if newColumn.Default == "" {
 		sql += " DEFAULT NULL"
 	} else {
-		sql += " DEFAULT " + formatStringValue("'", GetStringValue(column.Default))
+		sql += " " + this_.FormatDefaultValue(newColumn)
 	}
-	sql += " COMMENT " + formatStringValue("'", column.Comment)
-	if column.BeforeColumn != "" {
-		sql += " AFTER " + param.packingCharacterColumn(column.BeforeColumn)
+	if newColumn.NotNull {
+		sql += " NOT NULL"
+	}
+	sql += " COMMENT " + this_.PackValue(nil, newColumn.Comment)
+	if newColumn.BeforeColumn != "" {
+		sql += " AFTER " + this_.PackColumn(newColumn.BeforeColumn)
 	}
 
 	sqlList = append(sqlList, sql)
 
 	return
 }
-func (this_ *MysqlDialect) ColumnDeleteSql(param *GenerateParam, ownerName string, tableName string, columnName string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) ColumnDeleteSql(ownerName string, tableName string, columnName string) (sqlList []string, err error) {
 	var sql string
 	sql = `ALTER TABLE `
 
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		sql += this_.PackOwner(ownerName) + "."
 	}
-	sql += param.packingCharacterTable(tableName)
+	sql += this_.PackTable(tableName)
 
 	sql += ` DROP COLUMN `
-	sql += param.packingCharacterColumn(columnName)
+	sql += this_.PackColumn(columnName)
 
 	sqlList = append(sqlList, sql)
 	return
@@ -450,26 +536,26 @@ func (this_ *MysqlDialect) PrimaryKeysSelectSql(ownerName string, tableName stri
 	sql += `AND t.CONSTRAINT_TYPE='PRIMARY KEY' `
 	return
 }
-func (this_ *MysqlDialect) PrimaryKeyAddSql(param *GenerateParam, ownerName string, tableName string, primaryKeys []string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) PrimaryKeyAddSql(ownerName string, tableName string, primaryKeys []string) (sqlList []string, err error) {
 	sql := "ALTER TABLE "
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		sql += this_.PackOwner(ownerName) + "."
 	}
-	sql += "" + param.packingCharacterTable(tableName)
+	sql += "" + this_.PackTable(tableName)
 
 	sql += ` ADD PRIMARY KEY `
 
-	sql += "(" + param.packingCharacterColumns(strings.Join(primaryKeys, ",")) + ")"
+	sql += "(" + this_.PackColumns(primaryKeys) + ")"
 
 	sqlList = append(sqlList, sql)
 	return
 }
-func (this_ *MysqlDialect) PrimaryKeyDeleteSql(param *GenerateParam, ownerName string, tableName string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) PrimaryKeyDeleteSql(ownerName string, tableName string) (sqlList []string, err error) {
 	sql := "ALTER TABLE "
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		sql += this_.PackOwner(ownerName) + "."
 	}
-	sql += "" + param.packingCharacterTable(tableName)
+	sql += "" + this_.PackTable(tableName)
 
 	sql += ` DROP PRIMARY KEY `
 
@@ -522,12 +608,14 @@ func (this_ *MysqlDialect) IndexesSelectSql(ownerName string, tableName string) 
 	return
 }
 
-func (this_ *MysqlDialect) IndexAddSql(param *GenerateParam, ownerName string, tableName string, index *IndexModel) (sqlList []string, err error) {
+// ALTER TABLE [${ownerName}.]${tableName} ADD ${'PRIMARY KEY' | 'UNIQUE' | 'INDEX'} ${indexName} (${columns}) [COMMENT '${indexCommend}']
+
+func (this_ *MysqlDialect) IndexAddSql(ownerName string, tableName string, index *IndexModel) (sqlList []string, err error) {
 	sql := "ALTER TABLE "
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		sql += this_.PackOwner(ownerName) + "."
 	}
-	sql += "" + param.packingCharacterTable(tableName)
+	sql += "" + this_.PackTable(tableName)
 
 	switch strings.ToUpper(index.Type) {
 	case "PRIMARY":
@@ -543,62 +631,31 @@ func (this_ *MysqlDialect) IndexAddSql(param *GenerateParam, ownerName string, t
 		return
 	}
 	if index.Name != "" {
-		sql += "" + param.packingCharacterColumn(index.Name) + " "
+		sql += "" + this_.PackColumn(index.Name) + " "
 	}
 	if len(index.Columns) > 0 {
-		sql += "(" + param.packingCharacterColumns(strings.Join(index.Columns, ",")) + ")"
+		sql += "(" + this_.PackColumns(index.Columns) + ")"
 	}
 
 	if index.Comment != "" {
-		sql += " COMMENT " + formatStringValue("'", index.Comment)
+		sql += " COMMENT " + this_.PackValue(nil, index.Comment)
 	}
 
 	sqlList = append(sqlList, sql)
 	return
 }
 
-func (this_ *MysqlDialect) IndexUpdateSql(param *GenerateParam, ownerName string, tableName string, index *IndexModel) (sqlList []string, err error) {
-	sql := "ALTER TABLE "
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
-	}
-	sql += "" + param.packingCharacterTable(tableName)
+// ALTER TABLE [${ownerName}.]${tableName} DROP INDEX ${indexName}
 
-	if index.OldName != "" {
-		sql += " DROP INDEX " + param.packingCharacterColumn(index.OldName) + ","
-	} else {
-		sql += " DROP INDEX " + param.packingCharacterColumn(index.Name) + ","
-	}
-	switch strings.ToUpper(index.Type) {
-	case "PRIMARY":
-		sql += " ADD PRIMARY KEY "
-	case "UNIQUE":
-		sql += " ADD UNIQUE "
-	case "FULLTEXT":
-		sql += " ADD FULLTEXT "
-	case "":
-		sql += " ADD INDEX "
-	default:
-		err = errors.New("dialect [" + this_.DialectType().Name + "] not support index type [" + index.Type + "]")
-		return
-	}
-	sql += " " + param.packingCharacterColumn(index.Name) + "(" + param.packingCharacterColumns(strings.Join(index.Columns, ",")) + ")"
-
-	if index.Comment != "" {
-		sql += " COMMENT " + formatStringValue("'", index.Comment)
-	}
-	sqlList = append(sqlList, sql)
-	return
-}
-func (this_ *MysqlDialect) IndexDeleteSql(param *GenerateParam, ownerName string, tableName string, indexName string) (sqlList []string, err error) {
+func (this_ *MysqlDialect) IndexDeleteSql(ownerName string, tableName string, indexName string) (sqlList []string, err error) {
 	sql := "ALTER TABLE "
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		sql += this_.PackOwner(ownerName) + "."
 	}
-	sql += "" + param.packingCharacterTable(tableName)
+	sql += "" + this_.PackTable(tableName)
 
 	sql += ` DROP INDEX `
-	sql += "" + param.packingCharacterColumn(indexName)
+	sql += "" + this_.PackColumn(indexName)
 
 	sqlList = append(sqlList, sql)
 	return

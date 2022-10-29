@@ -7,21 +7,17 @@ import (
 	"strings"
 )
 
-func NewConvertParser(srcSql string, dest dialect.Dialect, param *dialect.GenerateParam) *ConvertParser {
-	if param == nil {
-		param = &dialect.GenerateParam{}
-	}
+func NewConvertParser(srcSql string, dest dialect.Dialect) *ConvertParser {
+
 	return &ConvertParser{
 		srcSql: srcSql,
 		dest:   dest,
-		param:  param,
 	}
 }
 
 type ConvertParser struct {
 	srcSql  string
 	dest    dialect.Dialect
-	param   *dialect.GenerateParam
 	sqlList []string
 	destSql string
 }
@@ -89,7 +85,7 @@ func (this_ *ConvertParser) parse(stmt_ sqlparser.Statement) (err error) {
 		if err != nil {
 			return err
 		}
-		sqlList, err := this_.dest.InsertSql(this_.param, insert)
+		sqlList, err := this_.dest.InsertSql(insert)
 		if err != nil {
 			return err
 		}
@@ -103,7 +99,7 @@ func (this_ *ConvertParser) parse(stmt_ sqlparser.Statement) (err error) {
 		if err != nil {
 			return err
 		}
-		sqlList, err := this_.dest.TableCreateSql(this_.param, databaseName, table)
+		sqlList, err := this_.dest.TableCreateSql(databaseName, table)
 		if err != nil {
 			return err
 		}

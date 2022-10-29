@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_dm"
-	"strings"
 	"testing"
 )
 
@@ -25,41 +24,19 @@ func initDaMen() {
 	return
 }
 
-func TestDaMen(t *testing.T) {
+func TestDaMenLoad(t *testing.T) {
 	initDaMen()
 	owners(DaMenDb, dialect.DaMen)
 }
 
-func TestDaMenTableCreate(t *testing.T) {
+func TestDaMenDDL(t *testing.T) {
 	initDaMen()
-	param := &dialect.GenerateParam{
-		AppendOwner: true,
-	}
 	//testTableDelete(DaMenDb, dialect.DaMen, param, "", getTable().Name)
-	testTableCreate(DaMenDb, dialect.DaMen, param, "", getTable())
-
-	testColumnUpdate(DaMenDb, dialect.DaMen, param, "", getTable().Name, &dialect.ColumnModel{
-		Name:    "name1",
-		Type:    "varchar",
-		Length:  500,
-		Comment: "name1注释",
-		OldName: "name",
-	})
-	testColumnDelete(DaMenDb, dialect.DaMen, param, "", getTable().Name, "detail3")
-	testColumnAdd(DaMenDb, dialect.DaMen, param, "", getTable().Name, &dialect.ColumnModel{
-		Name:    "name2",
-		Type:    "varchar",
-		Length:  500,
-		Comment: "name2注释",
-	})
-	tableDetail(DaMenDb, dialect.DaMen, "", getTable().Name)
-	testTableDelete(DaMenDb, dialect.DaMen, param, "", getTable().Name)
+	testDLL(DaMenDb, dialect.DaMen, "")
 }
 
 func TestDaMenSql(t *testing.T) {
 	initDaMen()
 	sqlInfo := loadSql("temp/sql_damen.sql")
-	sqlList := strings.Split(sqlInfo, ";\n")
-	exec(DaMenDb, sqlList)
-	tables(DaMenDb, dialect.DaMen, "SYSDBA")
+	testSql(DaMenDb, dialect.DaMen, "SYSDBA", sqlInfo)
 }

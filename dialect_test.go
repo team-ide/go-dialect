@@ -32,8 +32,43 @@ func getTable() (table *dialect.TableModel) {
 	return
 }
 
-func testOwnerCreate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, owner *dialect.OwnerModel) {
-	sqlList, err := dialect2.OwnerCreateSql(param, owner)
+func testDLL(db *sql.DB, dia dialect.Dialect, ownerName string) {
+	initKinBase()
+	table := getTable()
+	testTableCreate(db, dia, ownerName, getTable())
+
+	testColumnUpdate(db, dia, ownerName, table.Name,
+		&dialect.ColumnModel{
+			Name:    "name",
+			Type:    "varchar",
+			Length:  500,
+			Comment: "name1注释",
+		}, &dialect.ColumnModel{
+			Name:    "name1",
+			Type:    "varchar",
+			Length:  600,
+			Comment: "name1注释",
+		},
+	)
+	testColumnDelete(db, dia, ownerName, table.Name, "detail3")
+	testColumnAdd(db, dia, ownerName, table.Name, &dialect.ColumnModel{
+		Name:    "name2",
+		Type:    "varchar",
+		Length:  500,
+		Comment: "name2注释",
+	})
+	tableDetail(db, dia, ownerName, table.Name)
+	testTableDelete(db, dia, ownerName, table.Name)
+}
+
+func testSql(db *sql.DB, dia dialect.Dialect, ownerName, sqlInfo string) {
+	sqlList := worker.SplitSqlList(sqlInfo)
+	exec(db, sqlList)
+	tables(db, dia, ownerName)
+}
+
+func testOwnerCreate(db *sql.DB, dia dialect.Dialect, owner *dialect.OwnerModel) {
+	sqlList, err := dia.OwnerCreateSql(owner)
 	if err != nil {
 		panic(err)
 	}
@@ -43,8 +78,8 @@ func testOwnerCreate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.Genera
 	fmt.Println()
 }
 
-func testOwnerDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, ownerName string) {
-	sqlList, err := dialect2.OwnerDeleteSql(param, ownerName)
+func testOwnerDelete(db *sql.DB, dia dialect.Dialect, ownerName string) {
+	sqlList, err := dia.OwnerDeleteSql(ownerName)
 	if err != nil {
 		panic(err)
 	}
@@ -53,8 +88,8 @@ func testOwnerDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.Genera
 	fmt.Println()
 	fmt.Println()
 }
-func testTableCreate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, ownerName string, table *dialect.TableModel) {
-	sqlList, err := dialect2.TableCreateSql(param, ownerName, table)
+func testTableCreate(db *sql.DB, dia dialect.Dialect, ownerName string, table *dialect.TableModel) {
+	sqlList, err := dia.TableCreateSql(ownerName, table)
 	if err != nil {
 		panic(err)
 	}
@@ -64,8 +99,8 @@ func testTableCreate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.Genera
 	fmt.Println()
 
 }
-func testTableDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, ownerName string, tableName string) {
-	sqlList, err := dialect2.TableDeleteSql(param, ownerName, tableName)
+func testTableDelete(db *sql.DB, dia dialect.Dialect, ownerName string, tableName string) {
+	sqlList, err := dia.TableDeleteSql(ownerName, tableName)
 	if err != nil {
 		panic(err)
 	}
@@ -75,8 +110,8 @@ func testTableDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.Genera
 	fmt.Println()
 
 }
-func testColumnAdd(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, ownerName string, tableName string, column *dialect.ColumnModel) {
-	sqlList, err := dialect2.ColumnAddSql(param, ownerName, tableName, column)
+func testColumnAdd(db *sql.DB, dia dialect.Dialect, ownerName string, tableName string, column *dialect.ColumnModel) {
+	sqlList, err := dia.ColumnAddSql(ownerName, tableName, column)
 	if err != nil {
 		panic(err)
 	}
@@ -86,19 +121,19 @@ func testColumnAdd(db *sql.DB, dialect2 dialect.Dialect, param *dialect.Generate
 	fmt.Println()
 
 }
-func testColumnUpdate(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, ownerName string, tableName string, column *dialect.ColumnModel) {
-	sqlList, err := dialect2.ColumnUpdateSql(param, ownerName, tableName, column)
+func testColumnUpdate(db *sql.DB, dia dialect.Dialect, ownerName string, tableName string, oldColumn *dialect.ColumnModel, newColumn *dialect.ColumnModel) {
+	sqlList, err := dia.ColumnUpdateSql(ownerName, tableName, oldColumn, newColumn)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("--------owner [" + ownerName + "] table [" + tableName + "] column [" + column.Name + "] update--------")
+	fmt.Println("--------owner [" + ownerName + "] table [" + tableName + "] column [" + oldColumn.Name + "] update--------")
 	exec(db, sqlList)
 	fmt.Println()
 	fmt.Println()
 
 }
-func testColumnDelete(db *sql.DB, dialect2 dialect.Dialect, param *dialect.GenerateParam, ownerName string, tableName string, columnName string) {
-	sqlList, err := dialect2.ColumnDeleteSql(param, ownerName, tableName, columnName)
+func testColumnDelete(db *sql.DB, dia dialect.Dialect, ownerName string, tableName string, columnName string) {
+	sqlList, err := dia.ColumnDeleteSql(ownerName, tableName, columnName)
 	if err != nil {
 		panic(err)
 	}

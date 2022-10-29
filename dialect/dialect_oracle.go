@@ -83,6 +83,11 @@ func (this_ *OracleDialect) OwnersSelectSql() (sql string, err error) {
 	sql = `SELECT USERNAME FROM DBA_USERS ORDER BY USERNAME`
 	return
 }
+func (this_ *OracleDialect) OwnerSelectSql(ownerName string) (sql string, err error) {
+	sql = `SELECT USERNAME FROM DBA_USERS `
+	sql += ` WHERE USERNAME='` + ownerName + `'`
+	return
+}
 
 func (this_ *OracleDialect) TableModel(data map[string]interface{}) (table *TableModel, err error) {
 	if data == nil {

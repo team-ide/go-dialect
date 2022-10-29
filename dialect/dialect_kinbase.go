@@ -107,57 +107,53 @@ func (this_ *KinBaseDialect) init() {
 	this_.AddFuncTypeInfo(&FuncTypeInfo{Name: "md5", Format: "md5"})
 }
 
-func (this_ *KinBaseDialect) ColumnUpdateSql(param *GenerateParam, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
-	var columnType string
-	columnType, err = this_.FormatColumnType(column.Type, column.Length, column.Decimal)
-	if err != nil {
-		return
-	}
+func (this_ *KinBaseDialect) ColumnUpdateSql(ownerName string, tableName string, oldColumn *ColumnModel, newColumn *ColumnModel) (sqlList []string, err error) {
 
-	var sqlList_ []string
-
-	if column.OldName != "" && column.OldName != column.Name {
-		sqlList_, err = this_.columnRenameSql(param, ownerName, tableName, column.OldName, column.Name)
+	if oldColumn.Name != newColumn.Name {
+		var sqlList_ []string
+		sqlList_, err = this_.ColumnRenameSql(ownerName, tableName, oldColumn.Name, newColumn.Name)
 		if err != nil {
 			return
 		}
 		sqlList = append(sqlList, sqlList_...)
 	}
 
-	if column.Type != column.OldType ||
-		column.Length != column.OldLength ||
-		column.Decimal != column.OldDecimal ||
-		column.NotNull != column.OldNotNull ||
-		column.Default != column.OldDefault ||
-		column.BeforeColumn != "" {
+	if oldColumn.Type != newColumn.Type ||
+		oldColumn.Length != newColumn.Length ||
+		oldColumn.Decimal != newColumn.Decimal ||
+		oldColumn.Default != newColumn.Default ||
+		oldColumn.NotNull != newColumn.NotNull ||
+		oldColumn.BeforeColumn != newColumn.BeforeColumn {
+		var columnType string
+		columnType, err = this_.FormatColumnType(newColumn)
+		if err != nil {
+			return
+		}
+
 		var sql string
 		sql = `ALTER TABLE `
 
-		if param.AppendOwner && ownerName != "" {
-			sql += param.packingCharacterOwner(ownerName) + "."
+		if ownerName != "" {
+			sql += this_.PackOwner(ownerName) + "."
 		}
-		sql += param.packingCharacterTable(tableName)
+		sql += this_.PackTable(tableName)
 
 		sql += ` ALTER COLUMN `
-		sql += param.packingCharacterColumn(column.Name)
+		sql += this_.PackColumn(newColumn.Name)
 		sql += ` TYPE `
 		sql += ` ` + columnType + ``
-		if column.NotNull {
-			sql += ` NOT NULL`
+		if newColumn.Default == "" {
+			sql += " DEFAULT NULL"
+		} else {
+			sql += " " + this_.FormatDefaultValue(newColumn)
 		}
-		if column.Default != "" {
-			sql += ` DEFAULT ` + formatStringValue("'", GetStringValue(column.Default))
+		if newColumn.NotNull {
+			sql += ` NOT NULL`
 		}
 		sql += ``
 
 		sqlList = append(sqlList, sql)
 	}
-	if column.Comment != column.OldComment {
-		sqlList_, err = this_.ColumnCommentSql(param, ownerName, tableName, column.Name, column.Comment)
-		if err != nil {
-			return
-		}
-		sqlList = append(sqlList, sqlList_...)
-	}
+
 	return
 }

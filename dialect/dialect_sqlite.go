@@ -107,7 +107,7 @@ func (this_ *SqliteDialect) init() {
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "MEDIUMBLOB", TypeFormat: "MEDIUMBLOB($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONGBLOB", TypeFormat: "LONGBLOB", HasLength: false, IsString: true})
 
-	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SET", TypeFormat: "SET($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SET", TypeFormat: "VARCHAR(100)", HasLength: true, IsString: true})
 
 	this_.AddFuncTypeInfo(&FuncTypeInfo{Name: "md5", Format: "md5"})
 }
@@ -126,11 +126,15 @@ func (this_ *SqliteDialect) OwnersSelectSql() (sql string, err error) {
 	sql = `SELECT name FROM pragma_database_list AS t_i ORDER BY name `
 	return
 }
-func (this_ *SqliteDialect) OwnerCreateSql(param *GenerateParam, owner *OwnerModel) (sqlList []string, err error) {
+func (this_ *SqliteDialect) OwnerSelectSql(ownerName string) (sql string, err error) {
+	sql = `SELECT name FROM pragma_database_list AS t_i ORDER BY name `
+	return
+}
+func (this_ *SqliteDialect) OwnerCreateSql(owner *OwnerModel) (sqlList []string, err error) {
 
 	return
 }
-func (this_ *SqliteDialect) OwnerDeleteSql(param *GenerateParam, ownerName string) (sqlList []string, err error) {
+func (this_ *SqliteDialect) OwnerDeleteSql(ownerName string) (sqlList []string, err error) {
 
 	return
 }
@@ -158,31 +162,31 @@ func (this_ *SqliteDialect) TableSelectSql(ownerName string, tableName string) (
 	sql += `ORDER BY name`
 	return
 }
-func (this_ *SqliteDialect) TableCreateSql(param *GenerateParam, ownerName string, table *TableModel) (sqlList []string, err error) {
+func (this_ *SqliteDialect) TableCreateSql(ownerName string, table *TableModel) (sqlList []string, err error) {
 
 	createTableSql := `CREATE TABLE `
 
-	if param.AppendOwner && ownerName != "" {
-		createTableSql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		createTableSql += this_.PackOwner(ownerName) + "."
 	}
-	createTableSql += param.packingCharacterTable(table.Name)
+	createTableSql += this_.PackTable(table.Name)
 
 	createTableSql += `(`
 	createTableSql += "\n"
 	primaryKeys := ""
 	if len(table.ColumnList) > 0 {
 		for _, column := range table.ColumnList {
-			var columnSql = param.packingCharacterColumn(column.Name)
+			var columnSql = this_.PackColumn(column.Name)
 
 			var columnType string
-			columnType, err = this_.FormatColumnType(column.Type, column.Length, column.Decimal)
+			columnType, err = this_.FormatColumnType(column)
 			if err != nil {
 				return
 			}
 			columnSql += " " + columnType
 
 			if column.Default != "" {
-				columnSql += ` DEFAULT ` + formatStringValue("'", GetStringValue(column.Default))
+				columnSql += ` ` + this_.FormatDefaultValue(column)
 			}
 			if column.NotNull {
 				columnSql += ` NOT NULL`
@@ -196,7 +200,7 @@ func (this_ *SqliteDialect) TableCreateSql(param *GenerateParam, ownerName strin
 	}
 	if primaryKeys != "" {
 		primaryKeys = strings.TrimSuffix(primaryKeys, ",")
-		createTableSql += "\tPRIMARY KEY (" + param.packingCharacterColumns(primaryKeys) + ")"
+		createTableSql += "\tPRIMARY KEY (" + this_.PackColumns(strings.Split(primaryKeys, ",")) + ")"
 	}
 
 	createTableSql = strings.TrimSuffix(createTableSql, ",\n")
@@ -209,7 +213,7 @@ func (this_ *SqliteDialect) TableCreateSql(param *GenerateParam, ownerName strin
 	if len(table.IndexList) > 0 {
 		for _, one := range table.IndexList {
 			var sqlList_ []string
-			sqlList_, err = this_.IndexAddSql(param, ownerName, table.Name, one)
+			sqlList_, err = this_.IndexAddSql(ownerName, table.Name, one)
 			if err != nil {
 				return
 			}
@@ -218,18 +222,18 @@ func (this_ *SqliteDialect) TableCreateSql(param *GenerateParam, ownerName strin
 	}
 	return
 }
-func (this_ *SqliteDialect) TableCommentSql(param *GenerateParam, ownerName string, tableName string, comment string) (sqlList []string, err error) {
+func (this_ *SqliteDialect) TableCommentSql(ownerName string, tableName string, comment string) (sqlList []string, err error) {
 
 	return
 }
-func (this_ *SqliteDialect) TableDeleteSql(param *GenerateParam, ownerName string, tableName string) (sqlList []string, err error) {
+func (this_ *SqliteDialect) TableDeleteSql(ownerName string, tableName string) (sqlList []string, err error) {
 	var sql string
 	sql = `DROP TABLE `
 
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		sql += this_.PackOwner(ownerName) + "."
 	}
-	sql += param.packingCharacterTable(tableName)
+	sql += this_.PackTable(tableName)
 	sqlList = append(sqlList, sql)
 	return
 }
@@ -266,9 +270,9 @@ func (this_ *SqliteDialect) ColumnsSelectSql(ownerName string, tableName string)
 	sql = `SELECT name,dflt_value,"notnull",type FROM pragma_table_info("` + tableName + `") AS t_i `
 	return
 }
-func (this_ *SqliteDialect) ColumnAddSql(param *GenerateParam, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
+func (this_ *SqliteDialect) ColumnAddSql(ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
 	var columnType string
-	columnType, err = this_.FormatColumnType(column.Type, column.Length, column.Decimal)
+	columnType, err = this_.FormatColumnType(column)
 	if err != nil {
 		return
 	}
@@ -276,16 +280,16 @@ func (this_ *SqliteDialect) ColumnAddSql(param *GenerateParam, ownerName string,
 	var sql string
 	sql = `ALTER TABLE `
 
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		sql += this_.PackOwner(ownerName) + "."
 	}
-	sql += param.packingCharacterTable(tableName)
+	sql += this_.PackTable(tableName)
 
 	sql += ` ADD COLUMN `
-	sql += param.packingCharacterColumn(column.Name)
+	sql += this_.PackColumn(column.Name)
 	sql += ` ` + columnType + ``
 	if column.Default != "" {
-		sql += ` DEFAULT ` + formatStringValue("'", GetStringValue(column.Default))
+		sql += ` ` + this_.FormatDefaultValue(column)
 	}
 	if column.NotNull {
 		sql += ` NOT NULL`
@@ -296,42 +300,42 @@ func (this_ *SqliteDialect) ColumnAddSql(param *GenerateParam, ownerName string,
 
 	return
 }
-func (this_ *SqliteDialect) ColumnCommentSql(param *GenerateParam, ownerName string, tableName string, columnName string, comment string) (sqlList []string, err error) {
+func (this_ *SqliteDialect) ColumnCommentSql(ownerName string, tableName string, columnName string, comment string) (sqlList []string, err error) {
 
 	return
 }
-func (this_ *SqliteDialect) columnRenameSql(param *GenerateParam, ownerName string, tableName string, oldName string, newName string) (sqlList []string, err error) {
+func (this_ *SqliteDialect) ColumnRenameSql(ownerName string, tableName string, oldName string, newName string) (sqlList []string, err error) {
 	var sql string
 	sql = `ALTER TABLE `
 
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
+	if ownerName != "" {
+		sql += this_.PackOwner(ownerName) + "."
 	}
-	sql += param.packingCharacterTable(tableName)
+	sql += this_.PackTable(tableName)
 
 	sql += ` RENAME COLUMN `
-	sql += param.packingCharacterColumn(oldName)
+	sql += this_.PackColumn(oldName)
 	sql += ` TO `
-	sql += param.packingCharacterColumn(newName)
+	sql += this_.PackColumn(newName)
 
 	sqlList = append(sqlList, sql)
 	return
 }
-func (this_ *SqliteDialect) ColumnUpdateSql(param *GenerateParam, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
+func (this_ *SqliteDialect) ColumnUpdateSql(ownerName string, tableName string, oldColumn *ColumnModel, newColumn *ColumnModel) (sqlList []string, err error) {
 
 	return
 }
-func (this_ *SqliteDialect) ColumnDeleteSql(param *GenerateParam, ownerName string, tableName string, columnName string) (sqlList []string, err error) {
+func (this_ *SqliteDialect) ColumnDeleteSql(ownerName string, tableName string, columnName string) (sqlList []string, err error) {
 	var sql string
 	sql = `ALTER TABLE `
 
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
-	}
-	sql += param.packingCharacterTable(tableName)
+	//if ownerName != "" {
+	//	sql += this_.PackOwner(ownerName) + "."
+	//}
+	sql += this_.PackTable(tableName)
 
 	sql += ` DROP COLUMN `
-	sql += param.packingCharacterColumn(columnName)
+	sql += this_.PackColumn(columnName)
 
 	sqlList = append(sqlList, sql)
 	return
@@ -373,7 +377,7 @@ func (this_ *SqliteDialect) IndexesSelectSql(ownerName string, tableName string)
 
 	return
 }
-func (this_ *SqliteDialect) IndexAddSql(param *GenerateParam, ownerName string, tableName string, index *IndexModel) (sqlList []string, err error) {
+func (this_ *SqliteDialect) IndexAddSql(ownerName string, tableName string, index *IndexModel) (sqlList []string, err error) {
 	sql := "CREATE "
 	switch strings.ToUpper(index.Type) {
 	case "UNIQUE":
@@ -385,15 +389,15 @@ func (this_ *SqliteDialect) IndexAddSql(param *GenerateParam, ownerName string, 
 		return
 	}
 
-	sql += " " + param.packingCharacterColumn(index.Name) + ""
+	sql += " " + this_.PackColumn(index.Name) + ""
 
 	sql += " ON "
-	if param.AppendOwner && ownerName != "" {
-		sql += param.packingCharacterOwner(ownerName) + "."
-	}
-	sql += "" + param.packingCharacterTable(tableName)
+	//if ownerName != "" {
+	//	sql += this_.PackOwner(ownerName) + "."
+	//}
+	sql += "" + this_.PackTable(tableName)
 
-	sql += "(" + param.packingCharacterColumns(strings.Join(index.Columns, ",")) + ")"
+	sql += "(" + this_.PackColumns(index.Columns) + ")"
 
 	sqlList = append(sqlList, sql)
 	return

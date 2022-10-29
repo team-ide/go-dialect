@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_shentong"
-	"strings"
 	"testing"
 )
 
@@ -25,40 +24,18 @@ func initShenTong() {
 	return
 }
 
-func TestShenTong(t *testing.T) {
+func TestShenTongLoad(t *testing.T) {
 	initShenTong()
 	owners(ShenTongDb, dialect.ShenTong)
 }
 
-func TestShenTongTableCreate(t *testing.T) {
+func TestShenTongDDL(t *testing.T) {
 	initShenTong()
-	param := &dialect.GenerateParam{
-		AppendOwner: true,
-	}
-	testTableCreate(ShenTongDb, dialect.ShenTong, param, "", getTable())
-
-	testColumnUpdate(ShenTongDb, dialect.ShenTong, param, "", getTable().Name, &dialect.ColumnModel{
-		Name:    "name1",
-		Type:    "varchar",
-		Length:  500,
-		Comment: "name1注释",
-		OldName: "name",
-	})
-	testColumnDelete(ShenTongDb, dialect.ShenTong, param, "", getTable().Name, "detail3")
-	testColumnAdd(ShenTongDb, dialect.ShenTong, param, "", getTable().Name, &dialect.ColumnModel{
-		Name:    "name2",
-		Type:    "varchar",
-		Length:  500,
-		Comment: "name2注释",
-	})
-	tableDetail(ShenTongDb, dialect.ShenTong, "", getTable().Name)
-	testTableDelete(ShenTongDb, dialect.ShenTong, param, "", getTable().Name)
+	testDLL(ShenTongDb, dialect.ShenTong, "")
 }
 
 func TestShenTongSql(t *testing.T) {
 	initShenTong()
 	sqlInfo := loadSql("temp/sql_shentong.sql")
-	sqlList := strings.Split(sqlInfo, ";\n")
-	exec(ShenTongDb, sqlList)
-	tables(ShenTongDb, dialect.ShenTong, "SYSDBA")
+	testSql(ShenTongDb, dialect.ShenTong, "SYSDBA", sqlInfo)
 }

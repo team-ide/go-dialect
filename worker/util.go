@@ -2,9 +2,39 @@ package worker
 
 import (
 	"database/sql"
+	"github.com/google/uuid"
 	"github.com/team-ide/go-dialect/dialect"
 	"reflect"
+	"strings"
+	"time"
 )
+
+func SplitSqlList(sqlInfo string) (sqlList []string) {
+	sqlList = strings.Split(sqlInfo, `;(?=([^\']*\'[^\']*\')*[^\']*$)`)
+	return
+}
+
+//NowTime 获取当前时间戳
+func NowTime() int64 {
+	return GetTime(Now())
+}
+
+//GetTime 获取当前时间戳
+func GetTime(time time.Time) int64 {
+	return time.UnixNano() / 1e6
+}
+
+//Now 获取当前时间
+func Now() time.Time {
+	return time.Now()
+}
+
+// UUID 生成UUID
+func UUID() (res string) {
+	res = uuid.NewString()
+	res = strings.ReplaceAll(res, "-", "")
+	return
+}
 
 func GetSqlValueCache(columnTypes []*sql.ColumnType) (cache []interface{}) {
 	cache = make([]interface{}, len(columnTypes)) //临时存储每行数据
@@ -64,29 +94,56 @@ func GetSqlValue(columnType *sql.ColumnType, data interface{}) (value interface{
 		}
 		return GetSqlValue(columnType, vOf.Elem().Interface())
 	}
+	//if columnType.Name() == "NESTING_EVENT_TYPE" {
+	//	fmt.Println("NESTING_EVENT_TYPE value type", reflect.TypeOf(data).String(), " value is ", data)
+	//}
 	switch v := data.(type) {
 	case sql.NullString:
+		if !v.Valid {
+			return nil
+		}
 		value = (v).String
 		break
 	case sql.NullBool:
+		if !v.Valid {
+			return nil
+		}
 		value = (v).Bool
 		break
 	case sql.NullByte:
+		if !v.Valid {
+			return nil
+		}
 		value = (v).Byte
 		break
 	case sql.NullFloat64:
+		if !v.Valid {
+			return nil
+		}
 		value = (v).Float64
 		break
 	case sql.NullInt16:
+		if !v.Valid {
+			return nil
+		}
 		value = (v).Int16
 		break
 	case sql.NullInt32:
+		if !v.Valid {
+			return nil
+		}
 		value = (v).Int32
 		break
 	case sql.NullInt64:
+		if !v.Valid {
+			return nil
+		}
 		value = (v).Int64
 		break
 	case sql.NullTime:
+		if !v.Valid {
+			return nil
+		}
 		value = (v).Time
 		break
 	case sql.RawBytes:
@@ -106,4 +163,37 @@ func GetSqlValue(columnType *sql.ColumnType, data interface{}) (value interface{
 		break
 	}
 	return
+}
+
+//SplitArrayMap 分割数组，根据传入的数组和分割大小，将数组分割为大小等于指定大小的多个数组，如果不够分，则最后一个数组元素小于其他数组
+func SplitArrayMap(arr []map[string]interface{}, num int) [][]map[string]interface{} {
+	max := len(arr)
+	//判断数组大小是否小于等于指定分割大小的值，是则把原数组放入二维数组返回
+	if max <= num {
+		if max == 0 {
+			return [][]map[string]interface{}{}
+		}
+		return [][]map[string]interface{}{arr}
+	}
+	//获取应该数组分割为多少份
+	var quantity int
+	if max%num == 0 {
+		quantity = max / num
+	} else {
+		quantity = (max / num) + 1
+	}
+	//声明分割好的二维数组
+	var segments = make([][]map[string]interface{}, 0)
+	//声明分割数组的截止下标
+	var start, end, i int
+	for i = 1; i <= quantity; i++ {
+		end = i * num
+		if i != quantity {
+			segments = append(segments, arr[start:end])
+		} else {
+			segments = append(segments, arr[start:])
+		}
+		start = i * num
+	}
+	return segments
 }

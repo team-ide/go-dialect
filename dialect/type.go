@@ -28,19 +28,18 @@ func (this_ *ColumnTypeInfo) FormatColumnType(length int, decimal int) (columnTy
 	if this_.FormatFunc != nil {
 		return this_.FormatFunc(length, decimal)
 	}
-	if this_.TypeFormat == "VARCHAR2($l)" {
-		if length <= 0 {
-			length = 4000
-		}
-	}
 	columnType = this_.TypeFormat
 	lStr := ""
 	dStr := ""
-	if length > 0 {
+	if length >= 0 {
 		lStr = strconv.Itoa(length)
-		if decimal > 0 {
-			dStr = strconv.Itoa(decimal)
-		}
+	}
+	if decimal >= 0 {
+		dStr = strconv.Itoa(decimal)
+	}
+	if length == 0 && decimal == 0 {
+		lStr = ""
+		dStr = ""
 	}
 	columnType = strings.ReplaceAll(columnType, "$l", lStr)
 	columnType = strings.ReplaceAll(columnType, "$d", dStr)
