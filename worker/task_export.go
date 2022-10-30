@@ -80,20 +80,27 @@ func (this_ *taskExport) do() (err error) {
 	return
 }
 
-func (this_ *taskExport) getFileName(name string) (fileName string, err error) {
+func (this_ *taskExport) getFileName(dir string, name string) (fileName string, err error) {
 	var exist bool
 	if this_.Dir != "" {
-		exist, err = PathExists(this_.Dir)
+		if dir != "" {
+			dir = this_.Dir + string(os.PathSeparator) + dir
+		} else {
+			dir = this_.Dir
+		}
+	}
+	if dir != "" {
+		exist, err = PathExists(dir)
 		if err != nil {
 			return
 		}
 		if !exist {
-			err = os.MkdirAll(this_.Dir, 0777)
+			err = os.MkdirAll(dir, 0777)
 			if err != nil {
 				return
 			}
 		}
-		fileName = this_.Dir + string(os.PathSeparator)
+		fileName = dir + string(os.PathSeparator)
 	}
 	fileName += name
 	return
@@ -148,9 +155,9 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (err error) {
 	}
 
 	var ownerDataSource DataSource
-	if this_.DataSourceType.OwnerFileName != nil {
-		fileName := this_.DataSourceType.OwnerFileName(ownerName)
-		fileName, err = this_.getFileName(fileName)
+	if !this_.DataSourceType.OwnerIsDir {
+		fileName := ownerName + "." + this_.DataSourceType.FileSuffix
+		fileName, err = this_.getFileName("", fileName)
 		if err != nil {
 			return
 		}
@@ -160,7 +167,7 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (err error) {
 		}
 		ownerDataSource = this_.DataSourceType.New(param)
 		err = ownerDataSource.WriteStart()
-		go func() {
+		defer func() {
 			_ = ownerDataSource.WriteEnd()
 		}()
 	}
@@ -222,9 +229,9 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 	}
 
 	var tableDataSource DataSource
-	if this_.DataSourceType.TableFileName != nil {
-		fileName := this_.DataSourceType.TableFileName(targetOwnerName, targetTableName)
-		fileName, err = this_.getFileName(fileName)
+	if this_.DataSourceType.OwnerIsDir {
+		fileName := targetTableName + "." + this_.DataSourceType.FileSuffix
+		fileName, err = this_.getFileName(targetOwnerName, fileName)
 		if err != nil {
 			return
 		}

@@ -1,44 +1,36 @@
 package worker
 
 type DataSourceType struct {
-	Name          string `json:"name"`
-	New           func(param *DataSourceParam) (dataSource DataSource)
-	OwnerFileName func(ownerName string) (fileName string)
-	TableFileName func(ownerName string, tableName string) (fileName string)
+	Name       string `json:"name"`
+	New        func(param *DataSourceParam) (dataSource DataSource)
+	FileSuffix string `json:"fileSuffix"`
+	OwnerIsDir bool   `json:"ownerIsDir"`
 }
 
 var (
 	DataSourceTypeSql = &DataSourceType{
-		Name: "sql",
-		New:  NewDataSourceSql,
-		OwnerFileName: func(ownerName string) (fileName string) {
-			fileName = formatFileName(ownerName, "") + ".sql"
-			return
-		},
+		Name:       "sql",
+		FileSuffix: "sql",
+		OwnerIsDir: false,
+		New:        NewDataSourceSql,
 	}
 	DataSourceTypeExcel = &DataSourceType{
-		Name: "excel",
-		New:  NewDataSourceExcel,
-		TableFileName: func(ownerName string, tableName string) (fileName string) {
-			fileName = formatFileName(ownerName, tableName) + ".xlsx"
-			return
-		},
+		Name:       "excel",
+		FileSuffix: "xlsx",
+		OwnerIsDir: true,
+		New:        NewDataSourceExcel,
 	}
 	DataSourceTypeText = &DataSourceType{
-		Name: "text",
-		New:  NewDataSourceText,
-		TableFileName: func(ownerName string, tableName string) (fileName string) {
-			fileName = formatFileName(ownerName, tableName) + ".txt"
-			return
-		},
+		Name:       "text",
+		FileSuffix: "txt",
+		OwnerIsDir: true,
+		New:        NewDataSourceText,
 	}
 	DataSourceTypeCsv = &DataSourceType{
-		Name: "csv",
-		New:  NewDataSourceCsv,
-		TableFileName: func(ownerName string, tableName string) (fileName string) {
-			fileName = formatFileName(ownerName, tableName) + ".csv"
-			return
-		},
+		Name:       "csv",
+		FileSuffix: "csv",
+		OwnerIsDir: true,
+		New:        NewDataSourceCsv,
 	}
 
 	DataSourceTypeList = []*DataSourceType{
@@ -48,19 +40,3 @@ var (
 		DataSourceTypeCsv,
 	}
 )
-
-func formatFileName(ownerName string, tableName string) (fileName string) {
-	if ownerName != "" {
-		if fileName != "" {
-			fileName += "-"
-		}
-		fileName += ownerName
-	}
-	if tableName != "" {
-		if fileName != "" {
-			fileName += "-"
-		}
-		fileName += tableName
-	}
-	return
-}

@@ -5,7 +5,7 @@ import "github.com/team-ide/go-dialect/dialect"
 type DataSource interface {
 	Stop()
 	ReadStart() (err error)
-	Read(onRead func(data *DataSourceData) (err error)) (err error)
+	Read(columnList []*dialect.ColumnModel, onRead func(data *DataSourceData) (err error)) (err error)
 	ReadEnd() (err error)
 	WriteStart() (err error)
 	Write(data *DataSourceData) (err error)
@@ -25,8 +25,8 @@ type DataSourceParam struct {
 	Separator  string
 	SheetIndex int
 	StartRow   int
-	ColumnList []*dialect.ColumnModel
 	SheetName  string
+	Linefeed   string
 	TitleList  []string
 	Dia        dialect.Dialect
 }
@@ -43,4 +43,11 @@ func (this_ *DataSourceParam) GetCsvSeparator() string {
 		return this_.Separator
 	}
 	return ","
+}
+
+func (this_ *DataSourceParam) GetLinefeed() string {
+	if this_.Linefeed != "" {
+		return this_.Linefeed
+	}
+	return "|:-n-:|"
 }

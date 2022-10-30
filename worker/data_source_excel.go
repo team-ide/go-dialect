@@ -43,7 +43,7 @@ func (this_ *dataSourceExcel) ReadEnd() (err error) {
 	}
 	return
 }
-func (this_ *dataSourceExcel) Read(onRead func(data *DataSourceData) (err error)) (err error) {
+func (this_ *dataSourceExcel) Read(columnList []*dialect.ColumnModel, onRead func(data *DataSourceData) (err error)) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = errors.New(fmt.Sprint(e))
@@ -90,7 +90,7 @@ func (this_ *dataSourceExcel) Read(onRead func(data *DataSourceData) (err error)
 
 			var data = map[string]interface{}{}
 
-			for cellIndex, column := range this_.ColumnList {
+			for cellIndex, column := range columnList {
 				if cellIndex >= len(row.Cells) {
 					break
 				}
@@ -173,9 +173,6 @@ func (this_ *dataSourceExcel) Write(data *DataSourceData) (err error) {
 		return
 	}
 	columnList := data.ColumnList
-	if columnList == nil {
-		columnList = this_.ColumnList
-	}
 	if data.Data == nil || columnList == nil {
 		return
 	}

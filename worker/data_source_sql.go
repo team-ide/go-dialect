@@ -33,7 +33,7 @@ func (this_ *dataSourceSql) ReadStart() (err error) {
 func (this_ *dataSourceSql) ReadEnd() (err error) {
 	return
 }
-func (this_ *dataSourceSql) Read(onRead func(data *DataSourceData) (err error)) (err error) {
+func (this_ *dataSourceSql) Read(columnList []*dialect.ColumnModel, onRead func(data *DataSourceData) (err error)) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = errors.New(fmt.Sprint(e))
@@ -56,7 +56,11 @@ func (this_ *dataSourceSql) Read(onRead func(data *DataSourceData) (err error)) 
 		}
 		line, err = buf.ReadString('\n')
 		if line != "" {
-			sqlInfo += "\n" + line
+			if sqlInfo == "" {
+				sqlInfo = line
+			} else {
+				sqlInfo += line
+			}
 			if isSqlEnd(sqlInfo) {
 				sqlInfo = strings.TrimSpace(sqlInfo)
 				if sqlInfo != "" {
@@ -76,6 +80,19 @@ func (this_ *dataSourceSql) Read(onRead func(data *DataSourceData) (err error)) 
 				err = nil
 			}
 			break
+		}
+	}
+	if err != nil {
+		return
+	}
+	sqlInfo = strings.TrimSpace(sqlInfo)
+	if sqlInfo != "" {
+		err = onRead(&DataSourceData{
+			HasSql: true,
+			Sql:    sqlInfo,
+		})
+		if err != nil {
+			return
 		}
 	}
 	return
@@ -127,7 +144,7 @@ func (this_ *dataSourceSql) Write(data *DataSourceData) (err error) {
 }
 
 func isSqlEnd(sqlInfo string) (isEnd bool) {
-	if !strings.HasSuffix(sqlInfo, ";") {
+	if !strings.HasSuffix(strings.TrimSpace(sqlInfo), ";") {
 		return
 	}
 

@@ -33,7 +33,7 @@ func (this_ *dataSourceText) ReadStart() (err error) {
 func (this_ *dataSourceText) ReadEnd() (err error) {
 	return
 }
-func (this_ *dataSourceText) Read(onRead func(data *DataSourceData) (err error)) (err error) {
+func (this_ *dataSourceText) Read(columnList []*dialect.ColumnModel, onRead func(data *DataSourceData) (err error)) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = errors.New(fmt.Sprint(e))
@@ -50,17 +50,34 @@ func (this_ *dataSourceText) Read(onRead func(data *DataSourceData) (err error))
 	buf := bufio.NewReader(f)
 	var line string
 	var rowInfo string
+	separator := this_.GetTextSeparator()
+	columnLength := len(columnList)
+	if columnLength == 0 {
+		err = errors.New("column is null")
+		return
+	}
 	for {
 		if this_.isStop {
 			return
 		}
 		line, err = buf.ReadString('\n')
 		if line != "" {
-			rowInfo += "\n" + line
-			if isRowEnd(rowInfo) {
+			if rowInfo == "" {
+				rowInfo = line
+			} else {
+				rowInfo += line
+			}
+
+			ss := strings.Split(strings.TrimSpace(rowInfo), separator)
+			if len(ss) > columnLength {
+				err = errors.New("row [" + rowInfo + "] can not to column names [" + strings.Join(GetColumnNames(columnList), ",") + "]")
+				return
+			}
+			if len(ss) == columnLength {
 				rowInfo = strings.TrimSpace(rowInfo)
 				if rowInfo != "" {
-					err = this_.readRow(rowInfo, onRead)
+					rowInfo = strings.ReplaceAll(rowInfo, this_.GetLinefeed(), "\n")
+					err = readRow(rowInfo, separator, columnList, onRead)
 					if err != nil {
 						return
 					}
@@ -75,6 +92,16 @@ func (this_ *dataSourceText) Read(onRead func(data *DataSourceData) (err error))
 			break
 		}
 	}
+	if err != nil {
+		return
+	}
+	rowInfo = strings.TrimSpace(rowInfo)
+	if rowInfo != "" {
+		err = readRow(rowInfo, separator, columnList, onRead)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
@@ -85,15 +112,25 @@ func GetColumnNames(columnList []*dialect.ColumnModel) (columnNames []string) {
 	return
 }
 
-func (this_ *dataSourceText) readRow(rowInfo string, onRead func(data *DataSourceData) (err error)) (err error) {
-	calls := strings.Split(rowInfo, this_.GetTextSeparator())
+func readRow(rowInfo string, separator string, columnList []*dialect.ColumnModel, onRead func(data *DataSourceData) (err error)) (err error) {
+	calls := strings.Split(rowInfo, separator)
 	data := make(map[string]interface{})
-	if len(calls) != len(this_.ColumnList) {
-		err = errors.New("row [" + rowInfo + "] can not to column names [" + strings.Join(GetColumnNames(this_.ColumnList), ",") + "]")
+	if len(calls) != len(columnList) {
+		err = errors.New("row [" + rowInfo + "] can not to column names [" + strings.Join(GetColumnNames(columnList), ",") + "]")
 		return
 	}
-	for i, column := range this_.ColumnList {
-		data[column.Name] = calls[i]
+	for i, column := range columnList {
+		v := calls[i]
+		if !column.NotNull && v == "" {
+			continue
+		}
+		if strings.EqualFold(column.Type, "timestamp") {
+			if v == "" {
+				continue
+			}
+		}
+
+		data[column.Name] = v
 	}
 	err = onRead(&DataSourceData{
 		HasData: true,
@@ -139,15 +176,16 @@ func (this_ *dataSourceText) Write(data *DataSourceData) (err error) {
 		return
 	}
 	columnList := data.ColumnList
-	if columnList == nil {
-		columnList = this_.ColumnList
-	}
 	if data.Data == nil || columnList == nil {
 		return
 	}
 	var valueList []string
 	for _, column := range data.ColumnList {
-		valueList = append(valueList, dialect.GetStringValue(data.Data[column.Name]))
+		str := dialect.GetStringValue(data.Data[column.Name])
+		str = strings.ReplaceAll(str, "\r\n", this_.GetLinefeed())
+		str = strings.ReplaceAll(str, "\n", this_.GetLinefeed())
+		str = strings.ReplaceAll(str, "\r", this_.GetLinefeed())
+		valueList = append(valueList, str)
 	}
 
 	_, err = this_.saveFile.WriteString(strings.Join(valueList, this_.GetTextSeparator()) + "\n")
