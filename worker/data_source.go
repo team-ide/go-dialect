@@ -22,9 +22,25 @@ type DataSourceData struct {
 
 type DataSourceParam struct {
 	Path       string
+	Separator  string
 	SheetIndex int
 	StartRow   int
-	NameList   []string
+	ColumnList []*dialect.ColumnModel
 	SheetName  string
 	TitleList  []string
+	Dia        dialect.Dialect
+}
+
+func (this_ *DataSourceParam) GetTextSeparator() string {
+	if this_.Separator != "" {
+		return this_.Separator
+	}
+	return "|:-:|"
+}
+
+func (this_ *DataSourceParam) GetCsvSeparator() string {
+	if this_.Separator != "" {
+		return this_.Separator
+	}
+	return ","
 }

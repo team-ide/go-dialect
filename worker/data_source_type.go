@@ -24,10 +24,28 @@ var (
 			return
 		},
 	}
+	DataSourceTypeText = &DataSourceType{
+		Name: "text",
+		New:  NewDataSourceText,
+		TableFileName: func(ownerName string, tableName string) (fileName string) {
+			fileName = formatFileName(ownerName, tableName) + ".txt"
+			return
+		},
+	}
+	DataSourceTypeCsv = &DataSourceType{
+		Name: "csv",
+		New:  NewDataSourceCsv,
+		TableFileName: func(ownerName string, tableName string) (fileName string) {
+			fileName = formatFileName(ownerName, tableName) + ".csv"
+			return
+		},
+	}
 
 	DataSourceTypeList = []*DataSourceType{
 		DataSourceTypeSql,
 		DataSourceTypeExcel,
+		DataSourceTypeText,
+		DataSourceTypeCsv,
 	}
 )
 

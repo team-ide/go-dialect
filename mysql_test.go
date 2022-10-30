@@ -108,12 +108,12 @@ func TestMysqlExportSql(t *testing.T) {
 		},
 		ExportStructure: true,
 		ExportData:      true,
-		Dir:             "temp/export/sql",
+		Dir:             "temp/export",
 		ExportBatchSql:  true,
 		//FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
 		//	return tableName + "_" + index.Name
 		//},
-		DataSourceType: worker.DataSourceTypeExcel,
+		DataSourceType: worker.DataSourceTypeCsv,
 	})
 	err := task.Start()
 	if err != nil {

@@ -10,30 +10,30 @@ import (
 	"strings"
 )
 
-func NewDataSourceSql(param *DataSourceParam) (res DataSource) {
-	res = &dataSourceSql{
+func NewDataSourceText(param *DataSourceParam) (res DataSource) {
+	res = &dataSourceText{
 		DataSourceParam: param,
 	}
 	return
 }
 
-type dataSourceSql struct {
+type dataSourceText struct {
 	*DataSourceParam
 	saveFile *os.File
 	isStop   bool
 }
 
-func (this_ *dataSourceSql) Stop() {
+func (this_ *dataSourceText) Stop() {
 	this_.isStop = true
 }
 
-func (this_ *dataSourceSql) ReadStart() (err error) {
+func (this_ *dataSourceText) ReadStart() (err error) {
 	return
 }
-func (this_ *dataSourceSql) ReadEnd() (err error) {
+func (this_ *dataSourceText) ReadEnd() (err error) {
 	return
 }
-func (this_ *dataSourceSql) Read(onRead func(data *DataSourceData) (err error)) (err error) {
+func (this_ *dataSourceText) Read(onRead func(data *DataSourceData) (err error)) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = errors.New(fmt.Sprint(e))
@@ -49,26 +49,23 @@ func (this_ *dataSourceSql) Read(onRead func(data *DataSourceData) (err error)) 
 	}
 	buf := bufio.NewReader(f)
 	var line string
-	var sqlInfo string
+	var rowInfo string
 	for {
 		if this_.isStop {
 			return
 		}
 		line, err = buf.ReadString('\n')
 		if line != "" {
-			sqlInfo += "\n" + line
-			if isSqlEnd(sqlInfo) {
-				sqlInfo = strings.TrimSpace(sqlInfo)
-				if sqlInfo != "" {
-					err = onRead(&DataSourceData{
-						HasSql: true,
-						Sql:    sqlInfo,
-					})
+			rowInfo += "\n" + line
+			if isRowEnd(rowInfo) {
+				rowInfo = strings.TrimSpace(rowInfo)
+				if rowInfo != "" {
+					err = this_.readRow(rowInfo, onRead)
 					if err != nil {
 						return
 					}
 				}
-				sqlInfo = ""
+				rowInfo = ""
 			}
 		}
 		if err != nil {
@@ -81,7 +78,31 @@ func (this_ *dataSourceSql) Read(onRead func(data *DataSourceData) (err error)) 
 	return
 }
 
-func (this_ *dataSourceSql) WriteStart() (err error) {
+func GetColumnNames(columnList []*dialect.ColumnModel) (columnNames []string) {
+	for _, column := range columnList {
+		columnNames = append(columnNames, column.Name)
+	}
+	return
+}
+
+func (this_ *dataSourceText) readRow(rowInfo string, onRead func(data *DataSourceData) (err error)) (err error) {
+	calls := strings.Split(rowInfo, this_.GetTextSeparator())
+	data := make(map[string]interface{})
+	if len(calls) != len(this_.ColumnList) {
+		err = errors.New("row [" + rowInfo + "] can not to column names [" + strings.Join(GetColumnNames(this_.ColumnList), ",") + "]")
+		return
+	}
+	for i, column := range this_.ColumnList {
+		data[column.Name] = calls[i]
+	}
+	err = onRead(&DataSourceData{
+		HasData: true,
+		Data:    data,
+	})
+	return
+}
+
+func (this_ *dataSourceText) WriteStart() (err error) {
 
 	if this_.Path == "" {
 		err = errors.New("文件地址不能为空")
@@ -94,14 +115,14 @@ func (this_ *dataSourceSql) WriteStart() (err error) {
 	}
 	return
 }
-func (this_ *dataSourceSql) WriteEnd() (err error) {
+func (this_ *dataSourceText) WriteEnd() (err error) {
 	if this_.saveFile != nil {
 		err = this_.saveFile.Close()
 		return
 	}
 	return
 }
-func (this_ *dataSourceSql) Write(data *DataSourceData) (err error) {
+func (this_ *dataSourceText) Write(data *DataSourceData) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = errors.New(fmt.Sprint(e))
@@ -117,19 +138,27 @@ func (this_ *dataSourceSql) Write(data *DataSourceData) (err error) {
 	if this_.isStop {
 		return
 	}
-	if data.HasSql {
-		_, err = this_.saveFile.WriteString(data.Sql + ";\n")
-		if err != nil {
-			return
-		}
+	columnList := data.ColumnList
+	if columnList == nil {
+		columnList = this_.ColumnList
 	}
+	if data.Data == nil || columnList == nil {
+		return
+	}
+	var valueList []string
+	for _, column := range data.ColumnList {
+		valueList = append(valueList, dialect.GetStringValue(data.Data[column.Name]))
+	}
+
+	_, err = this_.saveFile.WriteString(strings.Join(valueList, this_.GetTextSeparator()) + "\n")
+	if err != nil {
+		return
+	}
+
 	return
 }
 
-func isSqlEnd(sqlInfo string) (isEnd bool) {
-	if !strings.HasSuffix(sqlInfo, ";") {
-		return
-	}
+func isRowEnd(rowInfo string) (isEnd bool) {
 
 	var inStringLevel int
 	var inStringPack byte
@@ -137,10 +166,10 @@ func isSqlEnd(sqlInfo string) (isEnd bool) {
 	var lastChar byte
 
 	var stringPackChars = []byte{'"', '\''}
-	for i := 0; i < len(sqlInfo); i++ {
-		thisChar = sqlInfo[i]
+	for i := 0; i < len(rowInfo); i++ {
+		thisChar = rowInfo[i]
 		if i > 0 {
-			lastChar = sqlInfo[i-1]
+			lastChar = rowInfo[i-1]
 		}
 
 		// inStringLevel == 0 表示 不在 字符串 包装 中

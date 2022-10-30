@@ -90,13 +90,13 @@ func (this_ *dataSourceExcel) Read(onRead func(data *DataSourceData) (err error)
 
 			var data = map[string]interface{}{}
 
-			for cellIndex, name := range this_.NameList {
+			for cellIndex, column := range this_.ColumnList {
 				if cellIndex >= len(row.Cells) {
 					break
 				}
 				cell := row.Cells[cellIndex]
 				var value = cell.String()
-				data[name] = value
+				data[column.Name] = value
 			}
 			err = onRead(&DataSourceData{
 				HasData: true,
@@ -172,7 +172,11 @@ func (this_ *dataSourceExcel) Write(data *DataSourceData) (err error) {
 	if this_.isStop {
 		return
 	}
-	if data.Data == nil || data.ColumnList == nil {
+	columnList := data.ColumnList
+	if columnList == nil {
+		columnList = this_.ColumnList
+	}
+	if data.Data == nil || columnList == nil {
 		return
 	}
 	var valueList []interface{}
