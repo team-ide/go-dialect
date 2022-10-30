@@ -81,6 +81,7 @@ func packingName(packingCharacter, name string) string {
 	name = strings.ReplaceAll(name, `""`, "")
 	name = strings.ReplaceAll(name, `'`, "")
 	name = strings.ReplaceAll(name, "`", "")
+	name = strings.TrimSpace(name)
 	if packingCharacter == "" {
 		return name
 	}
@@ -96,9 +97,9 @@ func packingValues(packingCharacter string, values []string) string {
 	res := ""
 
 	for _, value := range values {
-		res += packingName(packingCharacter, value) + ","
+		res += packingName(packingCharacter, value) + ", "
 	}
-	res = strings.TrimSuffix(res, ",")
+	res = strings.TrimSuffix(res, ", ")
 	return res
 }
 

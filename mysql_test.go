@@ -97,3 +97,28 @@ func TestMysqlSyncSqlite(t *testing.T) {
 	bs, _ := json.Marshal(task)
 	println(string(bs))
 }
+
+func TestMysqlExportSql(t *testing.T) {
+	initMysql()
+	task := worker.NewTaskExport(MysqlDb, dialect.Mysql, dialect.Mysql, &worker.TaskExportParam{
+		Owners: []*worker.TaskExportOwner{
+			{SourceName: "information_schema", TargetName: "XXX1"},
+			{SourceName: "mysql", TargetName: "XXX2"},
+			{SourceName: "performance_schema", TargetName: "XXX3"},
+		},
+		ExportStructure: true,
+		ExportData:      true,
+		Dir:             "temp/export/sql",
+		ExportBatchSql:  true,
+		//FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
+		//	return tableName + "_" + index.Name
+		//},
+		DataSourceType: worker.DataSourceTypeExcel,
+	})
+	err := task.Start()
+	if err != nil {
+		panic(err)
+	}
+	bs, _ := json.Marshal(task)
+	println(string(bs))
+}

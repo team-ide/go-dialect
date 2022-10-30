@@ -63,10 +63,10 @@ func (this_ *taskImport) do() (err error) {
 			return
 		}
 	}()
-	err = this_.dataSource.Read(this_.columnNameList, dataChan)
-	if err != nil {
-		return
-	}
+	//err = this_.dataSource.Read(dataChan)
+	//if err != nil {
+	//	return
+	//}
 	return
 }
 

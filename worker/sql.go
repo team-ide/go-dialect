@@ -22,9 +22,9 @@ func InsertDataListSql(dia dialect.Dialect, ownerName string, tableName string, 
 				continue
 			}
 			columnList_ = append(columnList_, column.Name)
-			values += str + ","
+			values += str + ", "
 		}
-		values = strings.TrimSuffix(values, ",")
+		values = strings.TrimSuffix(values, ", ")
 		values += ")"
 
 		insertSqlInfo := "INSERT INTO "
@@ -32,20 +32,20 @@ func InsertDataListSql(dia dialect.Dialect, ownerName string, tableName string, 
 			insertSqlInfo += dia.PackOwner(ownerName) + "."
 		}
 		insertSqlInfo += dia.PackTable(tableName)
-		insertSqlInfo += "("
+		insertSqlInfo += " ("
 		insertSqlInfo += dia.PackColumns(columnList_)
-		insertSqlInfo += ")VALUES"
-		insertSqlInfo += values
-		sqlList = append(sqlList, insertSqlInfo)
+		insertSqlInfo += ") VALUES "
+
+		sqlList = append(sqlList, insertSqlInfo+values)
 
 		key := strings.Join(columnList_, ",")
 		find, ok := batchSqlCache[key]
 		if ok {
-			find += "," + values
+			find += ",\n" + values
 			batchSqlCache[key] = find
 			batchSqlList[batchSqlIndexCache[key]] = find
 		} else {
-			find = insertSqlInfo
+			find = insertSqlInfo + "\n" + values
 			batchSqlIndexCache[key] = len(batchSqlCache)
 			batchSqlCache[key] = find
 			batchSqlList = append(batchSqlList, find)

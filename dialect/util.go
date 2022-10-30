@@ -40,6 +40,18 @@ func StringsIndex(array []string, val string) (index int) {
 	return
 }
 
+// BytesIndex Returns the index position of the string val in array
+func BytesIndex(array []byte, val byte) (index int) {
+	index = -1
+	for i := 0; i < len(array); i++ {
+		if array[i] == val {
+			index = i
+			return
+		}
+	}
+	return
+}
+
 func ReplaceStringByRegex(str, rule, replace string) string {
 	reg, err := regexp.Compile(rule)
 	if reg == nil || err != nil {

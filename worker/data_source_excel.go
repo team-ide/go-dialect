@@ -7,38 +7,57 @@ import (
 	"github.com/team-ide/go-dialect/dialect"
 )
 
-func NewDataSourceExcel(path string, sheetIndex int, skipRow int) (res *DataSourceExcel) {
-	res = &DataSourceExcel{
-		Path:       path,
-		SheetIndex: sheetIndex,
-		SkipRow:    skipRow,
+func NewDataSourceExcel(param *DataSourceParam) (res DataSource) {
+	res = &dataSourceExcel{
+		DataSourceParam: param,
 	}
 	return
 }
 
-type DataSourceExcel struct {
-	Path       string `json:"path"`
-	SheetIndex int
-	SkipRow    int
-	isStop     bool
+type dataSourceExcel struct {
+	*DataSourceParam
+	xlsxFForRead  *xlsx.File
+	xlsxFForWrite *xlsx.File
+	sheetForWrite *xlsx.Sheet
+	isStop        bool
 }
 
-func (this_ *DataSourceExcel) Stop() {
+func (this_ *dataSourceExcel) Stop() {
 	this_.isStop = true
 }
-func (this_ *DataSourceExcel) Read(nameList []string, dataChan chan map[string]interface{}) (err error) {
+
+func (this_ *dataSourceExcel) ReadStart() (err error) {
+	if this_.Path == "" {
+		err = errors.New("文件地址不能为空")
+		return
+	}
+	this_.xlsxFForRead, err = xlsx.OpenFile(this_.Path)
+	if err != nil {
+		err = errors.New("excel [" + this_.Path + "] open error, " + err.Error())
+		return
+	}
+	return
+}
+func (this_ *dataSourceExcel) ReadEnd() (err error) {
+	if this_.xlsxFForRead != nil {
+	}
+	return
+}
+func (this_ *dataSourceExcel) Read(onRead func(data *DataSourceData) (err error)) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = errors.New(fmt.Sprint(e))
 		}
 	}()
 
-	xlsxF, err := this_.open()
-	if err != nil {
-		return
+	if this_.xlsxFForRead == nil {
+		err = this_.ReadStart()
+		if err != nil {
+			return
+		}
 	}
 
-	sheets := xlsxF.Sheets
+	sheets := this_.xlsxFForRead.Sheets
 	if this_.SheetIndex >= 0 {
 		if len(sheets) < this_.SheetIndex+1 {
 			err = errors.New("excel [" + this_.Path + "] sheets len is [" + fmt.Sprint(len(sheets)) + "]")
@@ -46,6 +65,10 @@ func (this_ *DataSourceExcel) Read(nameList []string, dataChan chan map[string]i
 		}
 	}
 
+	startRow := this_.StartRow - 1
+	if startRow < 0 {
+		startRow = 0
+	}
 	for index, sheet := range sheets {
 		if this_.SheetIndex >= 0 {
 			if index != this_.SheetIndex {
@@ -57,10 +80,7 @@ func (this_ *DataSourceExcel) Read(nameList []string, dataChan chan map[string]i
 		}
 		maxRow := sheet.MaxRow
 
-		if this_.SkipRow < 0 {
-			this_.SkipRow = 0
-		}
-		for rowIndex := this_.SkipRow; rowIndex < maxRow; rowIndex++ {
+		for rowIndex := startRow; rowIndex < maxRow; rowIndex++ {
 
 			if this_.isStop {
 				return
@@ -70,7 +90,7 @@ func (this_ *DataSourceExcel) Read(nameList []string, dataChan chan map[string]i
 
 			var data = map[string]interface{}{}
 
-			for cellIndex, name := range nameList {
+			for cellIndex, name := range this_.NameList {
 				if cellIndex >= len(row.Cells) {
 					break
 				}
@@ -78,66 +98,88 @@ func (this_ *DataSourceExcel) Read(nameList []string, dataChan chan map[string]i
 				var value = cell.String()
 				data[name] = value
 			}
-
-			dataChan <- data
+			err = onRead(&DataSourceData{
+				HasData: true,
+				Data:    data,
+			})
+			if err != nil {
+				return
+			}
 		}
 	}
 	return
 }
 
-func (this_ *DataSourceExcel) open() (xlsxF *xlsx.File, err error) {
+func (this_ *dataSourceExcel) save() (err error) {
 	if this_.Path == "" {
 		err = errors.New("文件地址不能为空")
 		return
 	}
-	xlsxF, err = xlsx.OpenFile(this_.Path)
+	err = this_.xlsxFForWrite.Save(this_.Path)
 	if err != nil {
-		err = errors.New("excel [" + this_.Path + "] open error, " + err.Error())
+		err = errors.New("excel [" + this_.Path + "] save error, " + err.Error())
 		return
 	}
 	return
 }
 
-func (this_ *DataSourceExcel) Write(sheetName string, titles []string, nameList []string, dataChan chan map[string]interface{}) (err error) {
+func (this_ *dataSourceExcel) WriteStart() (err error) {
+	this_.xlsxFForWrite = xlsx.NewFile()
+
+	sheetName := this_.SheetName
+	if len(sheetName) > 31 {
+		sheetName = sheetName[0:30]
+	}
+	this_.sheetForWrite, err = this_.xlsxFForWrite.AddSheet(sheetName)
+	if err != nil {
+		err = errors.New("excel [" + this_.Path + "] add shell [" + this_.SheetName + "] error, " + err.Error())
+		return
+	}
+
+	if len(this_.TitleList) > 0 {
+		var valueList []interface{}
+		for _, title := range this_.TitleList {
+			valueList = append(valueList, title)
+		}
+		sheetWrite(this_.sheetForWrite, valueList)
+	}
+	err = this_.save()
+	if err != nil {
+		return
+	}
+	return
+}
+func (this_ *dataSourceExcel) WriteEnd() (err error) {
+	err = this_.save()
+	if err != nil {
+		return
+	}
+	return
+}
+func (this_ *dataSourceExcel) Write(data *DataSourceData) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = errors.New(fmt.Sprint(e))
 		}
 	}()
 
-	xlsxF, err := this_.open()
-	if err != nil {
+	if this_.xlsxFForWrite == nil {
+		err = this_.WriteStart()
+		if err != nil {
+			return
+		}
+	}
+	if this_.isStop {
 		return
 	}
-	sheet, err := xlsxF.AddSheet(sheetName)
-	if err != nil {
-		err = errors.New("excel [" + this_.Path + "] add shell error, " + err.Error())
+	if data.Data == nil || data.ColumnList == nil {
 		return
 	}
-	if len(titles) > 0 {
-		var valueList []interface{}
-		for _, title := range titles {
-			valueList = append(valueList, title)
-		}
-		sheetWrite(sheet, valueList)
+	var valueList []interface{}
+	for _, column := range data.ColumnList {
+		valueList = append(valueList, data.Data[column.Name])
 	}
-	for {
-		if this_.isStop {
-			break
-		}
-		data, ok := <-dataChan
-		if !ok {
-			break
-		}
-		var valueList []interface{}
-		for _, name := range nameList {
-			valueList = append(valueList, data[name])
-		}
-		if this_.isStop {
-			break
-		}
-		sheetWrite(sheet, valueList)
-	}
+	sheetWrite(this_.sheetForWrite, valueList)
 	return
 }
 

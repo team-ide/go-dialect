@@ -1,6 +1,7 @@
 package go_dialect
 
 import (
+	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-dialect/worker"
 	"os"
@@ -71,5 +72,22 @@ func TestSqlParse(t *testing.T) {
 		panic(err)
 	}
 	saveSql(convertParser.GetDestSql(), "temp/sql_sqlite.sql")
+
+}
+
+func TestSqlSplit(t *testing.T) {
+
+	var sqlInfo = `
+select * from aa where 1=1 and a='''x;x'';'
+;
+select * from aa where 1=1
+
+`
+	sqlList := worker.SplitSqlList(sqlInfo)
+	for _, sqlOne := range sqlList {
+		fmt.Println("-------sql one start--------")
+		fmt.Println(sqlOne)
+		fmt.Println("-------sql one end--------")
+	}
 
 }
