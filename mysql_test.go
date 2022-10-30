@@ -203,7 +203,7 @@ func TestMysqlExportData(t *testing.T) {
 		//FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
 		//	return tableName + "_" + index.Name
 		//},
-		DataSourceType: worker.DataSourceTypeText,
+		DataSourceType: worker.DataSourceTypeExcel,
 	})
 	err := task.Start()
 	if err != nil {
@@ -224,7 +224,7 @@ func TestMysqlImportData(t *testing.T) {
 		//FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
 		//	return tableName + "_" + index.Name
 		//},
-		DataSourceType: worker.DataSourceTypeText,
+		DataSourceType: worker.DataSourceTypeExcel,
 	})
 	err := task.Start()
 	if err != nil {

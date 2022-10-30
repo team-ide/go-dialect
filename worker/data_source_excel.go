@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/tealeg/xlsx"
 	"github.com/team-ide/go-dialect/dialect"
+	"strings"
 )
 
 func NewDataSourceExcel(param *DataSourceParam) (res DataSource) {
@@ -95,8 +96,16 @@ func (this_ *dataSourceExcel) Read(columnList []*dialect.ColumnModel, onRead fun
 					break
 				}
 				cell := row.Cells[cellIndex]
-				var value = cell.String()
-				data[column.Name] = value
+				var v = cell.String()
+				if !column.NotNull && v == "" {
+					continue
+				}
+				if strings.EqualFold(column.Type, "timestamp") {
+					if v == "" {
+						continue
+					}
+				}
+				data[column.Name] = v
 			}
 			err = onRead(&DataSourceData{
 				HasData: true,
