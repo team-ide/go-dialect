@@ -57,7 +57,7 @@ func addTask(task *Task) {
 	taskCacheLock.Lock()
 	defer taskCacheLock.Unlock()
 
-	task.TaskId = UUID()
+	task.TaskId = dialect.UUID()
 	taskCache[task.TaskId] = task
 	return
 }

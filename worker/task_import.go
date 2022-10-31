@@ -123,6 +123,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 		param := &DataSourceParam{
 			Path:      fileName,
 			SheetName: ownerName,
+			Dia:       this_.dia,
 		}
 		ownerDataSource = this_.DataSourceType.New(param)
 		err = ownerDataSource.ReadStart()
@@ -226,6 +227,7 @@ func (this_ *taskImport) importTable(ownerName string, path string, sourceTableN
 		param := &DataSourceParam{
 			Path:      path,
 			SheetName: targetTableName,
+			Dia:       this_.dia,
 		}
 		tableDataSource = this_.DataSourceType.New(param)
 		err = tableDataSource.ReadStart()

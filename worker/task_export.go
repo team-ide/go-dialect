@@ -164,6 +164,7 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (err error) {
 		param := &DataSourceParam{
 			Path:      fileName,
 			SheetName: ownerName,
+			Dia:       this_.targetDialect,
 		}
 		ownerDataSource = this_.DataSourceType.New(param)
 		err = ownerDataSource.WriteStart()
@@ -238,6 +239,7 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 		param := &DataSourceParam{
 			Path:      fileName,
 			SheetName: targetTableName,
+			Dia:       this_.targetDialect,
 		}
 		tableDataSource = this_.DataSourceType.New(param)
 		err = tableDataSource.WriteStart()

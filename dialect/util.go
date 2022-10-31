@@ -2,9 +2,11 @@ package dialect
 
 import (
 	"database/sql"
+	"github.com/google/uuid"
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -187,5 +189,12 @@ func GetBaseTypeValue(data interface{}) (res interface{}, is bool) {
 		res = dataValue.Interface()
 		break
 	}
+	return
+}
+
+// UUID 生成UUID
+func UUID() (res string) {
+	res = uuid.NewString()
+	res = strings.ReplaceAll(res, "-", "")
 	return
 }

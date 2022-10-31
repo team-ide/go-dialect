@@ -128,7 +128,7 @@ func (this_ *MysqlDialect) PackColumns(columnNames []string) string {
 	return packingNames("`", columnNames)
 }
 
-func (this_ *MysqlDialect) PackValue(column *ColumnModel, value interface{}) string {
+func (this_ *MysqlDialect) PackValueForSql(column *ColumnModel, value interface{}) string {
 	var columnTypeInfo *ColumnTypeInfo
 	if column != nil {
 		if strings.EqualFold(column.Type, "ENUM") {
@@ -166,7 +166,7 @@ func (this_ *MysqlDialect) FormatDefaultValue(column *ColumnModel) (defaultValue
 		}
 		return
 	}
-	defaultValue += this_.PackValue(nil, column.Default)
+	defaultValue += this_.PackValueForSql(nil, column.Default)
 	return
 }
 func (this_ *MysqlDialect) OwnerModel(data map[string]interface{}) (owner *OwnerModel, err error) {
@@ -282,7 +282,7 @@ func (this_ *MysqlDialect) TableCreateSql(ownerName string, table *TableModel) (
 			columnSql += ` NOT NULL`
 		}
 		if column.Comment != "" {
-			columnSql += " COMMENT " + this_.PackValue(nil, column.Comment)
+			columnSql += " COMMENT " + this_.PackValueForSql(nil, column.Comment)
 		}
 
 		if column.PrimaryKey {
@@ -332,7 +332,7 @@ func (this_ *MysqlDialect) TableCommentSql(ownerName string, tableName string, c
 		sql += this_.PackOwner(ownerName) + "."
 	}
 	sql += "" + this_.PackTable(tableName)
-	sql += " COMMENT " + this_.PackValue(nil, comment)
+	sql += " COMMENT " + this_.PackValueForSql(nil, comment)
 
 	sqlList = append(sqlList, sql)
 	return
@@ -451,7 +451,7 @@ func (this_ *MysqlDialect) ColumnAddSql(ownerName string, tableName string, colu
 	if column.NotNull {
 		sql += " NOT NULL"
 	}
-	sql += " COMMENT " + this_.PackValue(nil, column.Comment)
+	sql += " COMMENT " + this_.PackValueForSql(nil, column.Comment)
 	if column.BeforeColumn != "" {
 		sql += " AFTER " + this_.PackColumn(column.BeforeColumn)
 	}
@@ -485,7 +485,7 @@ func (this_ *MysqlDialect) ColumnUpdateSql(ownerName string, tableName string, o
 	if newColumn.NotNull {
 		sql += " NOT NULL"
 	}
-	sql += " COMMENT " + this_.PackValue(nil, newColumn.Comment)
+	sql += " COMMENT " + this_.PackValueForSql(nil, newColumn.Comment)
 	if newColumn.BeforeColumn != "" {
 		sql += " AFTER " + this_.PackColumn(newColumn.BeforeColumn)
 	}
@@ -638,7 +638,7 @@ func (this_ *MysqlDialect) IndexAddSql(ownerName string, tableName string, index
 	}
 
 	if index.Comment != "" {
-		sql += " COMMENT " + this_.PackValue(nil, index.Comment)
+		sql += " COMMENT " + this_.PackValueForSql(nil, index.Comment)
 	}
 
 	sqlList = append(sqlList, sql)

@@ -2,11 +2,9 @@ package worker
 
 import (
 	"database/sql"
-	"github.com/google/uuid"
 	"github.com/team-ide/go-dialect/dialect"
 	"os"
 	"reflect"
-	"strings"
 	"time"
 )
 
@@ -19,62 +17,6 @@ func PathExists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
-}
-
-func SplitSqlList(sqlInfo string) (sqlList []string) {
-	var list []string
-	var beg int
-
-	var inStringLevel int
-	var inStringPack byte
-	var thisChar byte
-	var lastChar byte
-
-	var stringPackChars = []byte{'"', '\''}
-	for i := 0; i < len(sqlInfo); i++ {
-		thisChar = sqlInfo[i]
-		if i > 0 {
-			lastChar = sqlInfo[i-1]
-		}
-
-		// inStringLevel == 0 表示 不在 字符串 包装 中
-		if thisChar == ';' && inStringLevel == 0 {
-			if i > 0 {
-				list = append(list, sqlInfo[beg:i])
-			}
-			beg = i + 1
-		} else {
-			packCharIndex := dialect.BytesIndex(stringPackChars, thisChar)
-			if packCharIndex >= 0 {
-				// inStringLevel == 0 表示 不在 字符串 包装 中
-				if inStringLevel == 0 {
-					inStringPack = stringPackChars[packCharIndex]
-					// 字符串包装层级 +1
-					inStringLevel++
-				} else {
-					// 如果有转义符号 类似 “\'”，“\"”
-					if lastChar == '\\' {
-					} else if lastChar == inStringPack {
-						// 如果 前一个字符 与字符串包装字符一致
-						inStringLevel--
-					} else {
-						// 字符串包装层级 -1
-						inStringLevel--
-					}
-				}
-			}
-		}
-
-	}
-	list = append(list, sqlInfo[beg:])
-	for _, sqlOne := range list {
-		sqlOne = strings.TrimSpace(sqlOne)
-		if sqlOne == "" {
-			continue
-		}
-		sqlList = append(sqlList, sqlOne)
-	}
-	return
 }
 
 //NowTime 获取当前时间戳
@@ -90,13 +32,6 @@ func GetTime(time time.Time) int64 {
 //Now 获取当前时间
 func Now() time.Time {
 	return time.Now()
-}
-
-// UUID 生成UUID
-func UUID() (res string) {
-	res = uuid.NewString()
-	res = strings.ReplaceAll(res, "-", "")
-	return
 }
 
 func GetSqlValueCache(columnTypes []*sql.ColumnType) (cache []interface{}) {

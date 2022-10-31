@@ -83,7 +83,7 @@ func (this_ *DefaultDialect) FormatColumnType(column *ColumnModel) (columnType s
 	return
 }
 func (this_ *DefaultDialect) FormatDefaultValue(column *ColumnModel) (defaultValue string) {
-	defaultValue = "DEFAULT " + this_.PackValue(nil, column.Default)
+	defaultValue = "DEFAULT " + this_.PackValueForSql(nil, column.Default)
 	return
 }
 func (this_ *DefaultDialect) ToColumnTypeInfo(columnType string) (columnTypeInfo *ColumnTypeInfo, length, decimal int, err error) {
@@ -173,7 +173,7 @@ func (this_ *DefaultDialect) PackColumns(columnNames []string) string {
 	return packingNames(`"`, columnNames)
 }
 
-func (this_ *DefaultDialect) PackValue(column *ColumnModel, value interface{}) string {
+func (this_ *DefaultDialect) PackValueForSql(column *ColumnModel, value interface{}) string {
 	var columnTypeInfo *ColumnTypeInfo
 	if column != nil {
 		columnTypeInfo, _ = this_.GetColumnTypeInfo(column.Type)
@@ -181,6 +181,115 @@ func (this_ *DefaultDialect) PackValue(column *ColumnModel, value interface{}) s
 	return packingValue(columnTypeInfo, `'`, `'`, value)
 }
 
+func (this_ *DefaultDialect) IsSqlEnd(sqlStr string) (isSqlEnd bool) {
+	if !strings.HasSuffix(strings.TrimSpace(sqlStr), ";") {
+		return
+	}
+	cacheKey := UUID()
+	sqlCache := sqlStr
+	sqlCache = strings.ReplaceAll(sqlCache, `''`, `|-`+cacheKey+`-|`)
+	sqlCache = strings.ReplaceAll(sqlCache, `""`, `|--`+cacheKey+`--|`)
+
+	var inStringLevel int
+	var inStringPack byte
+	var thisChar byte
+	var lastChar byte
+
+	var stringPackChars = []byte{'"', '\''}
+	for i := 0; i < len(sqlCache); i++ {
+		thisChar = sqlCache[i]
+		if i > 0 {
+			lastChar = sqlCache[i-1]
+		}
+
+		// inStringLevel == 0 表示 不在 字符串 包装 中
+		if thisChar == ';' && inStringLevel == 0 {
+		} else {
+			packCharIndex := BytesIndex(stringPackChars, thisChar)
+			if packCharIndex >= 0 {
+				// inStringLevel == 0 表示 不在 字符串 包装 中
+				if inStringLevel == 0 {
+					inStringPack = stringPackChars[packCharIndex]
+					// 字符串包装层级 +1
+					inStringLevel++
+				} else {
+					if thisChar != inStringPack {
+					} else if lastChar == '\\' { // 如果有转义符号 类似 “\'”，“\"”
+					} else if lastChar == inStringPack {
+						// 如果 前一个字符 与字符串包装字符一致
+					} else {
+						// 字符串包装层级 -1
+						inStringLevel--
+					}
+				}
+			}
+		}
+
+	}
+	isSqlEnd = inStringLevel == 0
+	return
+}
+func (this_ *DefaultDialect) SqlSplit(sqlStr string) (sqlList []string) {
+	cacheKey := UUID()
+	sqlCache := sqlStr
+	sqlCache = strings.ReplaceAll(sqlCache, `''`, `|-`+cacheKey+`-|`)
+	sqlCache = strings.ReplaceAll(sqlCache, `""`, `|--`+cacheKey+`--|`)
+
+	var list []string
+	var beg int
+
+	var inStringLevel int
+	var inStringPack byte
+	var thisChar byte
+	var lastChar byte
+
+	var stringPackChars = []byte{'"', '\''}
+	for i := 0; i < len(sqlCache); i++ {
+		thisChar = sqlCache[i]
+		if i > 0 {
+			lastChar = sqlCache[i-1]
+		}
+
+		// inStringLevel == 0 表示 不在 字符串 包装 中
+		if thisChar == ';' && inStringLevel == 0 {
+			if i > 0 {
+				list = append(list, sqlCache[beg:i])
+			}
+			beg = i + 1
+		} else {
+			packCharIndex := BytesIndex(stringPackChars, thisChar)
+			if packCharIndex >= 0 {
+				// inStringLevel == 0 表示 不在 字符串 包装 中
+				if inStringLevel == 0 {
+					inStringPack = stringPackChars[packCharIndex]
+					// 字符串包装层级 +1
+					inStringLevel++
+				} else {
+					if thisChar != inStringPack {
+					} else if lastChar == '\\' { // 如果有转义符号 类似 “\'”，“\"”
+					} else if lastChar == inStringPack {
+						// 如果 前一个字符 与字符串包装字符一致
+					} else {
+						// 字符串包装层级 -1
+						inStringLevel--
+					}
+				}
+			}
+		}
+
+	}
+	list = append(list, sqlCache[beg:])
+	for _, sqlOne := range list {
+		sqlOne = strings.TrimSpace(sqlOne)
+		if sqlOne == "" {
+			continue
+		}
+		sqlOne = strings.ReplaceAll(sqlOne, `|-`+cacheKey+`-|`, `''`)
+		sqlOne = strings.ReplaceAll(sqlOne, `|--`+cacheKey+`--|`, `""`)
+		sqlList = append(sqlList, sqlOne)
+	}
+	return
+}
 func (this_ *DefaultDialect) OwnerModel(data map[string]interface{}) (owner *OwnerModel, err error) {
 	return
 }
@@ -298,7 +407,7 @@ func (this_ *DefaultDialect) TableCommentSql(ownerName string, tableName string,
 		sql += this_.PackOwner(ownerName) + "."
 	}
 	sql += "" + this_.PackTable(tableName)
-	sql += " IS " + this_.PackValue(nil, comment)
+	sql += " IS " + this_.PackValueForSql(nil, comment)
 	sqlList = append(sqlList, sql)
 	return
 }
@@ -381,7 +490,7 @@ func (this_ *DefaultDialect) ColumnCommentSql(ownerName string, tableName string
 	}
 	sql += "" + this_.PackTable(tableName)
 	sql += "." + this_.PackColumn(columnName)
-	sql += " IS " + this_.PackValue(nil, comment)
+	sql += " IS " + this_.PackValueForSql(nil, comment)
 	sqlList = append(sqlList, sql)
 	return
 }
@@ -575,7 +684,7 @@ func (this_ *DefaultDialect) InsertSql(insert *InsertModel) (sqlList []string, e
 			}
 			switch value.Type {
 			case ValueTypeString:
-				sql += this_.PackValue(nil, value.Value)
+				sql += this_.PackValueForSql(nil, value.Value)
 				break
 			case ValueTypeNumber:
 				sql += value.Value

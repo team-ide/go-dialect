@@ -56,12 +56,8 @@ func (this_ *dataSourceSql) Read(columnList []*dialect.ColumnModel, onRead func(
 		}
 		line, err = buf.ReadString('\n')
 		if line != "" {
-			if sqlInfo == "" {
-				sqlInfo = line
-			} else {
-				sqlInfo += line
-			}
-			if isSqlEnd(sqlInfo) {
+			sqlInfo += line
+			if this_.Dia.IsSqlEnd(sqlInfo) {
 				sqlInfo = strings.TrimSpace(sqlInfo)
 				if sqlInfo != "" {
 					err = onRead(&DataSourceData{
@@ -140,51 +136,5 @@ func (this_ *dataSourceSql) Write(data *DataSourceData) (err error) {
 			return
 		}
 	}
-	return
-}
-
-func isSqlEnd(sqlInfo string) (isEnd bool) {
-	if !strings.HasSuffix(strings.TrimSpace(sqlInfo), ";") {
-		return
-	}
-
-	var inStringLevel int
-	var inStringPack byte
-	var thisChar byte
-	var lastChar byte
-
-	var stringPackChars = []byte{'"', '\''}
-	for i := 0; i < len(sqlInfo); i++ {
-		thisChar = sqlInfo[i]
-		if i > 0 {
-			lastChar = sqlInfo[i-1]
-		}
-
-		// inStringLevel == 0 表示 不在 字符串 包装 中
-		if thisChar == ';' && inStringLevel == 0 {
-		} else {
-			packCharIndex := dialect.BytesIndex(stringPackChars, thisChar)
-			if packCharIndex >= 0 {
-				// inStringLevel == 0 表示 不在 字符串 包装 中
-				if inStringLevel == 0 {
-					inStringPack = stringPackChars[packCharIndex]
-					// 字符串包装层级 +1
-					inStringLevel++
-				} else {
-					// 如果有转义符号 类似 “\'”，“\"”
-					if lastChar == '\\' {
-					} else if lastChar == inStringPack {
-						// 如果 前一个字符 与字符串包装字符一致
-						inStringLevel--
-					} else {
-						// 字符串包装层级 -1
-						inStringLevel--
-					}
-				}
-			}
-		}
-
-	}
-	isEnd = inStringLevel == 0
 	return
 }

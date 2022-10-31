@@ -17,7 +17,7 @@ func InsertDataListSql(dia dialect.Dialect, ownerName string, tableName string, 
 		var columnList_ []string
 		var values = "("
 		for _, column := range columnList {
-			str := dia.PackValue(column, data[column.Name])
+			str := dia.PackValueForSql(column, data[column.Name])
 			if strings.EqualFold(str, "null") {
 				continue
 			}

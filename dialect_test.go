@@ -62,7 +62,7 @@ func testDLL(db *sql.DB, dia dialect.Dialect, ownerName string) {
 }
 
 func testSql(db *sql.DB, dia dialect.Dialect, ownerName, sqlInfo string) {
-	sqlList := worker.SplitSqlList(sqlInfo)
+	sqlList := dia.SqlSplit(sqlInfo)
 	exec(db, sqlList)
 	tables(db, dia, ownerName)
 }

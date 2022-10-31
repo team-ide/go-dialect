@@ -23,7 +23,11 @@ type Dialect interface {
 	PackTable(tableName string) string
 	PackColumn(columnName string) string
 	PackColumns(columnNames []string) string
-	PackValue(column *ColumnModel, value interface{}) string
+	PackValueForSql(column *ColumnModel, value interface{}) string
+	// IsSqlEnd 判断SQL是否以 分号 结尾
+	IsSqlEnd(sqlInfo string) bool
+	// SqlSplit 根据 分号 分割多条SQL
+	SqlSplit(sqlInfo string) []string
 
 	OwnerModel(data map[string]interface{}) (owner *OwnerModel, err error)
 	OwnersSelectSql() (sql string, err error)
@@ -188,24 +192,29 @@ func formatStringValue(packingCharacter string, appendCharacter string, valueStr
 		return valueString
 	}
 	//valueString = strings.ReplaceAll(valueString, "\n", `\\n`)
-	ss := strings.Split(valueString, "")
 	out := packingCharacter
-	for _, s := range ss {
+	var valueLen = len(valueString)
+	for i := 0; i < valueLen; i++ {
+		s := valueString[i]
 		switch s {
-		case packingCharacter:
-			out += appendCharacter + s
+		case packingCharacter[0]:
+			out += appendCharacter + packingCharacter
 			break
-		case "\\":
+		case '\\':
 			if appendCharacter == "\\" {
 				out += "\\"
 			}
-			out += s
+			out += "\\"
 			break
 		default:
-			out += s
+			out += string(s)
 			break
 		}
 	}
 	out += packingCharacter
+	if strings.Contains(out, "Quotes a string to produce a result that can be used as a proper") {
+		println("before:", valueString)
+		println("after:", out)
+	}
 	return out
 }
