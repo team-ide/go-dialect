@@ -14,8 +14,9 @@ func NewTaskImport(db *sql.DB, dia dialect.Dialect, taskImportParam *TaskImportP
 		taskImportParam.DataSourceType = DataSourceTypeSql
 	}
 	task := &Task{
-		dia: dia,
-		db:  db,
+		dia:        dia,
+		db:         db,
+		onProgress: taskImportParam.OnProgress,
 	}
 	res = &taskImport{
 		Task:            task,
@@ -31,12 +32,13 @@ type TaskImportParam struct {
 	DataSourceType  *DataSourceType `json:"dataSourceType"`
 	BatchNumber     int             `json:"batchNumber"`
 	ContinueIsError bool            `json:"continueIsError"`
-	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string
+
+	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string `json:"-"`
+	OnProgress      func(progress *TaskProgress)                                               `json:"-"`
 }
 
 type TaskImportOwner struct {
 	Name           string             `json:"name"`
-	Dir            string             `json:"dir"`
 	Path           string             `json:"path"`
 	SkipTableNames []string           `json:"skipTableNames"`
 	Tables         []*TaskImportTable `json:"tables"`
@@ -147,7 +149,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 			return
 		}
 	} else {
-		dir := owner.Dir
+		dir := owner.Path
 		var ds []os.DirEntry
 		ds, err = os.ReadDir(dir)
 		if err != nil {

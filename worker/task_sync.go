@@ -10,8 +10,9 @@ import (
 
 func NewTaskSync(sourceDB *sql.DB, sourceDialect dialect.Dialect, targetDb *sql.DB, targetDialect dialect.Dialect, taskSyncParam *TaskSyncParam) (res *taskSync) {
 	task := &Task{
-		dia: sourceDialect,
-		db:  sourceDB,
+		dia:        sourceDialect,
+		db:         sourceDB,
+		onProgress: taskSyncParam.OnProgress,
 	}
 	res = &taskSync{
 		Task:          task,
@@ -30,7 +31,9 @@ type TaskSyncParam struct {
 	SyncStructure   bool `json:"syncStructure"`
 	SyncData        bool `json:"syncData"`
 	ContinueIsError bool `json:"continueIsError"`
-	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string
+
+	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string `json:"-"`
+	OnProgress      func(progress *TaskProgress)                                               `json:"-"`
 }
 
 type TaskSyncOwner struct {
@@ -109,6 +112,7 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 		if err != nil {
 			return
 		}
+		progress.Infos = append(progress.Infos, fmt.Sprintf("owner[%s] table size[%d]", owner.SourceName, len(list)))
 		for _, one := range list {
 			tables = append(tables, &TaskSyncTable{
 				SourceName: one.Name,

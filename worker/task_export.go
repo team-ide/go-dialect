@@ -17,8 +17,9 @@ func NewTaskExport(db *sql.DB, dia dialect.Dialect, targetDialect dialect.Dialec
 		taskExportParam.DataSourceType = DataSourceTypeSql
 	}
 	task := &Task{
-		dia: dia,
-		db:  db,
+		dia:        dia,
+		db:         db,
+		onProgress: taskExportParam.OnProgress,
 	}
 	res = &taskExport{
 		Task:            task,
@@ -39,7 +40,9 @@ type TaskExportParam struct {
 	ExportBatchSql  bool            `json:"exportBatchSql"`
 	ContinueIsError bool            `json:"continueIsError"`
 	Dir             string          `json:"dir"`
-	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string
+
+	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string `json:"-"`
+	OnProgress      func(progress *TaskProgress)                                               `json:"-"`
 }
 
 type TaskExportOwner struct {

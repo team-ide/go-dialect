@@ -81,6 +81,33 @@ var (
 	PostgresqlType = &Type{Name: "postgresql"}
 )
 
+func GetDialect(dialectType string) (dia Dialect) {
+	switch strings.ToLower(dialectType) {
+	case "mysql":
+		dia = Mysql
+		break
+	case "sqlite", "sqlite3":
+		dia = Sqlite
+		break
+	case "damen", "dm":
+		dia = DaMen
+		break
+	case "kingbase", "kb":
+		dia = KinBase
+		break
+	case "oracle":
+		dia = Oracle
+		break
+	case "shentong", "st":
+		dia = ShenTong
+		break
+	case "postgresql", "ps":
+		dia = Postgresql
+		break
+	}
+	return
+}
+
 func packingName(packingCharacter, name string) string {
 	name = strings.ReplaceAll(name, `""`, "")
 	name = strings.ReplaceAll(name, `'`, "")
@@ -212,9 +239,5 @@ func formatStringValue(packingCharacter string, appendCharacter string, valueStr
 		}
 	}
 	out += packingCharacter
-	if strings.Contains(out, "Quotes a string to produce a result that can be used as a proper") {
-		println("before:", valueString)
-		println("after:", out)
-	}
 	return out
 }

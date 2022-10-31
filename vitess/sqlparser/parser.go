@@ -17,7 +17,6 @@ limitations under the License.
 package sqlparser
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"strconv"
@@ -40,9 +39,6 @@ var parserPool = sync.Pool{
 
 // zeroParser is a zero-initialized parser to help reinitialize the parser for pooling.
 var zeroParser yyParserImpl
-
-// MySQLVersion is the version of MySQL that the parser would emulate
-var MySQLVersion = "50709" // default version if nothing else is stated
 
 // yyParsePooled is a wrapper around yyParse that pools the parser objects. There isn't a
 // particularly good reason to use yyParse directly, since it immediately discards its parser.
@@ -99,22 +95,6 @@ func Parse2(sql string) (Statement, BindVars, error) {
 		return nil, nil, ErrEmpty
 	}
 	return tokenizer.ParseTree, tokenizer.BindVars, nil
-}
-
-var MySQLServerVersion = flag.String("mysql_server_version", "", "MySQL server version to advertise.")
-
-func checkParserVersionFlag() {
-	if flag.Parsed() {
-		versionFlagSync.Do(func() {
-			if *MySQLServerVersion != "" {
-				convVersion, err := convertMySQLVersionToCommentVersion(*MySQLServerVersion)
-				if err != nil {
-				} else {
-					MySQLVersion = convVersion
-				}
-			}
-		})
-	}
 }
 
 // convertMySQLVersionToCommentVersion converts the MySQL version into comment version format.

@@ -29,9 +29,10 @@ type Task struct {
 	Errors           []string        `json:"errors"`
 	TaskProgressList []*TaskProgress `json:"taskProgressList"`
 
-	dia dialect.Dialect
-	db  *sql.DB
-	do  func() (err error)
+	onProgress func(progress *TaskProgress)
+	dia        dialect.Dialect
+	db         *sql.DB
+	do         func() (err error)
 }
 
 type TaskProgress struct {
@@ -104,6 +105,9 @@ func (this_ *Task) Start() (err error) {
 
 func (this_ *Task) addProgress(progress *TaskProgress) {
 	this_.TaskProgressList = append(this_.TaskProgressList, progress)
+	if this_.onProgress != nil {
+		this_.onProgress(progress)
+	}
 	return
 }
 

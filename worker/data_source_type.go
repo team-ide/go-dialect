@@ -1,5 +1,7 @@
 package worker
 
+import "strings"
+
 type DataSourceType struct {
 	Name       string `json:"name"`
 	New        func(param *DataSourceParam) (dataSource DataSource)
@@ -40,3 +42,21 @@ var (
 		DataSourceTypeCsv,
 	}
 )
+
+func GetDataSource(dataSourceType string) (res *DataSourceType) {
+	switch strings.ToLower(dataSourceType) {
+	case "sql":
+		res = DataSourceTypeSql
+		break
+	case "txt", "text":
+		res = DataSourceTypeText
+		break
+	case "excel":
+		res = DataSourceTypeExcel
+		break
+	case "csv":
+		res = DataSourceTypeCsv
+		break
+	}
+	return
+}

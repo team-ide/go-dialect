@@ -47,12 +47,30 @@ type Tokenizer struct {
 
 	Pos int
 	buf string
+
+	// MySQLVersion is the version of MySQL that the parser would emulate
+	MySQLVersion string
+}
+
+func (tkn *Tokenizer) GetMySQLVersion() string {
+	if tkn.MySQLVersion == "" {
+		return "50709" // default version if nothing else is stated
+	}
+	return tkn.MySQLVersion
+}
+
+func (tkn *Tokenizer) SetMySQLVersion(version string) (err error) {
+	convVersion, err := convertMySQLVersionToCommentVersion(version)
+	if err != nil {
+	} else {
+		tkn.MySQLVersion = convVersion
+	}
+	return
 }
 
 // NewStringTokenizer creates a new Tokenizer for the
 // sql string.
 func NewStringTokenizer(sql string) *Tokenizer {
-	checkParserVersionFlag()
 
 	return &Tokenizer{
 		buf:      sql,
@@ -660,7 +678,7 @@ func (tkn *Tokenizer) scanMySQLSpecificComment() (int, string) {
 
 	commentVersion, sql := ExtractMysqlComment(tkn.buf[start:tkn.Pos])
 
-	if MySQLVersion >= commentVersion {
+	if tkn.GetMySQLVersion() >= commentVersion {
 		// Only add the special comment to the tokenizer if the version of MySQL is higher or equal to the comment version
 		tkn.specialComment = NewStringTokenizer(sql)
 	}

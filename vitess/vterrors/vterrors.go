@@ -86,7 +86,6 @@ limitations under the License.
 package vterrors
 
 import (
-	"flag"
 	"fmt"
 	"io"
 
@@ -100,7 +99,7 @@ import (
 var LogErrStacks bool
 
 func init() {
-	flag.BoolVar(&LogErrStacks, "log_err_stacks", false, "log stack traces for errors")
+	//flag.BoolVar(&LogErrStacks, "log_err_stacks", false, "log stack traces for errors")
 }
 
 // New returns an error with the supplied message.

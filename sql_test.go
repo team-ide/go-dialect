@@ -1,4 +1,4 @@
-package go_dialect
+package main
 
 import (
 	"fmt"
