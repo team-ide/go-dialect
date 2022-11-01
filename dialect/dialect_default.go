@@ -83,7 +83,14 @@ func (this_ *DefaultDialect) FormatColumnType(column *ColumnModel) (columnType s
 	return
 }
 func (this_ *DefaultDialect) FormatDefaultValue(column *ColumnModel) (defaultValue string) {
-	defaultValue = "DEFAULT " + this_.PackValueForSql(nil, column.Default)
+	defaultValue = "DEFAULT "
+	if column.DefaultCurrentTimestamp || column.OnUpdateCurrentTimestamp {
+		if column.DefaultCurrentTimestamp {
+			defaultValue += " TO_TIMESTAMP('20190101 00:00:00.000000','yyyyMMdd HH24:mi:ss.ff6') "
+		}
+		return
+	}
+	defaultValue += this_.PackValueForSql(nil, column.Default)
 	return
 }
 func (this_ *DefaultDialect) ToColumnTypeInfo(columnType string) (columnTypeInfo *ColumnTypeInfo, length, decimal int, err error) {
@@ -709,5 +716,53 @@ func (this_ *DefaultDialect) InsertSql(insert *InsertModel) (sqlList []string, e
 	}
 
 	sqlList = append(sqlList, sql)
+	return
+}
+
+func (this_ *DefaultDialect) InsertDataListSql(ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, batchSqlList []string, err error) {
+	var batchSqlCache = make(map[string]string)
+	var batchSqlIndexCache = make(map[string]int)
+	var columnNames []string
+	for _, one := range columnList {
+		columnNames = append(columnNames, one.Name)
+	}
+	for _, data := range dataList {
+		var columnList_ []string
+		var values = "("
+		for _, column := range columnList {
+			str := this_.PackValueForSql(column, data[column.Name])
+			if strings.EqualFold(str, "null") {
+				continue
+			}
+			columnList_ = append(columnList_, column.Name)
+			values += str + ", "
+		}
+		values = strings.TrimSuffix(values, ", ")
+		values += ")"
+
+		insertSqlInfo := "INSERT INTO "
+		if ownerName != "" {
+			insertSqlInfo += this_.PackOwner(ownerName) + "."
+		}
+		insertSqlInfo += this_.PackTable(tableName)
+		insertSqlInfo += " ("
+		insertSqlInfo += this_.PackColumns(columnList_)
+		insertSqlInfo += ") VALUES "
+
+		sqlList = append(sqlList, insertSqlInfo+values)
+
+		key := strings.Join(columnList_, ",")
+		find, ok := batchSqlCache[key]
+		if ok {
+			find += ",\n" + values
+			batchSqlCache[key] = find
+			batchSqlList[batchSqlIndexCache[key]] = find
+		} else {
+			find = insertSqlInfo + "\n" + values
+			batchSqlIndexCache[key] = len(batchSqlCache)
+			batchSqlCache[key] = find
+			batchSqlList = append(batchSqlList, find)
+		}
+	}
 	return
 }

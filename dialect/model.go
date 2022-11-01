@@ -3,6 +3,7 @@ package dialect
 type OwnerModel struct {
 	Name             string `json:"name,omitempty"`
 	Comment          string `json:"comment,omitempty"`
+	Password         string `json:"password,omitempty"`
 	CharacterSetName string `json:"characterSetName,omitempty"`
 	CollationName    string `json:"collationName,omitempty"`
 	Error            string `json:"error,omitempty"`

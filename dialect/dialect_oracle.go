@@ -1,6 +1,7 @@
 package dialect
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -51,17 +52,17 @@ func (this_ *OracleDialect) init() {
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARCHAR", TypeFormat: "VARCHAR2($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARCHAR2", TypeFormat: "VARCHAR2($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TINYTEXT", TypeFormat: "VARCHAR2($l)", HasLength: true, IsString: true})
-	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TEXT", TypeFormat: "VARCHAR2($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TEXT", TypeFormat: "VARCHAR2(4000)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "MEDIUMTEXT", TypeFormat: "CLOB", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONGTEXT", TypeFormat: "CLOB", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CLOB", TypeFormat: "CLOB", HasLength: true, IsString: true})
-	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "ENUM", TypeFormat: "CHAR($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "ENUM", TypeFormat: "VARCHAR2(50)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TINYBLOB", TypeFormat: "BLOB", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BLOB", TypeFormat: "BLOB", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "MEDIUMBLOB", TypeFormat: "BLOB", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONGBLOB", TypeFormat: "BLOB", HasLength: true, IsString: true})
 
-	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SET", TypeFormat: "SET($l)", HasLength: true, IsString: true})
+	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SET", TypeFormat: "VARCHAR2(50)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "XMLTYPE", TypeFormat: "XMLTYPE($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "RAW", TypeFormat: "RAW($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NVARCHAR2", TypeFormat: "NVARCHAR2($l)", HasLength: true, IsString: true})
@@ -89,6 +90,15 @@ func (this_ *OracleDialect) OwnerSelectSql(ownerName string) (sql string, err er
 	return
 }
 func (this_ *OracleDialect) OwnerChangeSql(ownerName string) (sql string, err error) {
+	return
+}
+func (this_ *OracleDialect) OwnerCreateSql(owner *OwnerModel) (sqlList []string, err error) {
+	sql := ``
+	sql = `CREATE USER ` + owner.Name + ` IDENTIFIED BY "` + owner.Password + `" `
+	sqlList = append(sqlList, sql)
+
+	sql = `GRANT dba,resource,connect TO ` + owner.Name + ` `
+	sqlList = append(sqlList, sql)
 	return
 }
 
@@ -264,5 +274,66 @@ func (this_ *OracleDialect) IndexesSelectSql(ownerName string, tableName string)
 	sql += `AND au.TABLE_NAME='` + tableName + `' `
 
 	sql += ") "
+	return
+}
+
+func (this_ *OracleDialect) InsertDataListSql(ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, batchSqlList []string, err error) {
+	var batchSql = "INSERT ALL "
+	var columnNames []string
+	for _, one := range columnList {
+		columnNames = append(columnNames, one.Name)
+	}
+	for index, data := range dataList {
+		var columnList_ []string
+		var values = "("
+		for _, column := range columnList {
+			str := this_.PackValueForSql(column, data[column.Name])
+			if strings.EqualFold(str, "null") {
+				continue
+			}
+			columnList_ = append(columnList_, column.Name)
+			if column.Type == "TIMESTAMP" {
+				str = `TO_TIMESTAMP(` + str + `,'yyyy-MM-dd HH24:mi:ss.ff6')`
+			} else {
+				if column.NotNull {
+					if str == `''` {
+						str = `' '`
+					}
+				}
+				if len(str) > 1000 {
+					key := fmt.Sprintf("%s_%s_%s_%d", ownerName, tableName, column.Name, index)
+					batchSqlList = append(batchSqlList, `DECLARE `+key+` CLOB :=`+str)
+					str = `:` + key
+				}
+			}
+			values += str + ", "
+		}
+		values = strings.TrimSuffix(values, ", ")
+		values += ")"
+
+		insertSqlInfo := "INSERT INTO "
+		if ownerName != "" {
+			insertSqlInfo += this_.PackOwner(ownerName) + "."
+		}
+		insertSqlInfo += this_.PackTable(tableName)
+		insertSqlInfo += " ("
+		insertSqlInfo += this_.PackColumns(columnList_)
+		insertSqlInfo += ") VALUES "
+
+		sqlList = append(sqlList, insertSqlInfo+values)
+
+		batchOne := "INTO "
+		if ownerName != "" {
+			batchOne += this_.PackOwner(ownerName) + "."
+		}
+		batchOne += this_.PackTable(tableName)
+		batchOne += " ("
+		batchOne += this_.PackColumns(columnList_)
+		batchOne += ") VALUES " + values
+
+		batchSql += "\n" + batchOne
+	}
+	batchSql += "\n" + `SELECT 1 FROM DUAL`
+	batchSqlList = append(batchSqlList, batchSql)
 	return
 }

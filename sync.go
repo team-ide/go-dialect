@@ -41,12 +41,17 @@ func doSync() {
 	}
 	var owners = getSyncOwners(*syncOwner)
 	task := worker.NewTaskSync(db, dia, targetDb, targetDia,
-		func(ownerName string) (db *sql.DB, err error) {
-			changeSql, _ := dia.OwnerChangeSql(ownerName)
+		func(ownerName string) (workDb *sql.DB, err error) {
+			if *targetDialect == "sqlite" || *targetDialect == "sqlite3" {
+				workDb = targetDb
+				return
+			}
+			changeSql, _ := targetDia.OwnerChangeSql(ownerName)
+
 			if changeSql != "" {
-				db, err = getDbInfo(*targetDialect, *targetUser, password, *targetHost, *targetPort, ownerName)
+				workDb, err = getDbInfo(*targetDialect, *targetUser, password, *targetHost, *targetPort, ownerName)
 			} else {
-				db, err = getDbInfo(*targetDialect, ownerName, password, *targetHost, *targetPort, *targetDatabase)
+				workDb, err = getDbInfo(*targetDialect, ownerName, password, *targetHost, *targetPort, *targetDatabase)
 			}
 			return
 		},

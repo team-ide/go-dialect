@@ -101,6 +101,7 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 
 	ownerOne, err := OwnerSelect(this_.db, this_.dia, owner.SourceName)
 	if err != nil {
+		//fmt.Println("task sync syncOwner OwnerSelect owner:", owner.SourceName, " error:", err.Error())
 		return
 	}
 	if ownerOne == nil {
@@ -114,6 +115,7 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 		var list []*dialect.TableModel
 		list, err = TablesSelect(this_.db, this_.dia, owner.SourceName)
 		if err != nil {
+			//fmt.Println("task sync syncOwner TablesSelect owner:", owner.SourceName, " error:", err.Error())
 			return
 		}
 		progress.Infos = append(progress.Infos, fmt.Sprintf("owner[%s] table size[%d]", owner.SourceName, len(list)))
@@ -128,7 +130,7 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 		targetOwnerName = owner.SourceName
 	}
 
-	targetOwnerOne, err := OwnerSelect(this_.targetDb, this_.dia, targetOwnerName)
+	targetOwnerOne, err := OwnerSelect(this_.targetDb, this_.targetDialect, targetOwnerName)
 	if err != nil {
 		return
 	}
@@ -140,8 +142,9 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 		this_.addProgress(&TaskProgress{
 			Title: "同步[" + targetOwnerName + "] 不存在，创建",
 		})
-		_, err = OwnerCreate(this_.targetDb, this_.dia, &dialect.OwnerModel{
+		_, err = OwnerCreate(this_.targetDb, this_.targetDialect, &dialect.OwnerModel{
 			Name:             targetOwnerName,
+			Password:         this_.OwnerCreatePassword,
 			CharacterSetName: "utf8mb4",
 		})
 		if err != nil {
@@ -210,7 +213,7 @@ func (this_ *taskSync) syncTable(workDb *sql.DB, sourceOwnerName string, sourceT
 		err = errors.New("source db table [" + sourceOwnerName + "." + sourceTableName + "] is not exist")
 		return
 	}
-	oldTableDetail, err := TableDetail(workDb, this_.targetDialect, targetOwnerName, targetTableName)
+	oldTableDetail, err := TableDetail(this_.targetDb, this_.targetDialect, targetOwnerName, targetTableName)
 	if err != nil {
 		return
 	}
@@ -352,7 +355,7 @@ func (this_ *taskSync) insertDataList(workDb *sql.DB, dataList []map[string]inte
 
 	this_.addProgress(progress)
 
-	_, sqlList, err := InsertDataListSql(this_.targetDialect, targetOwnerName, targetTableName, columnList, dataList)
+	_, sqlList, err := this_.targetDialect.InsertDataListSql(targetOwnerName, targetTableName, columnList, dataList)
 	if err != nil {
 		return
 	}

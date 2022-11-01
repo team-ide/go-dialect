@@ -410,7 +410,7 @@ func (this_ *taskExport) exportDataList(ownerDataSource DataSource, tableDataSou
 	if this_.ExportAppendOwner {
 		sqlOwner = targetOwnerName
 	}
-	sqlList, batchSqlList, err := InsertDataListSql(this_.targetDialect, sqlOwner, targetTableName, columnList, dataList)
+	sqlList, batchSqlList, err := this_.targetDialect.InsertDataListSql(sqlOwner, targetTableName, columnList, dataList)
 	if err != nil {
 		return
 	}

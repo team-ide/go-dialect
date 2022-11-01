@@ -63,6 +63,7 @@ type Dialect interface {
 	IndexDeleteSql(ownerName string, tableName string, indexName string) (sqlList []string, err error)
 
 	InsertSql(insert *InsertModel) (sqlList []string, err error)
+	InsertDataListSql(ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, batchSqlList []string, err error)
 }
 
 var (

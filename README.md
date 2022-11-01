@@ -92,6 +92,8 @@ SQL方言
 
 ```shell
 
+docker run -itd --name mysql-3306 -m 1024m -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql:5.7
+
 # 导出 mysql 数据库的 mysql 库 为 mysql 的 sql
 go run . -do export -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -fileType sql -exportDir temp/export/test -exportOwner mysql -exportDialect mysql
 
@@ -108,5 +110,14 @@ go run . -do import -sourceDialect sqlite -sourceDatabase temp/sqlite.db -fileTy
 
 # 同步 mysql 数据库的 mysql 库 到 mysql 数据库的 DB2
 go run . -do sync -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -targetDialect mysql -targetHost 127.0.0.1 -targetPort 3306 -targetUser root -targetPassword 123456 -syncOwner mysql=DB2 -syncOwnerCreateIfNotExist true
+
+# 同步 mysql 数据库的 mysql 库 到 sqlite
+go run . -do sync -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -targetDialect sqlite -targetDatabase temp/sqlite.mysql -syncOwner mysql=main
+
+
+docker run -itd --name oracle-1521 -p 1521:1521 teamide/oracle-xe-11g:1.0
+
+# 同步 mysql 数据库的 mysql 库 到 oracle DB_FROM_MYSQL
+go run . -do sync -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -targetDialect oracle -targetHost 127.0.0.1 -targetPort 1521 -targetUser root -targetPassword 123456 -targetDatabase xe -syncOwner mysql=DB_FROM_MYSQL -syncOwnerCreateIfNotExist true
 
 ```

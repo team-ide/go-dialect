@@ -37,12 +37,17 @@ func doImport() {
 		password = *sourcePassword
 	}
 	task := worker.NewTaskImport(db, dia,
-		func(ownerName string) (db *sql.DB, err error) {
+		func(ownerName string) (workDb *sql.DB, err error) {
+
+			if *sourceDialect == "sqlite" || *sourceDialect == "sqlite3" {
+				workDb = db
+				return
+			}
 			changeSql, _ := dia.OwnerChangeSql(ownerName)
 			if changeSql != "" {
-				db, err = getDbInfo(*sourceDialect, *sourceUser, password, *sourceHost, *sourcePort, ownerName)
+				workDb, err = getDbInfo(*sourceDialect, *sourceUser, password, *sourceHost, *sourcePort, ownerName)
 			} else {
-				db, err = getDbInfo(*sourceDialect, ownerName, password, *sourceHost, *sourcePort, *sourceDatabase)
+				workDb, err = getDbInfo(*sourceDialect, ownerName, password, *sourceHost, *sourcePort, *sourceDatabase)
 			}
 			return
 		},

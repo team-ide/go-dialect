@@ -132,6 +132,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 			})
 			_, err = OwnerCreate(this_.db, this_.dia, &dialect.OwnerModel{
 				Name:             ownerName,
+				Password:         this_.ImportOwnerCreatePassword,
 				CharacterSetName: "utf8mb4",
 			})
 			if err != nil {
@@ -359,7 +360,7 @@ func (this_ *taskImport) importDataList(workDb *sql.DB, dataList []map[string]in
 
 	this_.addProgress(progress)
 
-	_, sqlList, err := InsertDataListSql(this_.dia, ownerName, tableName, columnList, dataList)
+	_, sqlList, err := this_.dia.InsertDataListSql(ownerName, tableName, columnList, dataList)
 	if err != nil {
 		return
 	}
