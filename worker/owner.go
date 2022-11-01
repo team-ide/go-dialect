@@ -53,3 +53,35 @@ func OwnerSelect(db *sql.DB, dia dialect.Dialect, ownerName string) (one *dialec
 	}
 	return
 }
+
+func OwnerCreate(db *sql.DB, dia dialect.Dialect, owner *dialect.OwnerModel) (created bool, err error) {
+	sqlList, err := dia.OwnerCreateSql(owner)
+	if err != nil {
+		return
+	}
+	if len(sqlList) == 0 {
+		return
+	}
+	_, err = DoExec(db, sqlList)
+	if err != nil {
+		return
+	}
+	created = true
+	return
+}
+
+func OwnerChange(db *sql.DB, dia dialect.Dialect, ownerName string) (created bool, err error) {
+	sqlInfo, err := dia.OwnerChangeSql(ownerName)
+	if err != nil {
+		return
+	}
+	if sqlInfo == "" {
+		return
+	}
+	_, err = DoExec(db, []string{sqlInfo})
+	if err != nil {
+		return
+	}
+	created = true
+	return
+}

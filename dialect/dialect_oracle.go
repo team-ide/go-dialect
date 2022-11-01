@@ -88,6 +88,9 @@ func (this_ *OracleDialect) OwnerSelectSql(ownerName string) (sql string, err er
 	sql += ` WHERE USERNAME='` + ownerName + `'`
 	return
 }
+func (this_ *OracleDialect) OwnerChangeSql(ownerName string) (sql string, err error) {
+	return
+}
 
 func (this_ *OracleDialect) TableModel(data map[string]interface{}) (table *TableModel, err error) {
 	if data == nil {

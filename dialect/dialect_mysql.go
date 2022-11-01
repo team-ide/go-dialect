@@ -194,6 +194,10 @@ func (this_ *MysqlDialect) OwnerSelectSql(ownerName string) (sql string, err err
 	sql += ` WHERE SCHEMA_NAME='` + ownerName + `'`
 	return
 }
+func (this_ *MysqlDialect) OwnerChangeSql(ownerName string) (sql string, err error) {
+	sql += `USE ` + this_.PackOwner(ownerName)
+	return
+}
 func (this_ *MysqlDialect) OwnerCreateSql(owner *OwnerModel) (sqlList []string, err error) {
 	var sql string
 	sql = `CREATE DATABASE ` + this_.PackOwner(owner.Name)

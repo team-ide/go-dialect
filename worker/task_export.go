@@ -33,13 +33,14 @@ func NewTaskExport(db *sql.DB, dia dialect.Dialect, targetDialect dialect.Dialec
 type TaskExportParam struct {
 	Owners []*TaskExportOwner `json:"owners"`
 
-	DataSourceType  *DataSourceType `json:"dataSourceType"`
-	BatchNumber     int             `json:"batchNumber"`
-	ExportStructure bool            `json:"exportStructure"`
-	ExportData      bool            `json:"exportData"`
-	ExportBatchSql  bool            `json:"exportBatchSql"`
-	ContinueIsError bool            `json:"continueIsError"`
-	Dir             string          `json:"dir"`
+	DataSourceType    *DataSourceType `json:"dataSourceType"`
+	BatchNumber       int             `json:"batchNumber"`
+	ExportStruct      bool            `json:"exportStruct"`
+	ExportData        bool            `json:"exportData"`
+	ExportBatchSql    bool            `json:"exportBatchSql"`
+	ContinueIsError   bool            `json:"continueIsError"`
+	Dir               string          `json:"dir"`
+	ExportAppendOwner bool            `json:"exportAppendOwner"`
 
 	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string `json:"-"`
 	OnProgress      func(progress *TaskProgress)                                               `json:"-"`
@@ -254,8 +255,8 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 		}()
 	}
 
-	if this_.ExportStructure {
-		err = this_.exportTableStructure(ownerDataSource, tableDataSource, tableDetail, targetOwnerName, targetTableName)
+	if this_.ExportStruct {
+		err = this_.exportTableStruct(ownerDataSource, tableDataSource, tableDetail, targetOwnerName, targetTableName)
 		if err != nil {
 			return
 		}
@@ -269,7 +270,7 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 	return
 }
 
-func (this_ *taskExport) exportTableStructure(ownerDataSource DataSource, tableDataSource DataSource, tableDetail *dialect.TableModel, targetOwnerName string, targetTableName string) (err error) {
+func (this_ *taskExport) exportTableStruct(ownerDataSource DataSource, tableDataSource DataSource, tableDetail *dialect.TableModel, targetOwnerName string, targetTableName string) (err error) {
 
 	progress := &TaskProgress{
 		Title: "导出表结构[" + tableDetail.OwnerName + "." + tableDetail.Name + "] 到 [" + targetOwnerName + "." + targetTableName + "]",
@@ -277,6 +278,11 @@ func (this_ *taskExport) exportTableStructure(ownerDataSource DataSource, tableD
 	var oldOwnerName = tableDetail.OwnerName
 	var oldTableName = tableDetail.Name
 	tableDetail.OwnerName = targetOwnerName
+	if this_.ExportAppendOwner {
+		tableDetail.OwnerName = targetOwnerName
+	} else {
+		tableDetail.OwnerName = ""
+	}
 	tableDetail.Name = targetTableName
 	defer func() {
 		tableDetail.OwnerName = oldOwnerName
@@ -400,8 +406,11 @@ func (this_ *taskExport) exportDataList(ownerDataSource DataSource, tableDataSou
 	}()
 
 	this_.addProgress(progress)
-
-	sqlList, batchSqlList, err := InsertDataListSql(this_.targetDialect, targetOwnerName, targetTableName, columnList, dataList)
+	var sqlOwner = ""
+	if this_.ExportAppendOwner {
+		sqlOwner = targetOwnerName
+	}
+	sqlList, batchSqlList, err := InsertDataListSql(this_.targetDialect, sqlOwner, targetTableName, columnList, dataList)
 	if err != nil {
 		return
 	}

@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func NewTaskImport(db *sql.DB, dia dialect.Dialect, taskImportParam *TaskImportParam) (res *taskImport) {
+func NewTaskImport(db *sql.DB, dia dialect.Dialect, newDb func(ownerName string) (db *sql.DB, err error), taskImportParam *TaskImportParam) (res *taskImport) {
 	if taskImportParam.DataSourceType == nil {
 		taskImportParam.DataSourceType = DataSourceTypeSql
 	}
@@ -21,6 +21,7 @@ func NewTaskImport(db *sql.DB, dia dialect.Dialect, taskImportParam *TaskImportP
 	res = &taskImport{
 		Task:            task,
 		TaskImportParam: taskImportParam,
+		newDb:           newDb,
 	}
 	task.do = res.do
 	return
@@ -29,12 +30,14 @@ func NewTaskImport(db *sql.DB, dia dialect.Dialect, taskImportParam *TaskImportP
 type TaskImportParam struct {
 	Owners []*TaskImportOwner `json:"owners"`
 
-	DataSourceType  *DataSourceType `json:"dataSourceType"`
-	BatchNumber     int             `json:"batchNumber"`
-	ContinueIsError bool            `json:"continueIsError"`
+	DataSourceType              *DataSourceType `json:"dataSourceType"`
+	BatchNumber                 int             `json:"batchNumber"`
+	ContinueIsError             bool            `json:"continueIsError"`
+	ImportOwnerCreateIfNotExist bool            `json:"importOwnerCreateIfNotExist"`
+	ImportOwnerCreatePassword   string          `json:"importOwnerCreatePassword"`
 
 	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string `json:"-"`
-	OnProgress      func(progress *TaskProgress)                                               `json:"-"`
+	OnProgress      func(progress *TaskProgress)
 }
 
 type TaskImportOwner struct {
@@ -51,7 +54,8 @@ type TaskImportTable struct {
 
 type taskImport struct {
 	*Task
-	*TaskImportParam
+	*TaskImportParam `json:"-"`
+	newDb            func(ownerName string) (db *sql.DB, err error)
 }
 
 func (this_ *taskImport) do() (err error) {
@@ -115,6 +119,36 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 
 	ownerName := owner.Name
 
+	//
+	if this_.ImportOwnerCreateIfNotExist {
+		var ownerOne *dialect.OwnerModel
+		ownerOne, err = OwnerSelect(this_.db, this_.dia, ownerName)
+		if err != nil {
+			return
+		}
+		if ownerOne == nil {
+			this_.addProgress(&TaskProgress{
+				Title: "导入[" + owner.Name + "] 不存在，创建",
+			})
+			_, err = OwnerCreate(this_.db, this_.dia, &dialect.OwnerModel{
+				Name:             ownerName,
+				CharacterSetName: "utf8mb4",
+			})
+			if err != nil {
+				return
+			}
+		} else {
+			this_.addProgress(&TaskProgress{
+				Title: "导入[" + owner.Name + "] 存在",
+			})
+		}
+	}
+
+	workDb, err := this_.newDb(ownerName)
+	if err != nil {
+		return
+	}
+
 	var ownerDataSource DataSource
 	if !this_.DataSourceType.OwnerIsDir {
 		fileName := owner.Path
@@ -137,7 +171,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 		}()
 		err = ownerDataSource.Read(nil, func(data *DataSourceData) (err error) {
 			if data.HasSql {
-				_, err = DoExec(this_.db, []string{data.Sql})
+				_, err = DoExec(workDb, []string{data.Sql})
 				if err != nil {
 					err = errors.New("sql:" + data.Sql + " exec error," + err.Error())
 					return
@@ -181,7 +215,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 					continue
 				}
 			}
-			err = this_.importTable(owner.Name, path, tableName, tableName)
+			err = this_.importTable(workDb, owner.Name, path, tableName, tableName)
 			if err != nil {
 				return
 			}
@@ -193,7 +227,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 	return
 }
 
-func (this_ *taskImport) importTable(ownerName string, path string, sourceTableName string, targetTableName string) (err error) {
+func (this_ *taskImport) importTable(workDb *sql.DB, ownerName string, path string, sourceTableName string, targetTableName string) (err error) {
 	if targetTableName == "" {
 		targetTableName = sourceTableName
 	}
@@ -215,7 +249,7 @@ func (this_ *taskImport) importTable(ownerName string, path string, sourceTableN
 
 	this_.addProgress(progress)
 
-	tableDetail, err := TableDetail(this_.db, this_.dia, ownerName, targetTableName)
+	tableDetail, err := TableDetail(workDb, this_.dia, ownerName, targetTableName)
 	if err != nil {
 		return
 	}
@@ -247,13 +281,13 @@ func (this_ *taskImport) importTable(ownerName string, path string, sourceTableN
 	//		return
 	//	}
 	//}
-	err = this_.importTableData(tableDataSource, tableDetail, ownerName, targetTableName)
+	err = this_.importTableData(workDb, tableDataSource, tableDetail, ownerName, targetTableName)
 	if err != nil {
 		return
 	}
 	return
 }
-func (this_ *taskImport) importTableData(tableDataSource DataSource, tableDetail *dialect.TableModel, targetOwnerName string, targetTableName string) (err error) {
+func (this_ *taskImport) importTableData(workDb *sql.DB, tableDataSource DataSource, tableDetail *dialect.TableModel, targetOwnerName string, targetTableName string) (err error) {
 
 	progress := &TaskProgress{
 		Title: "导入表数据[" + tableDetail.OwnerName + "." + tableDetail.Name + "] 到 [" + targetOwnerName + "." + targetTableName + "]",
@@ -282,7 +316,7 @@ func (this_ *taskImport) importTableData(tableDataSource DataSource, tableDetail
 		if data.HasData && data.Data != nil {
 			dataList = append(dataList, data.Data)
 			if len(dataList) >= batchNumber {
-				err = this_.importDataList(dataList, targetOwnerName, targetTableName, tableDetail.ColumnList)
+				err = this_.importDataList(workDb, dataList, targetOwnerName, targetTableName, tableDetail.ColumnList)
 				dataList = make([]map[string]interface{}, 0)
 				if err != nil {
 					return
@@ -296,7 +330,7 @@ func (this_ *taskImport) importTableData(tableDataSource DataSource, tableDetail
 		return
 	}
 	if len(dataList) >= 0 {
-		err = this_.importDataList(dataList, targetOwnerName, targetTableName, tableDetail.ColumnList)
+		err = this_.importDataList(workDb, dataList, targetOwnerName, targetTableName, tableDetail.ColumnList)
 		dataList = make([]map[string]interface{}, 0)
 		if err != nil {
 			return
@@ -305,7 +339,7 @@ func (this_ *taskImport) importTableData(tableDataSource DataSource, tableDetail
 	return
 }
 
-func (this_ *taskImport) importDataList(dataList []map[string]interface{}, ownerName string, tableName string, columnList []*dialect.ColumnModel) (err error) {
+func (this_ *taskImport) importDataList(workDb *sql.DB, dataList []map[string]interface{}, ownerName string, tableName string, columnList []*dialect.ColumnModel) (err error) {
 
 	progress := &TaskProgress{
 		Title: "插入数据[" + ownerName + "." + tableName + "]",
@@ -330,7 +364,7 @@ func (this_ *taskImport) importDataList(dataList []map[string]interface{}, owner
 		return
 	}
 	var errSql string
-	errSql, err = DoExec(this_.db, sqlList)
+	errSql, err = DoExec(workDb, sqlList)
 	if err != nil {
 		if errSql != "" {
 			err = errors.New("sql:" + errSql + " exec error," + err.Error())

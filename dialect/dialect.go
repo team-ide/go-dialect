@@ -32,6 +32,7 @@ type Dialect interface {
 	OwnerModel(data map[string]interface{}) (owner *OwnerModel, err error)
 	OwnersSelectSql() (sql string, err error)
 	OwnerSelectSql(ownerName string) (sql string, err error)
+	OwnerChangeSql(ownerName string) (sql string, err error)
 	OwnerCreateSql(owner *OwnerModel) (sqlList []string, err error)
 	OwnerDeleteSql(ownerName string) (sqlList []string, err error)
 

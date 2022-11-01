@@ -2,22 +2,14 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-dialect/worker"
 	"strings"
 )
 
-var (
-	exportType  = flag.String("exportType", "", "导出 类型：sql、excel、txt、csv")
-	exportDir   = flag.String("exportDir", "", "导出 文件存储目录")
-	exportOwner = flag.String("exportOwner", "", "导出 库或表所属者，多个使用“,”隔开，“x,xx=xx1”")
-	exportDia   = flag.String("exportDia", "", "导出 方言：mysql、sqlite、dm、kingbase、oracle")
-)
-
 func doExport() {
-	if *exportType == "" {
-		println("请输入 导出 类型")
+	if *fileType == "" {
+		println("请输入 文件 类型")
 		return
 	}
 	if *exportDir == "" {
@@ -28,27 +20,29 @@ func doExport() {
 		println("请输入 导出 库或表所属者")
 		return
 	}
-	db, err := getDbInfo(*dbType, *user, *password, *host, *port, *database)
+	db, err := getDbInfo(*sourceDialect, *sourceUser, *sourcePassword, *sourceHost, *sourcePort, *sourceDatabase)
 	if err != nil {
 		panic(err)
 	}
-	dia := dialect.GetDialect(*dbType)
+	dia := dialect.GetDialect(*sourceDialect)
 	if db == nil || dia == nil {
-		panic("dbType [" + *dbType + "] not support")
+		panic("sourceDialect [" + *sourceDialect + "] not support")
 	}
 
-	targetDialect := dialect.GetDialect(*exportDia)
-	dataSourceType := worker.GetDataSource(*exportType)
+	exportDia := dialect.GetDialect(*exportDialect)
+	dataSourceType := worker.GetDataSource(*fileType)
 	if dataSourceType == nil {
-		panic("export [" + *exportType + "] not support")
+		panic("fileType [" + *fileType + "] not support")
 	}
+
 	var owners = getExportOwners(*exportOwner)
-	task := worker.NewTaskExport(db, dia, targetDialect, &worker.TaskExportParam{
-		Owners:          owners,
-		ExportStructure: true,
-		ExportData:      true,
-		Dir:             *exportDir,
-		ExportBatchSql:  true,
+	task := worker.NewTaskExport(db, dia, exportDia, &worker.TaskExportParam{
+		Owners:            owners,
+		ExportStruct:      *exportStruct == "" || *exportStruct == "1" || *exportStruct == "true",
+		ExportData:        *exportData == "" || *exportData == "1" || *exportData == "true",
+		ExportAppendOwner: *exportAppendOwner == "1" || *exportAppendOwner == "true",
+		Dir:               *exportDir,
+		ExportBatchSql:    true,
 		FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
 			return tableName + "_" + index.Name
 		},

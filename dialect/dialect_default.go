@@ -306,6 +306,10 @@ func (this_ *DefaultDialect) OwnerDeleteSql(ownerName string) (sqlList []string,
 	err = errors.New("dialect [" + this_.DialectType().Name + "] not support owner delete sql")
 	return
 }
+func (this_ *DefaultDialect) OwnerChangeSql(ownerName string) (sql string, err error) {
+	err = errors.New("dialect [" + this_.DialectType().Name + "] not support owner change sql")
+	return
+}
 
 func (this_ *DefaultDialect) TableModel(data map[string]interface{}) (table *TableModel, err error) {
 	return

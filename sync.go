@@ -1,25 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
-	"flag"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-dialect/worker"
 	"strings"
 )
 
-var (
-	syncDbType   = flag.String("syncDbType", "", "同步 目标 数据库类型：mysql、sqlite3、dm、kingbase、oracle")
-	syncHost     = flag.String("syncHost", "", "同步 目标 数据库Host")
-	syncPort     = flag.Int("syncPort", 0, "同步 目标 数据库Port")
-	syncUser     = flag.String("syncUser", "", "同步 目标 数据库登录用户")
-	syncPassword = flag.String("syncPassword", "", "同步 目标 数据库登录密码")
-	syncDatabase = flag.String("syncDatabase", "", "同步 目标 数据库模式名称")
-	syncOwner    = flag.String("syncOwner", "", "同步 库或表所属者，多个使用“,”隔开，“x,xx=xx1”")
-)
-
 func doSync() {
-	if *syncDbType == "" {
+	if *targetDialect == "" {
 		println("请输入 同步 目标 数据库类型")
 		return
 	}
@@ -27,39 +17,55 @@ func doSync() {
 		println("请输入 同步 库或表所属者")
 		return
 	}
-	db, err := getDbInfo(*dbType, *user, *password, *host, *port, *database)
+	db, err := getDbInfo(*sourceDialect, *sourceUser, *sourcePassword, *sourceHost, *sourcePort, *sourceDatabase)
 	if err != nil {
 		panic(err)
 	}
-	dia := dialect.GetDialect(*dbType)
+	dia := dialect.GetDialect(*sourceDialect)
 	if db == nil || dia == nil {
-		panic("dbType [" + *dbType + "] not support")
+		panic("sourceDialect [" + *sourceDialect + "] not support")
 	}
 
-	targetDb, err := getDbInfo(*syncDbType, *syncUser, *syncPassword, *syncHost, *syncPort, *syncDatabase)
+	targetDb, err := getDbInfo(*targetDialect, *targetUser, *targetPassword, *targetHost, *targetPort, *targetDatabase)
 	if err != nil {
 		panic(err)
 	}
-	targetDia := dialect.GetDialect(*syncDbType)
+	targetDia := dialect.GetDialect(*targetDialect)
 	if targetDb == nil || targetDia == nil {
-		panic("syncDbType [" + *syncDbType + "] not support")
+		panic("targetDialect [" + *targetDialect + "] not support")
 	}
 
+	password := *importOwnerCreatePassword
+	if password == "" {
+		password = *sourcePassword
+	}
 	var owners = getSyncOwners(*syncOwner)
-	task := worker.NewTaskSync(db, dia, targetDb, targetDia, &worker.TaskSyncParam{
-		Owners:        owners,
-		SyncStructure: true,
-		FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
-			return tableName + "_" + index.Name
-		},
-		OnProgress: func(progress *worker.TaskProgress) {
-			bs, err := json.Marshal(progress)
-			if err != nil {
-				panic(err)
+	task := worker.NewTaskSync(db, dia, targetDb, targetDia,
+		func(ownerName string) (db *sql.DB, err error) {
+			changeSql, _ := dia.OwnerChangeSql(ownerName)
+			if changeSql != "" {
+				db, err = getDbInfo(*targetDialect, *targetUser, password, *targetHost, *targetPort, ownerName)
+			} else {
+				db, err = getDbInfo(*targetDialect, ownerName, password, *targetHost, *targetPort, *targetDatabase)
 			}
-			println(string(bs))
+			return
 		},
-	})
+		&worker.TaskSyncParam{
+			Owners:                owners,
+			SyncStructure:         true,
+			OwnerCreateIfNotExist: *syncOwnerCreateIfNotExist == "1" || *syncOwnerCreateIfNotExist == "true",
+			OwnerCreatePassword:   password,
+			FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
+				return tableName + "_" + index.Name
+			},
+			OnProgress: func(progress *worker.TaskProgress) {
+				bs, err := json.Marshal(progress)
+				if err != nil {
+					panic(err)
+				}
+				println(string(bs))
+			},
+		})
 	err = task.Start()
 	if err != nil {
 		panic(err)

@@ -1,55 +1,67 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
-	"flag"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-dialect/worker"
 	"strings"
 )
 
-var (
-	importType  = flag.String("importType", "", "导入 类型：sql、excel、txt、csv")
-	importOwner = flag.String("importOwner", "", "导入 库或表所属者，多个使用“,”隔开，指定文件或目录，“xx=data/xx”")
-)
-
 func doImport() {
-	if *importType == "" {
-		println("请输入 导出类型")
+	if *fileType == "" {
+		println("请输入 文件 类型")
 		return
 	}
 	if *importOwner == "" {
 		println("请输入 库或表所属者名称")
 		return
 	}
-	db, err := getDbInfo(*dbType, *user, *password, *host, *port, *database)
+	db, err := getDbInfo(*sourceDialect, *sourceUser, *sourcePassword, *sourceHost, *sourcePort, *sourceDatabase)
 	if err != nil {
 		panic(err)
 	}
-	dia := dialect.GetDialect(*dbType)
+	dia := dialect.GetDialect(*sourceDialect)
 	if db == nil || dia == nil {
-		panic("dbType [" + *dbType + "] not support")
+		panic("sourceDialect [" + *sourceDialect + "] not support")
 	}
 
-	dataSourceType := worker.GetDataSource(*importType)
+	dataSourceType := worker.GetDataSource(*fileType)
 	if dataSourceType == nil {
-		panic("import [" + *importType + "] not support")
+		panic("fileType [" + *fileType + "] not support")
 	}
 	var owners = getImportOwners(*importOwner)
-	task := worker.NewTaskImport(db, dia, &worker.TaskImportParam{
-		Owners: owners,
-		FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
-			return tableName + "_" + index.Name
-		},
-		DataSourceType: dataSourceType,
-		OnProgress: func(progress *worker.TaskProgress) {
-			bs, err := json.Marshal(progress)
-			if err != nil {
-				panic(err)
+
+	password := *importOwnerCreatePassword
+	if password == "" {
+		password = *sourcePassword
+	}
+	task := worker.NewTaskImport(db, dia,
+		func(ownerName string) (db *sql.DB, err error) {
+			changeSql, _ := dia.OwnerChangeSql(ownerName)
+			if changeSql != "" {
+				db, err = getDbInfo(*sourceDialect, *sourceUser, password, *sourceHost, *sourcePort, ownerName)
+			} else {
+				db, err = getDbInfo(*sourceDialect, ownerName, password, *sourceHost, *sourcePort, *sourceDatabase)
 			}
-			println(string(bs))
+			return
 		},
-	})
+		&worker.TaskImportParam{
+			Owners:                      owners,
+			ImportOwnerCreateIfNotExist: *importOwnerCreateIfNotExist == "1" || *importOwnerCreateIfNotExist == "true",
+			ImportOwnerCreatePassword:   password,
+			FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
+				return tableName + "_" + index.Name
+			},
+			DataSourceType: dataSourceType,
+			OnProgress: func(progress *worker.TaskProgress) {
+				bs, err := json.Marshal(progress)
+				if err != nil {
+					panic(err)
+				}
+				println(string(bs))
+			},
+		})
 	err = task.Start()
 	if err != nil {
 		panic(err)

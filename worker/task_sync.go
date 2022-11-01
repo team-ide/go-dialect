@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func NewTaskSync(sourceDB *sql.DB, sourceDialect dialect.Dialect, targetDb *sql.DB, targetDialect dialect.Dialect, taskSyncParam *TaskSyncParam) (res *taskSync) {
+func NewTaskSync(sourceDB *sql.DB, sourceDialect dialect.Dialect, targetDb *sql.DB, targetDialect dialect.Dialect, newDb func(ownerName string) (db *sql.DB, err error), taskSyncParam *TaskSyncParam) (res *taskSync) {
 	task := &Task{
 		dia:        sourceDialect,
 		db:         sourceDB,
@@ -19,6 +19,7 @@ func NewTaskSync(sourceDB *sql.DB, sourceDialect dialect.Dialect, targetDb *sql.
 		targetDialect: targetDialect,
 		targetDb:      targetDb,
 		TaskSyncParam: taskSyncParam,
+		newDb:         newDb,
 	}
 	task.do = res.do
 	return
@@ -27,10 +28,12 @@ func NewTaskSync(sourceDB *sql.DB, sourceDialect dialect.Dialect, targetDb *sql.
 type TaskSyncParam struct {
 	Owners []*TaskSyncOwner `json:"owners"`
 
-	BatchNumber     int  `json:"batchNumber"`
-	SyncStructure   bool `json:"syncStructure"`
-	SyncData        bool `json:"syncData"`
-	ContinueIsError bool `json:"continueIsError"`
+	BatchNumber           int    `json:"batchNumber"`
+	SyncStructure         bool   `json:"syncStructure"`
+	SyncData              bool   `json:"syncData"`
+	ContinueIsError       bool   `json:"continueIsError"`
+	OwnerCreateIfNotExist bool   `json:"ownerCreateIfNotExist"`
+	OwnerCreatePassword   string `json:"ownerCreatePassword"`
 
 	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string `json:"-"`
 	OnProgress      func(progress *TaskProgress)                                               `json:"-"`
@@ -53,6 +56,7 @@ type taskSync struct {
 	*TaskSyncParam
 	targetDialect dialect.Dialect
 	targetDb      *sql.DB
+	newDb         func(ownerName string) (db *sql.DB, err error)
 }
 
 func (this_ *taskSync) do() (err error) {
@@ -119,6 +123,36 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 			})
 		}
 	}
+	targetOwnerName := owner.TargetName
+	if targetOwnerName == "" {
+		targetOwnerName = owner.SourceName
+	}
+
+	targetOwnerOne, err := OwnerSelect(this_.targetDb, this_.dia, targetOwnerName)
+	if err != nil {
+		return
+	}
+	if targetOwnerOne == nil {
+		if !this_.OwnerCreateIfNotExist {
+			err = errors.New("target db owner [" + targetOwnerName + "] is not exist")
+			return
+		}
+		this_.addProgress(&TaskProgress{
+			Title: "同步[" + targetOwnerName + "] 不存在，创建",
+		})
+		_, err = OwnerCreate(this_.targetDb, this_.dia, &dialect.OwnerModel{
+			Name:             targetOwnerName,
+			CharacterSetName: "utf8mb4",
+		})
+		if err != nil {
+			return
+		}
+	}
+
+	workDb, err := this_.newDb(targetOwnerName)
+	if err != nil {
+		return
+	}
 
 	for _, table := range tables {
 
@@ -134,7 +168,7 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 			}
 		}
 
-		err = this_.syncTable(owner.SourceName, table.SourceName, owner.TargetName, table.TargetName)
+		err = this_.syncTable(workDb, owner.SourceName, table.SourceName, owner.TargetName, table.TargetName)
 		if err != nil {
 			return
 		}
@@ -143,7 +177,7 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 	return
 }
 
-func (this_ *taskSync) syncTable(sourceOwnerName string, sourceTableName string, targetOwnerName string, targetTableName string) (err error) {
+func (this_ *taskSync) syncTable(workDb *sql.DB, sourceOwnerName string, sourceTableName string, targetOwnerName string, targetTableName string) (err error) {
 	if targetOwnerName == "" {
 		targetOwnerName = sourceOwnerName
 	}
@@ -176,7 +210,7 @@ func (this_ *taskSync) syncTable(sourceOwnerName string, sourceTableName string,
 		err = errors.New("source db table [" + sourceOwnerName + "." + sourceTableName + "] is not exist")
 		return
 	}
-	oldTableDetail, err := TableDetail(this_.targetDb, this_.targetDialect, targetOwnerName, targetTableName)
+	oldTableDetail, err := TableDetail(workDb, this_.targetDialect, targetOwnerName, targetTableName)
 	if err != nil {
 		return
 	}
@@ -186,13 +220,13 @@ func (this_ *taskSync) syncTable(sourceOwnerName string, sourceTableName string,
 	oldTableDetail.OwnerName = targetOwnerName
 	oldTableDetail.Name = targetTableName
 	if this_.SyncStructure {
-		err = this_.syncTableSyncStructure(newTableDetail, oldTableDetail)
+		err = this_.syncTableSyncStructure(workDb, newTableDetail, oldTableDetail)
 		if err != nil {
 			return
 		}
 	}
 	if this_.SyncData {
-		err = this_.syncTableSyncData(newTableDetail, oldTableDetail)
+		err = this_.syncTableSyncData(workDb, newTableDetail, oldTableDetail)
 		if err != nil {
 			return
 		}
@@ -200,7 +234,7 @@ func (this_ *taskSync) syncTable(sourceOwnerName string, sourceTableName string,
 	return
 }
 
-func (this_ *taskSync) syncTableSyncStructure(newTableDetail *dialect.TableModel, oldTableDetail *dialect.TableModel) (err error) {
+func (this_ *taskSync) syncTableSyncStructure(workDb *sql.DB, newTableDetail *dialect.TableModel, oldTableDetail *dialect.TableModel) (err error) {
 
 	progress := &TaskProgress{
 		Title: "同步表结构[" + newTableDetail.OwnerName + "." + newTableDetail.Name + "] 到 [" + oldTableDetail.OwnerName + "." + oldTableDetail.Name + "]",
@@ -228,13 +262,13 @@ func (this_ *taskSync) syncTableSyncStructure(newTableDetail *dialect.TableModel
 
 	if len(oldTableDetail.ColumnList) == 0 {
 		newTableDetail.Name = oldTableDetail.Name
-		err = TableCreate(this_.targetDb, this_.targetDialect, oldTableDetail.OwnerName, newTableDetail)
+		err = TableCreate(workDb, this_.targetDialect, oldTableDetail.OwnerName, newTableDetail)
 		if err != nil {
 			return
 		}
 		return
 	} else {
-		err = TableUpdate(this_.targetDb, this_.targetDialect, oldTableDetail, this_.dia, newTableDetail)
+		err = TableUpdate(workDb, this_.targetDialect, oldTableDetail, this_.dia, newTableDetail)
 		if err != nil {
 			return
 		}
@@ -242,7 +276,7 @@ func (this_ *taskSync) syncTableSyncStructure(newTableDetail *dialect.TableModel
 	return
 }
 
-func (this_ *taskSync) syncTableSyncData(newTableDetail *dialect.TableModel, oldTableDetail *dialect.TableModel) (err error) {
+func (this_ *taskSync) syncTableSyncData(workDb *sql.DB, newTableDetail *dialect.TableModel, oldTableDetail *dialect.TableModel) (err error) {
 
 	progress := &TaskProgress{
 		Title: "同步表数据[" + newTableDetail.OwnerName + "." + newTableDetail.Name + "] 到 [" + oldTableDetail.OwnerName + "." + oldTableDetail.Name + "]",
@@ -290,7 +324,7 @@ func (this_ *taskSync) syncTableSyncData(newTableDetail *dialect.TableModel, old
 	dataListGroup := SplitArrayMap(list, batchNumber)
 
 	for _, dataList := range dataListGroup {
-		err = this_.insertDataList(dataList, oldTableDetail.OwnerName, oldTableDetail.Name, columnList)
+		err = this_.insertDataList(workDb, dataList, oldTableDetail.OwnerName, oldTableDetail.Name, columnList)
 		if err != nil {
 			return
 		}
@@ -298,7 +332,7 @@ func (this_ *taskSync) syncTableSyncData(newTableDetail *dialect.TableModel, old
 	return
 }
 
-func (this_ *taskSync) insertDataList(dataList []map[string]interface{}, targetOwnerName string, targetTableName string, columnList []*dialect.ColumnModel) (err error) {
+func (this_ *taskSync) insertDataList(workDb *sql.DB, dataList []map[string]interface{}, targetOwnerName string, targetTableName string, columnList []*dialect.ColumnModel) (err error) {
 
 	progress := &TaskProgress{
 		Title: "插入数据[" + targetOwnerName + "." + targetTableName + "]",
@@ -323,7 +357,7 @@ func (this_ *taskSync) insertDataList(dataList []map[string]interface{}, targetO
 		return
 	}
 	var errSql string
-	errSql, err = DoExec(this_.targetDb, sqlList)
+	errSql, err = DoExec(workDb, sqlList)
 	if err != nil {
 		if errSql != "" {
 			err = errors.New("sql:" + errSql + " exec error," + err.Error())
