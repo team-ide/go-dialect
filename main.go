@@ -47,6 +47,8 @@ var (
 	targetPassword            = flag.String("targetPassword", "", "目标 数据库 password")
 	targetDatabase            = flag.String("targetDatabase", "", "目标 数据库 连接库（库名、用户名、SID）")
 	syncOwner                 = flag.String("syncOwner", "", "同步 库（库名、表拥有者），默认全部，多个使用“,”隔开")
+	syncStruct                = flag.String("syncStruct", "", "同步 结构体，默认true，适用于导出类型为sql、excel")
+	syncData                  = flag.String("syncData", "", "同步 数据，默认true")
 	syncOwnerCreateIfNotExist = flag.String("syncOwnerCreateIfNotExist", "", "同步 库如果不存在，则创建")
 	syncOwnerCreatePassword   = flag.String("syncOwnerCreatePassword", "", "同步 库创建的密码，只有库为所属者有效，默认为targetPassword，如：oracle等数据库")
 )

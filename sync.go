@@ -52,7 +52,8 @@ func doSync() {
 		},
 		&worker.TaskSyncParam{
 			Owners:                owners,
-			SyncStructure:         true,
+			SyncStruct:            *syncStruct == "" || *syncStruct == "1" || *syncStruct == "true",
+			SyncData:              *syncData == "" || *syncData == "1" || *syncData == "true",
 			OwnerCreateIfNotExist: *syncOwnerCreateIfNotExist == "1" || *syncOwnerCreateIfNotExist == "true",
 			OwnerCreatePassword:   password,
 			FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {

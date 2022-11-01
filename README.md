@@ -77,9 +77,13 @@ SQL方言
 * -targetDatabase
   * 目标 数据库 连接库（库名、用户名、SID）
 * -syncOwner
-  * 导出 库（库名、表拥有者），默认全部，多个使用“,”隔开
-  * 如果导出重置 库名，使用“库=修改后库名”
+  * 同步 库（库名、表拥有者），默认全部，多个使用“,”隔开
+  * 如果同步重置 库名，使用“库=修改后库名”
   * 示例：x,xx=xx1,xxx=xxx1
+* -syncStruct
+  * 同步 结构体，默认true，适用于导出类型为sql、excel
+* -syncData
+  * 同步 数据，默认true
 * -syncOwnerCreateIfNotExist
   * 同步 库如果不存在，则创建，默认false
 * -syncOwnerCreatePassword

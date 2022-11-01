@@ -29,7 +29,7 @@ type TaskSyncParam struct {
 	Owners []*TaskSyncOwner `json:"owners"`
 
 	BatchNumber           int    `json:"batchNumber"`
-	SyncStructure         bool   `json:"syncStructure"`
+	SyncStruct            bool   `json:"syncStruct"`
 	SyncData              bool   `json:"syncData"`
 	ContinueIsError       bool   `json:"continueIsError"`
 	OwnerCreateIfNotExist bool   `json:"ownerCreateIfNotExist"`
@@ -219,7 +219,7 @@ func (this_ *taskSync) syncTable(workDb *sql.DB, sourceOwnerName string, sourceT
 	}
 	oldTableDetail.OwnerName = targetOwnerName
 	oldTableDetail.Name = targetTableName
-	if this_.SyncStructure {
+	if this_.SyncStruct {
 		err = this_.syncTableSyncStructure(workDb, newTableDetail, oldTableDetail)
 		if err != nil {
 			return
