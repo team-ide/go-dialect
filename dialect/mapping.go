@@ -22,15 +22,22 @@ type MappingSql struct {
 }
 
 type MappingSqlTemplate struct {
-	Content string            `json:"content"`
-	Root    *MappingStatement `json:"root"`
+	Content string            `json:"content,omitempty"`
+	Root    *MappingStatement `json:"root,omitempty"`
 }
 type MappingStatement struct {
-	Content     string              `json:"content"`
-	Statements  []*MappingStatement `json:"statements"`
-	Parent      *MappingStatement   `json:"-"`
-	HasBrackets bool                `json:"hasBrackets"`
+	Content    string               `json:"content,omitempty"`
+	Statements []*MappingStatement  `json:"statements,omitempty"`
+	Parent     *MappingStatement    `json:"-"`
+	Type       MappingStatementType `json:"type,omitempty"`
 }
+
+type MappingStatementType string
+
+var (
+	MappingStatementTypeString  MappingStatementType = "string"
+	MappingStatementTypeBracket MappingStatementType = "bracket"
+)
 
 func (this_ *MappingSqlTemplate) parse() (err error) {
 	content := strings.TrimSpace(this_.Content)
@@ -38,39 +45,40 @@ func (this_ *MappingSqlTemplate) parse() (err error) {
 	this_.Root = &MappingStatement{}
 
 	var inBracketsLevel int
-	var thisChar byte
+	var thisStr string
 	var lastStatement *MappingStatement
-
-	for i := 0; i < len(content); i++ {
-		thisChar = content[i]
-		if thisChar == '[' {
+	strList := strings.Split(content, "")
+	for i := 0; i < len(strList); i++ {
+		thisStr = strList[i]
+		if thisStr == "[" {
 			inBracketsLevel++
 			statement := &MappingStatement{
-				HasBrackets: true,
+				Type: MappingStatementTypeBracket,
 			}
 			if lastStatement == nil {
 				statement.Parent = this_.Root
 			} else {
-				statement.Parent = lastStatement
+				statement.Parent = lastStatement.Parent
 			}
 			lastStatement = statement
 			lastStatement.Parent.Statements = append(lastStatement.Parent.Statements, statement)
-		} else if thisChar == ']' {
+		} else if thisStr == "]" {
 			if lastStatement == nil || inBracketsLevel == 0 {
 				err = errors.New("sql template [" + content + "] parse error, has more “[”")
 				return
 			}
 			inBracketsLevel--
-			lastStatement = lastStatement.Parent
+			lastStatement = nil
 		} else {
 			if lastStatement == nil {
 				statement := &MappingStatement{
+					Type:   MappingStatementTypeString,
 					Parent: this_.Root,
 				}
 				lastStatement = statement
 				this_.Root.Statements = append(this_.Root.Statements, statement)
 			}
-			lastStatement.Content += string(thisChar)
+			lastStatement.Content += thisStr
 		}
 
 	}
