@@ -14,7 +14,7 @@ func TestMapping(t *testing.T) {
 
 	for key, value := range mappingSql.SqlTemplates {
 		fmt.Println(*key, "-content", value.Content)
-		bs, _ := json.Marshal(value.Root)
+		bs, _ := json.Marshal(value.Root.Statements)
 		fmt.Println(*key, "-node", string(bs))
 	}
 }
