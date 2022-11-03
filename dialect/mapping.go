@@ -18,73 +18,7 @@ func ParseMapping(content string) (mappingSql *MappingSql, err error) {
 
 type MappingSql struct {
 	Content      string
-	SqlTemplates map[*MappingSqlType]*MappingSqlTemplate
-}
-
-type MappingSqlTemplate struct {
-	Content string            `json:"content,omitempty"`
-	Root    *MappingStatement `json:"root,omitempty"`
-}
-type MappingStatement struct {
-	Content    string               `json:"content,omitempty"`
-	Statements []*MappingStatement  `json:"statements,omitempty"`
-	Parent     *MappingStatement    `json:"-"`
-	Type       MappingStatementType `json:"type,omitempty"`
-}
-
-type MappingStatementType string
-
-var (
-	MappingStatementTypeString  MappingStatementType = "string"
-	MappingStatementTypeBracket MappingStatementType = "bracket"
-)
-
-func (this_ *MappingSqlTemplate) parse() (err error) {
-	content := strings.TrimSpace(this_.Content)
-
-	this_.Root = &MappingStatement{}
-
-	var inBracketsLevel int
-	var thisStr string
-	var lastStatement *MappingStatement
-	strList := strings.Split(content, "")
-	for i := 0; i < len(strList); i++ {
-		thisStr = strList[i]
-		if thisStr == "[" {
-			inBracketsLevel++
-			statement := &MappingStatement{
-				Type: MappingStatementTypeBracket,
-			}
-			if lastStatement == nil {
-				statement.Parent = this_.Root
-			} else {
-				statement.Parent = lastStatement.Parent
-			}
-			lastStatement = statement
-			lastStatement.Parent.Statements = append(lastStatement.Parent.Statements, statement)
-		} else if thisStr == "]" {
-			if lastStatement == nil || inBracketsLevel == 0 {
-				err = errors.New("sql template [" + content + "] parse error, has more “[”")
-				return
-			}
-			inBracketsLevel--
-			lastStatement = nil
-		} else {
-			if lastStatement == nil {
-				statement := &MappingStatement{
-					Type:   MappingStatementTypeString,
-					Parent: this_.Root,
-				}
-				lastStatement = statement
-				this_.Root.Statements = append(this_.Root.Statements, statement)
-			}
-			lastStatement.Content += thisStr
-		}
-
-	}
-
-	//fmt.Println(this_.Sql)
-	return
+	SqlTemplates map[*MappingSqlType]*RootSqlStatement
 }
 
 type MappingSqlType string
@@ -150,13 +84,13 @@ type MappingParser struct {
 
 func (this_ *MappingParser) Parse() (mappingSql *MappingSql, err error) {
 	mappingSql = &MappingSql{
-		SqlTemplates: make(map[*MappingSqlType]*MappingSqlTemplate),
+		SqlTemplates: make(map[*MappingSqlType]*RootSqlStatement),
 	}
 	reader := strings.NewReader(this_.content)
 	buf := bufio.NewReader(reader)
 	var line string
 	var lastMappingSqlType *MappingSqlType
-	var lastSqlTemplate *MappingSqlTemplate
+	var lastSqlContext *string
 	for {
 		line, err = buf.ReadString('\n')
 		if err != nil && err != io.EOF {
@@ -165,13 +99,13 @@ func (this_ *MappingParser) Parse() (mappingSql *MappingSql, err error) {
 		}
 		if lastMappingSqlType != nil {
 			if lastMappingSqlType.isEnd(line) {
-				err = lastSqlTemplate.parse()
+				mappingSql.SqlTemplates[lastMappingSqlType], err = GetSqlStatement(*lastSqlContext)
 				if err != nil {
 					err = errors.New("sql template parse error," + err.Error())
 					return
 				}
 				lastMappingSqlType = nil
-				lastSqlTemplate = nil
+				lastSqlContext = nil
 				continue
 			}
 		}
@@ -179,16 +113,15 @@ func (this_ *MappingParser) Parse() (mappingSql *MappingSql, err error) {
 		for _, one := range MappingSqlTypes {
 			if isStart = one.isStart(line); isStart {
 				lastMappingSqlType = one
-				lastSqlTemplate = &MappingSqlTemplate{}
-				mappingSql.SqlTemplates[lastMappingSqlType] = lastSqlTemplate
+				lastSqlContext = new(string)
 				break
 			}
 		}
 		if isStart {
 			continue
 		}
-		if lastSqlTemplate != nil {
-			lastSqlTemplate.Content = lastSqlTemplate.Content + line
+		if lastSqlContext != nil {
+			*lastSqlContext += line
 		}
 		if err == io.EOF { //读取结束，会报EOF
 			err = nil
