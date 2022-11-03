@@ -71,12 +71,13 @@ func sqlStatementParser(content string) (sqlStatement *RootSqlStatement, err err
 type SqlStatementParser struct {
 	content      []string
 	contentLen   int
-	curIndex     int
+	curIndex     int //当前索引
+	curRowStart  int //当前行开始索引
 	curStr       string
 	curStatement SqlStatement
 	curParent    SqlStatement
-	curRow       int
-	curCol       int
+	curRow       int // 当前行
+	curCol       int // 当前列
 	bracketLevel int // “{}” 层级
 	braceLevel   int // “[]” 层级
 }
@@ -87,6 +88,7 @@ func (this_ *SqlStatementParser) reset() {
 	this_.curRow = 0
 	this_.curCol = 0
 	this_.curIndex = 0
+	this_.curRowStart = 0
 	this_.curStr = ""
 	this_.curParent = nil
 	this_.curStatement = nil
