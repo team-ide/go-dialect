@@ -33,15 +33,15 @@ ALTER TABLE [{ownerName}.]{tableName} ADD {indexType} {indexName} ({columnNames}
 }
 func TestSqlStatementParser(t *testing.T) {
 	content := `
-{ if EqualFold(indexType, 'UNIQUE') {}
+{ if EqualFold(indexType, 'UNIQUE') }
 ALTER TABLE [{ownerName}.]{tableName} ADD UNIQUE {indexName} ({columnNames}) [COMMENT {columnComment}]
-{ } else if EqualFold(indexType, 'FULLTEXT') {}
+{ else if EqualFold(indexType, 'FULLTEXT') }
 ALTER TABLE [{ownerName}.]{tableName} ADD FULLTEXT {indexName} ({columnNames}) [COMMENT {columnComment}]
-{ } else if indexType == '' {}
+{ else if indexType == '' }
 ALTER TABLE [{ownerName}.]{tableName} ADD INDEX {indexName} ({columnNames}) [COMMENT {columnComment}]
-{ } else {}
+{ else }
 ALTER TABLE [{ownerName}.]{tableName} ADD {indexType} {indexName} ({columnNames}) [COMMENT {columnComment}]
-{ }}
+{ }
 `
 
 	sqlStatement, err := sqlStatementParser(content)
@@ -50,10 +50,8 @@ ALTER TABLE [{ownerName}.]{tableName} ADD {indexType} {indexName} ({columnNames}
 	}
 
 	fmt.Println("sql-template:", sqlStatement.GetTemplate())
-	for _, node := range *sqlStatement.GetChildren() {
-		bs, _ := json.Marshal(node)
-		fmt.Println("children:", string(bs))
-	}
+	bs, _ := json.Marshal(sqlStatement)
+	fmt.Println("sql-statement:", string(bs))
 }
 
 func TestMappingSql(t *testing.T) {
