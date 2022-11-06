@@ -99,7 +99,7 @@ func (this_ *MappingParser) Parse() (mappingSql *MappingSql, err error) {
 		}
 		if lastMappingSqlType != nil {
 			if lastMappingSqlType.isEnd(line) {
-				mappingSql.SqlTemplates[lastMappingSqlType], err = GetSqlStatement(*lastSqlContext)
+				mappingSql.SqlTemplates[lastMappingSqlType], err = sqlStatementParse(*lastSqlContext)
 				if err != nil {
 					err = errors.New("sql template parse error," + err.Error())
 					return
