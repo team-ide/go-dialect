@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func getIfCondition(str string) (condition string, err error) {
+func getIfCondition(str string, parent SqlStatement) (condition string, expressionStatement *ExpressionStatement, err error) {
 	condition = strings.TrimSpace(str)
 	condition = strings.TrimPrefix(condition, "{")
 	condition = strings.TrimSuffix(condition, "}")
@@ -18,6 +18,12 @@ func getIfCondition(str string) (condition string, err error) {
 	}
 	condition = reg.ReplaceAllString(condition, "")
 	condition = strings.TrimSpace(condition)
+
+	expressionStatement, err = parseExpressionStatement(condition, parent)
+	if err != nil {
+		return
+	}
+
 	return
 }
 func (this_ *SqlStatementParser) checkIfStatement() (startIndex int, endIndex int, err error) {
@@ -39,7 +45,7 @@ func (this_ *SqlStatementParser) checkIfStatement() (startIndex int, endIndex in
 		text := curStr[0:startIndex]
 		if text != "" {
 			var sqlStatements []SqlStatement
-			sqlStatements, err = parseIgnorableSqlStatement(text)
+			sqlStatements, err = parseTextSqlStatement(text, this_.curParent)
 			if err != nil {
 				return
 			}
@@ -51,7 +57,7 @@ func (this_ *SqlStatementParser) checkIfStatement() (startIndex int, endIndex in
 				Parent:  this_.curParent,
 			},
 		}
-		statement.Condition, err = getIfCondition(statement.Content)
+		statement.Condition, statement.ConditionExpression, err = getIfCondition(statement.Content, statement.Parent)
 		if err != nil {
 			return
 		}
@@ -89,8 +95,14 @@ func (this_ *SqlStatementParser) checkElseIfStatement() (startIndex int, endInde
 		endIndex = finds[0][1]
 		text := curStr[0:startIndex]
 		if text != "" {
+			p := this_.curParent
+			if this_.curElseIf != nil {
+				p = this_.curElseIf
+			} else {
+				p = this_.curIf
+			}
 			var sqlStatements []SqlStatement
-			sqlStatements, err = parseIgnorableSqlStatement(text)
+			sqlStatements, err = parseTextSqlStatement(text, p)
 			if err != nil {
 				return
 			}
@@ -109,7 +121,7 @@ func (this_ *SqlStatementParser) checkElseIfStatement() (startIndex int, endInde
 			If:    this_.curIf,
 			Index: len(this_.curIf.ElseIfs),
 		}
-		statement.Condition, err = getIfCondition(statement.Content)
+		statement.Condition, statement.ConditionExpression, err = getIfCondition(statement.Content, statement.Parent)
 		if err != nil {
 			return
 		}
@@ -143,8 +155,14 @@ func (this_ *SqlStatementParser) checkElseStatement() (startIndex int, endIndex 
 		endIndex = finds[0][1]
 		text := curStr[0:startIndex]
 		if text != "" {
+			p := this_.curParent
+			if this_.curElseIf != nil {
+				p = this_.curElseIf
+			} else {
+				p = this_.curIf
+			}
 			var sqlStatements []SqlStatement
-			sqlStatements, err = parseIgnorableSqlStatement(text)
+			sqlStatements, err = parseTextSqlStatement(text, p)
 			if err != nil {
 				return
 			}
@@ -192,8 +210,16 @@ func (this_ *SqlStatementParser) checkIfEndStatement() (startIndex int, endIndex
 		endIndex = finds[0][1]
 		text := curStr[0:startIndex]
 		if text != "" {
+			p := this_.curParent
+			if this_.curElse != nil {
+				p = this_.curElse
+			} else if this_.curElseIf != nil {
+				p = this_.curElseIf
+			} else {
+				p = this_.curIf
+			}
 			var sqlStatements []SqlStatement
-			sqlStatements, err = parseIgnorableSqlStatement(text)
+			sqlStatements, err = parseTextSqlStatement(text, p)
 			if err != nil {
 				return
 			}

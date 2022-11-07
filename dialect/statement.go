@@ -62,9 +62,10 @@ type TextSqlStatement struct {
 
 type IfSqlStatement struct {
 	*AbstractSqlStatement
-	Condition string                `json:"condition"`
-	ElseIfs   []*ElseIfSqlStatement `json:"elseIfs"`
-	Else      *ElseSqlStatement     `json:"else"`
+	Condition           string                `json:"condition"`
+	ConditionExpression *ExpressionStatement  `json:"conditionExpression"`
+	ElseIfs             []*ElseIfSqlStatement `json:"elseIfs"`
+	Else                *ElseSqlStatement     `json:"else"`
 }
 
 func (this_ *IfSqlStatement) GetTemplate() (template string) {
@@ -93,9 +94,10 @@ func (this_ *IfSqlStatement) GetTemplate() (template string) {
 
 type ElseIfSqlStatement struct {
 	*AbstractSqlStatement
-	Condition string          `json:"condition"`
-	If        *IfSqlStatement `json:"-"`
-	Index     int             `json:"index"`
+	Condition           string               `json:"condition"`
+	ConditionExpression *ExpressionStatement `json:"conditionExpression"`
+	If                  *IfSqlStatement      `json:"-"`
+	Index               int                  `json:"index"`
 }
 
 func (this_ *ElseIfSqlStatement) GetTemplate() (template string) {
@@ -162,5 +164,35 @@ func (this_ *ForStatement) GetTemplate() (template string) {
 }
 
 type ExpressionStatement struct {
+	*AbstractSqlStatement
+}
+
+type ExpressionStringStatement struct {
+	*AbstractSqlStatement
+	Value string `json:"value"`
+}
+
+type ExpressionNumberStatement struct {
+	*AbstractSqlStatement
+	Value float64 `json:"value"`
+}
+
+type ExpressionIdentifierStatement struct {
+	*AbstractSqlStatement
+	Identifier string `json:"identifier"`
+}
+
+type ExpressionFuncStatement struct {
+	*AbstractSqlStatement
+	Func string `json:"func"`
+}
+
+type ExpressionOperatorStatement struct {
+	*AbstractSqlStatement
+	Operator string `json:"operator"`
+}
+
+// ExpressionBracketsStatement 括号
+type ExpressionBracketsStatement struct {
 	*AbstractSqlStatement
 }

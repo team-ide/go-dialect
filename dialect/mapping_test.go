@@ -3,6 +3,7 @@ package dialect
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -33,11 +34,30 @@ func testOut(sqlStatement SqlStatement, tab int) {
 	if sqlStatement == nil {
 		return
 	}
+
+	cr := *sqlStatement.GetChildren()
+	*sqlStatement.GetChildren() = []SqlStatement{}
 	bs, _ := json.Marshal(sqlStatement)
 	for i := 0; i < tab; i++ {
 		fmt.Print("\t")
 	}
+	fmt.Print(reflect.TypeOf(sqlStatement).String() + ":")
+	*sqlStatement.GetChildren() = cr
 	fmt.Println("", string(bs))
+	switch data := sqlStatement.(type) {
+	case *IfSqlStatement:
+		for i := 0; i < tab+1; i++ {
+			fmt.Print("\t")
+		}
+		fmt.Println("if condition:")
+		testOut(data.ConditionExpression, tab+2)
+	case *ElseIfSqlStatement:
+		for i := 0; i < tab+1; i++ {
+			fmt.Print("\t")
+		}
+		fmt.Println("else if condition:")
+		testOut(data.ConditionExpression, tab+2)
+	}
 	if sqlStatement.GetChildren() != nil {
 		for _, node := range *sqlStatement.GetChildren() {
 			testOut(node, tab+1)

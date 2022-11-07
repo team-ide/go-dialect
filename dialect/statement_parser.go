@@ -1,7 +1,6 @@
 package dialect
 
 import (
-	"errors"
 	"strings"
 )
 
@@ -69,6 +68,14 @@ func (this_ *SqlStatementParser) parse() (sqlStatement *RootSqlStatement, err er
 
 func (this_ *SqlStatementParser) parseStr() (err error) {
 	if this_.contentLen <= this_.curIndex {
+		if this_.curStr != "" {
+			var sqlStatements []SqlStatement
+			sqlStatements, err = parseTextSqlStatement(this_.curStr, this_.curParent)
+			if err != nil {
+				return
+			}
+			*this_.curParent.GetChildren() = append(*this_.curParent.GetChildren(), sqlStatements...)
+		}
 		return
 	}
 	var char = this_.content[this_.curIndex]
@@ -159,123 +166,5 @@ func (this_ *SqlStatementParser) checkStatement() (err error) {
 		}
 	}
 
-	return
-}
-
-func parseIgnorableSqlStatement(content string) (sqlStatements []SqlStatement, err error) {
-	rootSqlStatement := &RootSqlStatement{
-		AbstractSqlStatement: &AbstractSqlStatement{},
-	}
-	var inBracketsLevel int
-	var thisStr string
-	var last SqlStatement
-	var lastParent SqlStatement = rootSqlStatement
-	strList := strings.Split(content, "")
-	for i := 0; i < len(strList); i++ {
-		thisStr = strList[i]
-		if thisStr == "[" {
-			if lastParent == nil {
-				err = errors.New("sql template [" + content + "] parse error")
-				return
-			}
-			inBracketsLevel++
-			sqlStatement := &IgnorableSqlStatement{
-				AbstractSqlStatement: &AbstractSqlStatement{
-					Parent: lastParent,
-				},
-			}
-			last = sqlStatement
-			*last.GetParent().GetChildren() = append(*last.GetParent().GetChildren(), sqlStatement)
-			lastParent = sqlStatement
-		} else if thisStr == "]" {
-			if last == nil || inBracketsLevel == 0 {
-				err = errors.New("sql template [" + content + "] parse error, has more “[”")
-				return
-			}
-			inBracketsLevel--
-			lastParent = lastParent.GetParent()
-			last = nil
-		} else {
-			if last == nil {
-				textSqlStatement := &TextSqlStatement{
-					AbstractSqlStatement: &AbstractSqlStatement{
-						Parent: lastParent,
-					},
-				}
-				last = textSqlStatement
-				*last.GetParent().GetChildren() = append(*last.GetParent().GetChildren(), textSqlStatement)
-			}
-			*last.GetContent() += thisStr
-		}
-
-	}
-	var list []SqlStatement
-	for _, one := range rootSqlStatement.Children {
-		list, err = parseExpressionStatement(*one.GetContent())
-		if err != nil {
-			return
-		}
-		switch one.(type) {
-		case *IgnorableSqlStatement:
-			*one.GetContent() = ""
-			*one.GetChildren() = list
-			sqlStatements = append(sqlStatements, one)
-		default:
-			sqlStatements = append(sqlStatements, list...)
-		}
-	}
-	//fmt.Println(this_.Sql)
-	return
-}
-
-func parseExpressionStatement(content string) (sqlStatements []SqlStatement, err error) {
-	rootSqlStatement := &RootSqlStatement{
-		AbstractSqlStatement: &AbstractSqlStatement{},
-	}
-	var inBracketsLevel int
-	var thisStr string
-	var last SqlStatement
-	var lastParent SqlStatement = rootSqlStatement
-	strList := strings.Split(content, "")
-	for i := 0; i < len(strList); i++ {
-		thisStr = strList[i]
-		if thisStr == "{" {
-			if lastParent == nil {
-				err = errors.New("sql template [" + content + "] parse error")
-				return
-			}
-			inBracketsLevel++
-			sqlStatement := &ExpressionStatement{
-				AbstractSqlStatement: &AbstractSqlStatement{
-					Parent: lastParent,
-				},
-			}
-			last = sqlStatement
-			*last.GetParent().GetChildren() = append(*last.GetParent().GetChildren(), sqlStatement)
-			lastParent = sqlStatement
-		} else if thisStr == "}" {
-			if last == nil || inBracketsLevel == 0 {
-				err = errors.New("sql template [" + content + "] parse error, has more “[”")
-				return
-			}
-			inBracketsLevel--
-			lastParent = lastParent.GetParent()
-			last = nil
-		} else {
-			if last == nil {
-				textSqlStatement := &TextSqlStatement{
-					AbstractSqlStatement: &AbstractSqlStatement{
-						Parent: lastParent,
-					},
-				}
-				last = textSqlStatement
-				*last.GetParent().GetChildren() = append(*last.GetParent().GetChildren(), textSqlStatement)
-			}
-			*last.GetContent() += thisStr
-		}
-
-	}
-	sqlStatements = rootSqlStatement.Children
-	//fmt.Println(this_.Sql)
 	return
 }
