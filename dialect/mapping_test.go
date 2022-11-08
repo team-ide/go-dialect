@@ -78,13 +78,13 @@ func testOut(sqlStatement SqlStatement, tab int) {
 func TestSqlStatementParser(t *testing.T) {
 	content := `
 { if EqualFold(indexType, 'UNIQUE}') }
-ALTER TABLE [{ownerName}.]{tableName} ADD UNIQUE {indexName} ({columnNames}) [COMMENT {columnComment}]
+ALTER TABLE [{ownerName}.]{tableName} ADD UNIQUE {indexName} ({columnNames}) [COMMENT {indexComment}]
 { else if EqualFold(indexType, 'FULLTEXT') }
-ALTER TABLE [{ownerName}.]{tableName} ADD FULLTEXT {indexName} ({columnNames}) [COMMENT {columnComment}]
+ALTER TABLE [{ownerName}.]{tableName} ADD FULLTEXT {indexName} ({columnNames}) [COMMENT {indexComment}]
 { else if indexType == '' }
-ALTER TABLE [{ownerName}.]{tableName} ADD INDEX {indexName} ({columnNames}) [COMMENT {columnComment}]
+ALTER TABLE [{ownerName}.]{tableName} ADD INDEX {indexName} ({columnNames}) [COMMENT {indexComment}]
 { else }
-ALTER TABLE [{ownerName}.]{tableName} ADD {indexType} {indexName} ({columnNames}) [COMMENT {columnComment}]
+ALTER TABLE [{ownerName}.]{tableName} ADD {indexType} {indexName} ({columnNames}) [COMMENT {indexComment}]
 { }
 `
 
@@ -98,11 +98,27 @@ ALTER TABLE [{ownerName}.]{tableName} ADD {indexType} {indexName} ({columnNames}
 	fmt.Println("sql-statement:", string(bs))
 	testOut(sqlStatement, 0)
 	context := map[string]interface{}{}
-	text, err := sqlStatement.Invoke(context)
+	context["ownerName"] = "库名"
+	context["tableName"] = "表名"
+	context["indexName"] = "索引名称"
+	context["columnNames"] = "字段1,字段2"
+	context["indexComment"] = "索引注释"
+	text, err := sqlStatement.Format(context)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("sql-text:", text)
+}
+
+func TestSplitOperator(t *testing.T) {
+	res, err := splitOperator("a+a-s/d")
+	if err != nil {
+		panic(err)
+	}
+	for _, one := range res {
+		fmt.Println(one)
+	}
+
 }
 
 func TestMappingSql(t *testing.T) {

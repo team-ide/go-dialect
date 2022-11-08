@@ -5,7 +5,7 @@ type SqlStatement interface {
 	GetContent() (content *string)
 	GetParent() (parent SqlStatement)
 	GetChildren() (children *[]SqlStatement)
-	Invoke(context map[string]interface{}) (text string, err error)
+	Format(context map[string]interface{}) (text string, err error)
 }
 
 type AbstractSqlStatement struct {
@@ -184,7 +184,8 @@ type ExpressionIdentifierStatement struct {
 
 type ExpressionFuncStatement struct {
 	*AbstractSqlStatement
-	Func string `json:"func"`
+	Func string          `json:"func"`
+	Args []*SqlStatement `json:"args"`
 }
 
 type ExpressionOperatorStatement struct {

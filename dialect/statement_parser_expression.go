@@ -2,8 +2,43 @@ package dialect
 
 import (
 	"errors"
+	"regexp"
+	"strconv"
 	"strings"
 )
+
+var (
+	operators      = []string{"+", "-", "*", "/", "<=", ">=", "==", "<", ">"}
+	matchOperators = []string{"\\+", "\\-", "\\*", "/", "<=", ">=", "==", "<", ">"}
+)
+
+func isOperator(str string) bool {
+	return StringsIndex(operators, str) >= 0
+}
+
+func splitOperator(content string) (res []string, err error) {
+	content = strings.TrimSpace(content)
+	if content == "" {
+		return
+	}
+	reg := regexp.MustCompile("[(" + strings.Join(matchOperators, ")(") + ")]+")
+	matches := reg.FindAllStringIndex(content, -1)
+	if len(matches) == 0 {
+		res = append(res, content)
+		return
+	}
+	lastIndex := 0
+	for _, match := range matches {
+		res = append(res, content[lastIndex:match[0]])
+		res = append(res, content[match[0]:match[1]])
+		lastIndex = match[1]
+	}
+	if len(content) > lastIndex {
+		res = append(res, content[lastIndex:])
+	}
+
+	return
+}
 
 func parseExpressionStatement(content string, parent SqlStatement) (expressionStatement *ExpressionStatement, err error) {
 	content = strings.TrimSpace(content)
@@ -21,6 +56,55 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 	var thisChar string
 
 	strList := strings.Split(content, "")
+
+	processStr := func(str string, statements *[]SqlStatement, thisParent SqlStatement) (err error) {
+		if str == "" {
+			return
+		}
+		var splitOperatorValues []string
+		splitOperatorValues, err = splitOperator(str)
+		if err != nil {
+			return
+		}
+		for _, one := range splitOperatorValues {
+			if one == "" {
+				continue
+			}
+			if isOperator(one) {
+				statement := &ExpressionOperatorStatement{
+					Operator: one,
+					AbstractSqlStatement: &AbstractSqlStatement{
+						Parent:  thisParent,
+						Content: one,
+					},
+				}
+				*statements = append(*statements, statement)
+			} else {
+				number, e := strconv.ParseFloat(one, 64)
+				if e != nil {
+					statement := &ExpressionIdentifierStatement{
+						Identifier: one,
+						AbstractSqlStatement: &AbstractSqlStatement{
+							Parent:  thisParent,
+							Content: one,
+						},
+					}
+					*statements = append(*statements, statement)
+				} else {
+					statement := &ExpressionNumberStatement{
+						Value: number,
+						AbstractSqlStatement: &AbstractSqlStatement{
+							Parent:  thisParent,
+							Content: one,
+						},
+					}
+					*statements = append(*statements, statement)
+				}
+
+			}
+		}
+		return
+	}
 	for i := 0; i < len(strList); i++ {
 		thisChar = strList[i]
 
@@ -29,12 +113,14 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 		}
 		packCharIndex := StringsIndex(stringPackChars, thisChar)
 		var isStringEnd bool
+		var isStringStart bool
 		if packCharIndex >= 0 {
 			// inStringLevel == 0 表示 不在 字符串 包装 中
 			if inStringLevel == 0 {
 				inStringPack = stringPackChars[packCharIndex]
 				// 字符串包装层级 +1
 				inStringLevel++
+				isStringStart = true
 			} else {
 				// 如果有转义符号 类似 “\'”，“\"”
 				if lastChar == "\\" {
@@ -45,9 +131,9 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 					// 字符串包装层级 -1
 					inStringLevel--
 				}
-			}
-			if inStringLevel == 0 {
-				isStringEnd = true
+				if inStringLevel == 0 {
+					isStringEnd = true
+				}
 			}
 		}
 		var thisParentChildren *[]SqlStatement
@@ -63,7 +149,21 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 			}
 		}
 
-		if isStringEnd {
+		if isStringStart {
+			if levelStatement[level] != nil {
+				err = processStr(str, levelStatement[level].GetChildren(), thisParent)
+				if err != nil {
+					return
+				}
+			} else {
+				err = processStr(str, thisParentChildren, thisParent)
+				if err != nil {
+					return
+				}
+			}
+			str = ""
+
+		} else if isStringEnd {
 			stringValue := str
 			stringValue = strings.TrimSuffix(stringValue, stringPackChars[packCharIndex])
 			stringValue = strings.TrimPrefix(stringValue, stringPackChars[packCharIndex])
@@ -87,15 +187,32 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 					return
 				}
 				var statement SqlStatement
-				if str != "" {
-					statement = &ExpressionFuncStatement{
-						Func: str,
-						AbstractSqlStatement: &AbstractSqlStatement{
-							Parent:  thisParent,
-							Content: str,
-						},
+				var splitOperatorValues []string
+				splitOperatorValues, err = splitOperator(str)
+				if err != nil {
+					return
+				}
+
+				for i, one := range splitOperatorValues {
+					if one == "" {
+						continue
 					}
-				} else {
+					if i < len(splitOperatorValues)-1 || isOperator(one) {
+						err = processStr(one, thisParentChildren, thisParent)
+						if err != nil {
+							return
+						}
+					} else {
+						statement = &ExpressionFuncStatement{
+							Func: one,
+							AbstractSqlStatement: &AbstractSqlStatement{
+								Parent:  thisParent,
+								Content: one,
+							},
+						}
+					}
+				}
+				if statement == nil {
 					statement = &ExpressionBracketsStatement{
 						AbstractSqlStatement: &AbstractSqlStatement{
 							Parent: thisParent,
@@ -111,15 +228,9 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 					err = errors.New("sql template [" + content + "] parse match end error")
 					return
 				}
-				if str != "" {
-					statement := &ExpressionIdentifierStatement{
-						Identifier: str,
-						AbstractSqlStatement: &AbstractSqlStatement{
-							Parent:  thisParent,
-							Content: str,
-						},
-					}
-					*levelStatement[level].GetChildren() = append(*levelStatement[level].GetChildren(), statement)
+				err = processStr(str, levelStatement[level].GetChildren(), thisParent)
+				if err != nil {
+					return
 				}
 				levelStatement[level] = nil
 				level--
@@ -129,14 +240,10 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 					err = errors.New("sql template [" + content + "] parse match end error")
 					return
 				}
-				statement := &ExpressionIdentifierStatement{
-					Identifier: str,
-					AbstractSqlStatement: &AbstractSqlStatement{
-						Parent:  thisParent,
-						Content: str,
-					},
+				err = processStr(str, levelStatement[level].GetChildren(), thisParent)
+				if err != nil {
+					return
 				}
-				*levelStatement[level].GetChildren() = append(*levelStatement[level].GetChildren(), statement)
 				str = ""
 			} else {
 				str += thisChar
@@ -146,14 +253,10 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 		}
 	}
 	if str != "" {
-		statement := &ExpressionIdentifierStatement{
-			Identifier: str,
-			AbstractSqlStatement: &AbstractSqlStatement{
-				Parent:  parent,
-				Content: str,
-			},
+		err = processStr(str, &sqlStatements, parent)
+		if err != nil {
+			return
 		}
-		sqlStatements = append(sqlStatements, statement)
 	}
 	expressionStatement = &ExpressionStatement{
 		AbstractSqlStatement: &AbstractSqlStatement{
