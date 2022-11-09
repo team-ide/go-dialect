@@ -184,8 +184,8 @@ type ExpressionIdentifierStatement struct {
 
 type ExpressionFuncStatement struct {
 	*AbstractSqlStatement
-	Func string          `json:"func"`
-	Args []*SqlStatement `json:"args"`
+	Func string         `json:"func"`
+	Args []SqlStatement `json:"args"`
 }
 
 type ExpressionOperatorStatement struct {
