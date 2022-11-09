@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -103,11 +104,21 @@ ALTER TABLE [{ownerName}.]{tableName} ADD {indexType} {indexName} ({columnNames}
 	context["indexName"] = "索引名称"
 	context["columnNames"] = "字段1,字段2"
 	context["indexComment"] = "索引注释"
+	context["indexType"] = "索引注释"
+
+	context["EqualFold"] = reflect.ValueOf(StringEqualFold)
 	text, err := sqlStatement.Format(context)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("sql-text:", text)
+}
+
+func StringEqualFold(arg1 interface{}, arg2 interface{}) (equal bool) {
+	str1 := GetStringValue(arg1)
+	str2 := GetStringValue(arg2)
+	equal = strings.EqualFold(str1, str2)
+	return
 }
 
 func TestSplitOperator(t *testing.T) {
@@ -133,4 +144,25 @@ func TestMappingSql(t *testing.T) {
 		bs, _ := json.Marshal(value.Children)
 		fmt.Println(*key, ":children:", string(bs))
 	}
+}
+
+func method1() string {
+	return "a"
+}
+
+type methodObject struct {
+}
+
+func (this_ *methodObject) method1() string {
+	return "a"
+}
+func TestMethod(t *testing.T) {
+	methodValue := reflect.ValueOf(method1)
+	res := methodValue.Call([]reflect.Value{})
+	println("call method1 result:", res)
+
+	obj := &methodObject{}
+	methodValue = reflect.ValueOf(obj.method1)
+	res = methodValue.Call([]reflect.Value{})
+	println("call methodObject method1 result:", res)
 }
