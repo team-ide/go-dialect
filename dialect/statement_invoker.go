@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 )
@@ -159,12 +160,45 @@ func (this_ *ExpressionNumberStatement) GetValue(context map[string]interface{})
 	return
 }
 
-func (this_ *ExpressionFuncStatement) GetValue(context map[string]interface{}) (res string, err error) {
-
+func (this_ *ExpressionFuncStatement) GetValue(context map[string]interface{}) (res interface{}, err error) {
+	find, ok := context[this_.Func]
+	if !ok {
+		err = errors.New("func [" + this_.Func + "] not define")
+		return
+	}
+	method, ok := find.(reflect.Value)
+	if !ok {
+		err = errors.New("func [" + this_.Func + "] can not to reflect.Method")
+		return
+	}
+	var values []reflect.Value
+	var v interface{}
+	for _, arg := range this_.Children {
+		v, err = GetStatementValue(arg, context)
+		if err != nil {
+			return
+		}
+		values = append(values, reflect.ValueOf(v))
+		fmt.Println("ExpressionFuncStatement GetValue arg:", arg, ",value:", v)
+	}
+	fmt.Println("ExpressionFuncStatement GetValue args:", this_.Args, ",values:", values)
+	methodResults := method.Call(values)
+	if len(methodResults) > 0 {
+		for _, methodResult := range methodResults {
+			switch obj := methodResult.Interface().(type) {
+			case error:
+				err = obj
+				break
+			default:
+				res = methodResult.Interface()
+				break
+			}
+		}
+	}
 	return
 }
 
-func (this_ *ExpressionBracketsStatement) GetValue(context map[string]interface{}) (res string, err error) {
+func (this_ *ExpressionBracketsStatement) GetValue(context map[string]interface{}) (res interface{}, err error) {
 
 	return
 }
