@@ -78,7 +78,7 @@ func testOut(sqlStatement SqlStatement, tab int) {
 }
 func TestSqlStatementParser(t *testing.T) {
 	content := `
-{ if EqualFold(indexType, 'UNIQUE}') }
+{ if EqualFold(indexType, 'UNIQUE') }
 ALTER TABLE [{ownerName}.]{tableName} ADD UNIQUE {indexName} ({columnNames}) [COMMENT {indexComment}]
 { else if EqualFold(indexType, 'FULLTEXT') }
 ALTER TABLE [{ownerName}.]{tableName} ADD FULLTEXT {indexName} ({columnNames}) [COMMENT {indexComment}]
@@ -98,26 +98,29 @@ ALTER TABLE [{ownerName}.]{tableName} ADD {indexType} {indexName} ({columnNames}
 	bs, _ := json.Marshal(sqlStatement)
 	fmt.Println("sql-statement:", string(bs))
 	testOut(sqlStatement, 0)
-	context := map[string]interface{}{}
-	context["ownerName"] = "库名"
-	context["tableName"] = "表名"
-	context["indexName"] = "索引名称"
-	context["columnNames"] = "字段1,字段2"
-	context["indexComment"] = "索引注释"
-	context["indexType"] = "索引注释"
+	statementContext := NewStatementContext()
+	statementContext.SetData("ownerName", "库名")
+	statementContext.SetData("tableName", "表名")
+	statementContext.SetData("indexName", "索引名称")
+	statementContext.SetData("columnNames", "字段1,字段2")
+	statementContext.SetData("indexComment", "索引注释")
+	statementContext.SetData("indexType", "uniqUe")
 
-	context["EqualFold"] = reflect.ValueOf(StringEqualFold)
-	text, err := sqlStatement.Format(context)
+	statementContext.AddMethod("EqualFold", StringEqualFold)
+
+	text, err := sqlStatement.Format(statementContext)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("sql-text:", text)
 }
 
-func StringEqualFold(arg1 interface{}, arg2 interface{}) (equal bool) {
+func StringEqualFold(arg1 interface{}, arg2 interface{}) (equal bool, err error) {
 	str1 := GetStringValue(arg1)
 	str2 := GetStringValue(arg2)
 	equal = strings.EqualFold(str1, str2)
+
+	//fmt.Println("StringEqualFold str1:", str1, ",str2:", str2, ",equal:", equal)
 	return
 }
 
@@ -157,6 +160,8 @@ func (this_ *methodObject) method1() string {
 	return "a"
 }
 func TestMethod(t *testing.T) {
+	methodType := reflect.ValueOf(method1)
+	fmt.Println(methodType.Type().NumOut())
 	methodValue := reflect.ValueOf(method1)
 	res := methodValue.Call([]reflect.Value{})
 	println("call method1 result:", res)
