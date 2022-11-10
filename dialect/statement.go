@@ -5,7 +5,7 @@ type SqlStatement interface {
 	GetContent() (content *string)
 	GetParent() (parent SqlStatement)
 	GetChildren() (children *[]SqlStatement)
-	Format(context map[string]interface{}) (text string, err error)
+	Format(statementContext *StatementContext) (text string, err error)
 }
 
 type AbstractSqlStatement struct {
