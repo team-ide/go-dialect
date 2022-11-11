@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func getIfCondition(str string, parent SqlStatement) (condition string, expressionStatement *ExpressionStatement, err error) {
+func getIfCondition(str string, parent Statement) (condition string, expressionStatement *ExpressionStatement, err error) {
 	condition = strings.TrimSpace(str)
 	condition = strings.TrimPrefix(condition, "{")
 	condition = strings.TrimSuffix(condition, "}")
@@ -26,7 +26,7 @@ func getIfCondition(str string, parent SqlStatement) (condition string, expressi
 
 	return
 }
-func (this_ *SqlStatementParser) checkIfStatement() (startIndex int, endIndex int, err error) {
+func (this_ *StatementParser) checkIfStatement() (startIndex int, endIndex int, err error) {
 	var reg *regexp.Regexp
 	var finds [][]int
 	var curStr = this_.curStr
@@ -44,15 +44,15 @@ func (this_ *SqlStatementParser) checkIfStatement() (startIndex int, endIndex in
 		endIndex = finds[0][1]
 		text := curStr[0:startIndex]
 		if text != "" {
-			var sqlStatements []SqlStatement
-			sqlStatements, err = parseTextSqlStatement(text, this_.curParent)
+			var statements []Statement
+			statements, err = parseTextStatement(text, this_.curParent)
 			if err != nil {
 				return
 			}
-			*this_.curParent.GetChildren() = append(*this_.curParent.GetChildren(), sqlStatements...)
+			*this_.curParent.GetChildren() = append(*this_.curParent.GetChildren(), statements...)
 		}
-		statement := &IfSqlStatement{
-			AbstractSqlStatement: &AbstractSqlStatement{
+		statement := &IfStatement{
+			AbstractStatement: &AbstractStatement{
 				Content: curStr[startIndex:endIndex],
 				Parent:  this_.curParent,
 			},
@@ -73,7 +73,7 @@ func (this_ *SqlStatementParser) checkIfStatement() (startIndex int, endIndex in
 	return
 }
 
-func (this_ *SqlStatementParser) checkElseIfStatement() (startIndex int, endIndex int, err error) {
+func (this_ *StatementParser) checkElseIfStatement() (startIndex int, endIndex int, err error) {
 	var reg *regexp.Regexp
 	var finds [][]int
 	var curStr = this_.curStr
@@ -101,20 +101,20 @@ func (this_ *SqlStatementParser) checkElseIfStatement() (startIndex int, endInde
 			} else {
 				p = this_.curIf
 			}
-			var sqlStatements []SqlStatement
-			sqlStatements, err = parseTextSqlStatement(text, p)
+			var statements []Statement
+			statements, err = parseTextStatement(text, p)
 			if err != nil {
 				return
 			}
 			if this_.curElseIf != nil {
-				this_.curElseIf.Children = append(this_.curElseIf.Children, sqlStatements...)
+				this_.curElseIf.Children = append(this_.curElseIf.Children, statements...)
 			} else {
-				this_.curIf.Children = append(this_.curIf.Children, sqlStatements...)
+				this_.curIf.Children = append(this_.curIf.Children, statements...)
 			}
 		}
 
-		statement := &ElseIfSqlStatement{
-			AbstractSqlStatement: &AbstractSqlStatement{
+		statement := &ElseIfStatement{
+			AbstractStatement: &AbstractStatement{
 				Content: curStr[startIndex:endIndex],
 				Parent:  this_.curIf,
 			},
@@ -134,7 +134,7 @@ func (this_ *SqlStatementParser) checkElseIfStatement() (startIndex int, endInde
 	}
 	return
 }
-func (this_ *SqlStatementParser) checkElseStatement() (startIndex int, endIndex int, err error) {
+func (this_ *StatementParser) checkElseStatement() (startIndex int, endIndex int, err error) {
 	var reg *regexp.Regexp
 	var finds [][]int
 	var curStr = this_.curStr
@@ -161,20 +161,20 @@ func (this_ *SqlStatementParser) checkElseStatement() (startIndex int, endIndex 
 			} else {
 				p = this_.curIf
 			}
-			var sqlStatements []SqlStatement
-			sqlStatements, err = parseTextSqlStatement(text, p)
+			var statements []Statement
+			statements, err = parseTextStatement(text, p)
 			if err != nil {
 				return
 			}
 			if this_.curElseIf != nil {
-				this_.curElseIf.Children = append(this_.curElseIf.Children, sqlStatements...)
+				this_.curElseIf.Children = append(this_.curElseIf.Children, statements...)
 			} else {
-				this_.curIf.Children = append(this_.curIf.Children, sqlStatements...)
+				this_.curIf.Children = append(this_.curIf.Children, statements...)
 			}
 		}
 
-		statement := &ElseSqlStatement{
-			AbstractSqlStatement: &AbstractSqlStatement{
+		statement := &ElseStatement{
+			AbstractStatement: &AbstractStatement{
 				Content: curStr[startIndex:endIndex],
 				Parent:  this_.curIf,
 			},
@@ -189,7 +189,7 @@ func (this_ *SqlStatementParser) checkElseStatement() (startIndex int, endIndex 
 	}
 	return
 }
-func (this_ *SqlStatementParser) checkIfEndStatement() (startIndex int, endIndex int, err error) {
+func (this_ *StatementParser) checkIfEndStatement() (startIndex int, endIndex int, err error) {
 	var reg *regexp.Regexp
 	var finds [][]int
 	var curStr = this_.curStr
@@ -218,17 +218,17 @@ func (this_ *SqlStatementParser) checkIfEndStatement() (startIndex int, endIndex
 			} else {
 				p = this_.curIf
 			}
-			var sqlStatements []SqlStatement
-			sqlStatements, err = parseTextSqlStatement(text, p)
+			var statements []Statement
+			statements, err = parseTextStatement(text, p)
 			if err != nil {
 				return
 			}
 			if this_.curElse != nil {
-				this_.curElse.Children = append(this_.curElse.Children, sqlStatements...)
+				this_.curElse.Children = append(this_.curElse.Children, statements...)
 			} else if this_.curElseIf != nil {
-				this_.curElseIf.Children = append(this_.curElseIf.Children, sqlStatements...)
+				this_.curElseIf.Children = append(this_.curElseIf.Children, statements...)
 			} else {
-				this_.curIf.Children = append(this_.curIf.Children, sqlStatements...)
+				this_.curIf.Children = append(this_.curIf.Children, statements...)
 			}
 		}
 

@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func FormatStatements(statements []SqlStatement, statementContext *StatementContext) (text string, err error) {
+func FormatStatements(statements []Statement, statementContext *StatementContext) (text string, err error) {
 
 	var oneText string
 	for _, one := range statements {
@@ -19,10 +19,10 @@ func FormatStatements(statements []SqlStatement, statementContext *StatementCont
 	return
 }
 
-func FormatStatement(statement_ SqlStatement, statementContext *StatementContext) (text string, err error) {
+func FormatStatement(statement_ Statement, statementContext *StatementContext) (text string, err error) {
 
 	switch statement := statement_.(type) {
-	case *IgnorableSqlStatement:
+	case *IgnorableStatement:
 		text, err = statement.Format(statementContext)
 		break
 	default:
@@ -32,7 +32,7 @@ func FormatStatement(statement_ SqlStatement, statementContext *StatementContext
 	return
 }
 
-func (this_ *AbstractSqlStatement) Format(statementContext *StatementContext) (text string, err error) {
+func (this_ *AbstractStatement) Format(statementContext *StatementContext) (text string, err error) {
 	text += this_.Content
 
 	childrenText, err := FormatStatements(this_.Children, statementContext)
@@ -43,7 +43,7 @@ func (this_ *AbstractSqlStatement) Format(statementContext *StatementContext) (t
 	return
 }
 
-func (this_ *IgnorableSqlStatement) Format(statementContext *StatementContext) (text string, err error) {
+func (this_ *IgnorableStatement) Format(statementContext *StatementContext) (text string, err error) {
 
 	findValue, err := StatementsFindValue(this_.Children, statementContext)
 	if err != nil {
@@ -65,7 +65,7 @@ func isTrue(value interface{}) bool {
 	return res
 }
 
-func (this_ *ElseIfSqlStatement) Format(statementContext *StatementContext) (text string, err error) {
+func (this_ *ElseIfStatement) Format(statementContext *StatementContext) (text string, err error) {
 	childrenText, err := FormatStatements(this_.Children, statementContext)
 	if err != nil {
 		return
@@ -74,7 +74,7 @@ func (this_ *ElseIfSqlStatement) Format(statementContext *StatementContext) (tex
 	return
 }
 
-func (this_ *ElseSqlStatement) Format(statementContext *StatementContext) (text string, err error) {
+func (this_ *ElseStatement) Format(statementContext *StatementContext) (text string, err error) {
 	childrenText, err := FormatStatements(this_.Children, statementContext)
 	if err != nil {
 		return
@@ -83,7 +83,7 @@ func (this_ *ElseSqlStatement) Format(statementContext *StatementContext) (text 
 	return
 }
 
-func (this_ *IfSqlStatement) Format(statementContext *StatementContext) (text string, err error) {
+func (this_ *IfStatement) Format(statementContext *StatementContext) (text string, err error) {
 	//text += this_.Content
 
 	if this_.ConditionExpression == nil {
@@ -155,11 +155,11 @@ func (this_ *ExpressionStatement) GetValue(statementContext *StatementContext) (
 	return
 }
 
-func GetStatementValue(sqlStatement SqlStatement, statementContext *StatementContext) (res interface{}, err error) {
+func GetStatementValue(statement_ Statement, statementContext *StatementContext) (res interface{}, err error) {
 
 	var data interface{}
 
-	switch statement := sqlStatement.(type) {
+	switch statement := statement_.(type) {
 	case *ExpressionFuncStatement:
 		data, err = statement.GetValue(statementContext)
 		break
@@ -186,7 +186,7 @@ func GetStatementValue(sqlStatement SqlStatement, statementContext *StatementCon
 	return
 }
 
-func StatementsFindValue(statements []SqlStatement, statementContext *StatementContext) (findValue bool, err error) {
+func StatementsFindValue(statements []Statement, statementContext *StatementContext) (findValue bool, err error) {
 	var data interface{}
 	for _, one := range statements {
 		switch statement := one.(type) {

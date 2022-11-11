@@ -1,6 +1,7 @@
 package dialect
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -77,6 +78,39 @@ func (this_ *StatementContext) SetData(name string, value interface{}) *Statemen
 	defer this_.dataCacheLock.Unlock()
 
 	this_.dataCache[name] = value
+	return this_
+}
+
+func (this_ *StatementContext) SetJSONData(data interface{}) (err error) {
+	if data == nil {
+		return
+	}
+	bs, err := json.Marshal(data)
+	if err != nil {
+		return
+	}
+	if len(bs) == 0 {
+		return
+	}
+	dataMap := map[string]interface{}{}
+	err = json.Unmarshal(bs, &dataMap)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (this_ *StatementContext) SetMapData(data map[string]interface{}) *StatementContext {
+	if data == nil {
+		return this_
+	}
+	this_.dataCacheLock.Lock()
+	defer this_.dataCacheLock.Unlock()
+
+	for name, value := range data {
+		this_.dataCache[name] = value
+	}
+
 	return this_
 }
 

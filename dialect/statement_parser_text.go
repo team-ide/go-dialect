@@ -5,12 +5,12 @@ import (
 	"strings"
 )
 
-func parseTextSqlStatement(content string, parent SqlStatement) (sqlStatements []SqlStatement, err error) {
+func parseTextStatement(content string, parent Statement) (statements []Statement, err error) {
 	list, err := parseStringStatement(content, parent,
-		func(thisChar string, parent SqlStatement) (sqlStatement SqlStatement) {
+		func(thisChar string, parent Statement) (statement Statement) {
 			if thisChar == "[" {
-				sqlStatement = &IgnorableSqlStatement{
-					AbstractSqlStatement: &AbstractSqlStatement{
+				statement = &IgnorableStatement{
+					AbstractStatement: &AbstractStatement{
 						Parent: parent,
 					},
 				}
@@ -28,32 +28,32 @@ func parseTextSqlStatement(content string, parent SqlStatement) (sqlStatements [
 		return
 	}
 
-	var list_ []SqlStatement
+	var list_ []Statement
 	for _, one := range list {
 		list_, err = parseTextExpressionStatement(*one.GetContent(), one.GetParent())
 		if err != nil {
 			return
 		}
 		switch one.(type) {
-		case *IgnorableSqlStatement:
+		case *IgnorableStatement:
 			*one.GetContent() = ""
 			*one.GetChildren() = list_
-			sqlStatements = append(sqlStatements, one)
+			statements = append(statements, one)
 		default:
-			sqlStatements = append(sqlStatements, list_...)
+			statements = append(statements, list_...)
 		}
 	}
 	//fmt.Println(this_.Sql)
 	return
 }
 
-func parseTextExpressionStatement(content string, parent SqlStatement) (sqlStatements []SqlStatement, err error) {
+func parseTextExpressionStatement(content string, parent Statement) (statements []Statement, err error) {
 
 	list, err := parseStringStatement(content, parent,
-		func(thisChar string, parent SqlStatement) (sqlStatement SqlStatement) {
+		func(thisChar string, parent Statement) (statement Statement) {
 			if thisChar == "{" {
-				sqlStatement = &ExpressionStatement{
-					AbstractSqlStatement: &AbstractSqlStatement{
+				statement = &ExpressionStatement{
+					AbstractStatement: &AbstractStatement{
 						Parent: parent,
 					},
 				}
@@ -76,21 +76,21 @@ func parseTextExpressionStatement(content string, parent SqlStatement) (sqlState
 			if err != nil {
 				return
 			}
-			sqlStatements = append(sqlStatements, expressionStatement)
+			statements = append(statements, expressionStatement)
 		default:
-			sqlStatements = append(sqlStatements, one)
+			statements = append(statements, one)
 		}
 	}
 	return
 }
 
-func parseStringStatement(content string, parent SqlStatement,
-	matchStart func(thisChar string, parent SqlStatement) (sqlStatement SqlStatement),
+func parseStringStatement(content string, parent Statement,
+	matchStart func(thisChar string, parent Statement) (statement Statement),
 	matchEnd func(thisChar string) (matchStart bool),
-) (sqlStatements []SqlStatement, err error) {
+) (statements []Statement, err error) {
 
 	var level int
-	var levelStatement = make(map[int]SqlStatement)
+	var levelStatement = make(map[int]Statement)
 	var str string
 
 	var inStringPack string
@@ -100,7 +100,7 @@ func parseStringStatement(content string, parent SqlStatement,
 	var thisChar string
 
 	strList := strings.Split(content, "")
-	var matchStatement SqlStatement
+	var matchStatement Statement
 	for i := 0; i < len(strList); i++ {
 		thisChar = strList[i]
 
@@ -126,14 +126,14 @@ func parseStringStatement(content string, parent SqlStatement,
 				}
 			}
 		}
-		var thisParentChildren *[]SqlStatement
+		var thisParentChildren *[]Statement
 		var thisParent = parent
 		if levelStatement[level] == nil {
-			thisParentChildren = &sqlStatements
+			thisParentChildren = &statements
 		} else {
 			thisParent = levelStatement[level].GetParent()
 			if thisParent == parent {
-				thisParentChildren = &sqlStatements
+				thisParentChildren = &statements
 			} else {
 				thisParentChildren = levelStatement[level].GetParent().GetChildren()
 			}
@@ -150,13 +150,13 @@ func parseStringStatement(content string, parent SqlStatement,
 					if levelStatement[level] != nil {
 						*levelStatement[level].GetContent() += str
 					} else {
-						textSqlStatement := &TextSqlStatement{
-							AbstractSqlStatement: &AbstractSqlStatement{
+						textStatement := &TextStatement{
+							AbstractStatement: &AbstractStatement{
 								Parent:  thisParent,
 								Content: str,
 							},
 						}
-						*thisParentChildren = append(*thisParentChildren, textSqlStatement)
+						*thisParentChildren = append(*thisParentChildren, textStatement)
 					}
 				}
 				*thisParentChildren = append(*thisParentChildren, matchStatement)
@@ -181,13 +181,13 @@ func parseStringStatement(content string, parent SqlStatement,
 		}
 	}
 	if str != "" {
-		textSqlStatement := &TextSqlStatement{
-			AbstractSqlStatement: &AbstractSqlStatement{
+		textStatement := &TextStatement{
+			AbstractStatement: &AbstractStatement{
 				Parent:  parent,
 				Content: str,
 			},
 		}
-		sqlStatements = append(sqlStatements, textSqlStatement)
+		statements = append(statements, textStatement)
 	}
 	return
 }

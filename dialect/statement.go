@@ -1,33 +1,33 @@
 package dialect
 
-type SqlStatement interface {
+type Statement interface {
 	GetTemplate() (template string)
 	GetContent() (content *string)
-	GetParent() (parent SqlStatement)
-	GetChildren() (children *[]SqlStatement)
+	GetParent() (parent Statement)
+	GetChildren() (children *[]Statement)
 	Format(statementContext *StatementContext) (text string, err error)
 }
 
-type AbstractSqlStatement struct {
-	Content  string         `json:"content,omitempty"`
-	Children []SqlStatement `json:"children,omitempty"`
-	Parent   SqlStatement   `json:"-"`
+type AbstractStatement struct {
+	Content  string      `json:"content,omitempty"`
+	Children []Statement `json:"children,omitempty"`
+	Parent   Statement   `json:"-"`
 }
 
-func (this_ *AbstractSqlStatement) GetContent() (content *string) {
+func (this_ *AbstractStatement) GetContent() (content *string) {
 	content = &this_.Content
 	return
 }
 
-func (this_ *AbstractSqlStatement) GetParent() (parent SqlStatement) {
+func (this_ *AbstractStatement) GetParent() (parent Statement) {
 	parent = this_.Parent
 	return
 }
-func (this_ *AbstractSqlStatement) GetChildren() (children *[]SqlStatement) {
+func (this_ *AbstractStatement) GetChildren() (children *[]Statement) {
 	children = &this_.Children
 	return
 }
-func (this_ *AbstractSqlStatement) GetTemplate() (template string) {
+func (this_ *AbstractStatement) GetTemplate() (template string) {
 	template += this_.Content
 	for _, one := range this_.Children {
 		template += one.GetTemplate()
@@ -35,15 +35,15 @@ func (this_ *AbstractSqlStatement) GetTemplate() (template string) {
 	return
 }
 
-type RootSqlStatement struct {
-	*AbstractSqlStatement
+type RootStatement struct {
+	*AbstractStatement
 }
 
-type IgnorableSqlStatement struct {
-	*AbstractSqlStatement
+type IgnorableStatement struct {
+	*AbstractStatement
 }
 
-func (this_ *IgnorableSqlStatement) GetTemplate() (template string) {
+func (this_ *IgnorableStatement) GetTemplate() (template string) {
 	template += "["
 
 	template += this_.Content
@@ -56,19 +56,19 @@ func (this_ *IgnorableSqlStatement) GetTemplate() (template string) {
 	return
 }
 
-type TextSqlStatement struct {
-	*AbstractSqlStatement
+type TextStatement struct {
+	*AbstractStatement
 }
 
-type IfSqlStatement struct {
-	*AbstractSqlStatement
-	Condition           string                `json:"condition"`
-	ConditionExpression *ExpressionStatement  `json:"conditionExpression"`
-	ElseIfs             []*ElseIfSqlStatement `json:"elseIfs"`
-	Else                *ElseSqlStatement     `json:"else"`
+type IfStatement struct {
+	*AbstractStatement
+	Condition           string               `json:"condition"`
+	ConditionExpression *ExpressionStatement `json:"conditionExpression"`
+	ElseIfs             []*ElseIfStatement   `json:"elseIfs"`
+	Else                *ElseStatement       `json:"else"`
 }
 
-func (this_ *IfSqlStatement) GetTemplate() (template string) {
+func (this_ *IfStatement) GetTemplate() (template string) {
 	template += "if " + this_.Condition + " {\n"
 
 	//template += this_.Content
@@ -92,15 +92,15 @@ func (this_ *IfSqlStatement) GetTemplate() (template string) {
 	return
 }
 
-type ElseIfSqlStatement struct {
-	*AbstractSqlStatement
+type ElseIfStatement struct {
+	*AbstractStatement
 	Condition           string               `json:"condition"`
 	ConditionExpression *ExpressionStatement `json:"conditionExpression"`
-	If                  *IfSqlStatement      `json:"-"`
+	If                  *IfStatement         `json:"-"`
 	Index               int                  `json:"index"`
 }
 
-func (this_ *ElseIfSqlStatement) GetTemplate() (template string) {
+func (this_ *ElseIfStatement) GetTemplate() (template string) {
 	template += " else if " + this_.Condition + " {\n"
 
 	//template += this_.Content
@@ -121,19 +121,19 @@ func (this_ *ElseIfSqlStatement) GetTemplate() (template string) {
 	}
 	return
 }
-func (this_ *ElseIfSqlStatement) IsEndElseIf() (isEnd bool) {
+func (this_ *ElseIfStatement) IsEndElseIf() (isEnd bool) {
 	if this_.Index == len(this_.If.ElseIfs)-1 {
 		isEnd = true
 	}
 	return
 }
 
-type ElseSqlStatement struct {
-	*AbstractSqlStatement
-	If *IfSqlStatement `json:"-"`
+type ElseStatement struct {
+	*AbstractStatement
+	If *IfStatement `json:"-"`
 }
 
-func (this_ *ElseSqlStatement) GetTemplate() (template string) {
+func (this_ *ElseStatement) GetTemplate() (template string) {
 	template += " else {\n"
 
 	//template += this_.Content
@@ -147,7 +147,7 @@ func (this_ *ElseSqlStatement) GetTemplate() (template string) {
 }
 
 type ForStatement struct {
-	*AbstractSqlStatement
+	*AbstractStatement
 }
 
 func (this_ *ForStatement) GetTemplate() (template string) {
@@ -164,36 +164,36 @@ func (this_ *ForStatement) GetTemplate() (template string) {
 }
 
 type ExpressionStatement struct {
-	*AbstractSqlStatement
+	*AbstractStatement
 }
 
 type ExpressionStringStatement struct {
-	*AbstractSqlStatement
+	*AbstractStatement
 	Value string `json:"value"`
 }
 
 type ExpressionNumberStatement struct {
-	*AbstractSqlStatement
+	*AbstractStatement
 	Value float64 `json:"value"`
 }
 
 type ExpressionIdentifierStatement struct {
-	*AbstractSqlStatement
+	*AbstractStatement
 	Identifier string `json:"identifier"`
 }
 
 type ExpressionFuncStatement struct {
-	*AbstractSqlStatement
-	Func string         `json:"func"`
-	Args []SqlStatement `json:"args"`
+	*AbstractStatement
+	Func string      `json:"func"`
+	Args []Statement `json:"args"`
 }
 
 type ExpressionOperatorStatement struct {
-	*AbstractSqlStatement
+	*AbstractStatement
 	Operator string `json:"operator"`
 }
 
 // ExpressionBracketsStatement 括号
 type ExpressionBracketsStatement struct {
-	*AbstractSqlStatement
+	*AbstractStatement
 }

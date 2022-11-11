@@ -1,45 +1,35 @@
 package dialect
 
-var mappingMySql = `
--- 数据库方言SQL --
-
--- 库、表所属者相关SQL --
-
---  owner create sql start --
-CREATE DATABASE [IF NOT EXISTS] {ownerName}
-[[DEFAULT] CHARACTER SET {characterSetName}]
-[[DEFAULT] COLLATE {collationName}]
---  owner create sql end --
-
---  owners select sql start --
+var (
+	MappingMysql = &SqlMapping{
+		// 库或所属者 相关 SQL
+		OwnersSelect: `
 SELECT
     SCHEMA_NAME name,
     DEFAULT_CHARACTER_SET_NAME characterSetName,
     DEFAULT_COLLATION_NAME collationName
 FROM information_schema.schemata
 ORDER BY SCHEMA_NAME
---  owners select sql end --
-
---  owner select sql start --
+`,
+		OwnerSelect: `
 SELECT
     SCHEMA_NAME name,
     DEFAULT_CHARACTER_SET_NAME characterSetName,
     DEFAULT_COLLATION_NAME collationName
 FROM information_schema.schemata
 WHERE SCHEMA_NAME='{ownerName}'
---  owner select sql end --
-
---  owner delete sql start --
+`,
+		OwnerCreate: `
+CREATE DATABASE [IF NOT EXISTS] {ownerName}
+[[DEFAULT] CHARACTER SET {characterSetName}]
+[[DEFAULT] COLLATE {collationName}]
+`,
+		OwnerDelete: `
 DROP DATABASE IF EXISTS {ownerName}
---  owner delete sql end --
+`,
 
---  owner delete sql start --
-DROP DATABASE IF EXISTS {ownerName}
---  owner delete sql end --
-
--- 表相关SQL --
-
---  tables select sql start --
+		// 表 相关 SQL
+		TablesSelect: `
 SELECT
     TABLE_NAME name,
     TABLE_COMMENT comment,
@@ -47,9 +37,8 @@ SELECT
 FROM information_schema.tables
 WHERE TABLE_SCHEMA='{ownerName}'
 ORDER BY TABLE_NAME
---  tables select sql end --
-
---  table select sql start --
+`,
+		TableSelect: `
 SELECT
   TABLE_NAME name,
   TABLE_COMMENT comment,
@@ -57,33 +46,26 @@ SELECT
 FROM information_schema.tables
 WHERE TABLE_SCHEMA='{ownerName}'
   AND TABLE_NAME='{tableName}'
---  table select sql end --
-
---  table create sql start --
+`,
+		TableCreate: `
 CREATE TABLE [{ownerName}.]{tableName}(
-{tableCreateColumns}
-)
---  table create sql end --
-
---  table create column sql start --
-{columnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {default}] [NOT NULL]
---  table create column sql end --
-
---  table comment sql start --
+    { for column in columnList }
+	{column.columnName} {column.columnType} [CHARACTER SET {column.characterSetName}] [DEFAULT {column.default}] [NOT NULL][,]
+	{ }
+)[CHARACTER SET {characterSetName}] [COMMENT {tableComment}]
+`,
+		TableComment: `
 ALTER TABLE [{ownerName}.]{tableName} COMMENT '{tableComment}'
---  table comment sql end --
-
---  table rename sql start --
+`,
+		TableRename: `
 ALTER TABLE [{ownerName}.]{oldTableName} RENAME AS {newTableName}
---  table rename sql end --
-
---  table delete sql start --
+`,
+		TableDelete: `
 DROP TABLE IF EXISTS [{ownerName}.]{tableName}
---  table delete sql end --
+`,
 
--- 字段相关SQL --
-
---  columns select sql start --
+		// 字段 相关 SQL
+		ColumnsSelect: `
 SELECT
     COLUMN_NAME columnName,
     COLUMN_COMMENT columnComment,
@@ -98,9 +80,8 @@ SELECT
 FROM information_schema.columns
 WHERE TABLE_SCHEMA='{ownerName}'
   AND TABLE_NAME='{tableName}'
---  columns select sql end --
-
---  column select sql start --
+`,
+		ColumnSelect: `
 SELECT
     COLUMN_NAME columnName,
     COLUMN_COMMENT columnComment,
@@ -117,31 +98,25 @@ WHERE TABLE_SCHEMA='{ownerName}'
   AND TABLE_NAME='{tableName}'
   AND TABLE_NAME='{tableName}'
   AND COLUMN_NAME='{columnName}'
---  column select sql end --
-
---  column add sql start --
+`,
+		ColumnAdd: `
 ALTER TABLE [{ownerName}.]{tableName} ADD COLUMN {columnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {columnDefault}] [NOT NULL] [COMMENT {columnComment}]
---  column add sql end --
-
---  column comment sql start --
+`,
+		ColumnComment: `
 ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {columnName} {columnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {columnDefault}] [NOT NULL] [COMMENT {columnComment}]
---  column comment sql end --
-
---  column rename sql start --
-ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {oldColumnName} {newColumnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {columnDefault}] [NOT NULL] [COMMENT {columnComment}]
---  column rename sql end --
-
---  column update sql start --
-ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {columnName} {columnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {columnDefault}] [NOT NULL] [COMMENT {columnComment}] [AFTER {columnAfter}]
---  column update sql end --
-
---  column delete sql start --
+`,
+		ColumnDelete: `
 ALTER TABLE [{ownerName}.]{tableName} DROP COLUMN {columnName}
---  column delete sql end --
+`,
+		ColumnRename: `
+ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {oldColumnName} {newColumnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {columnDefault}] [NOT NULL] [COMMENT {columnComment}]
+`,
+		ColumnUpdate: `
+ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {columnName} {columnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {columnDefault}] [NOT NULL] [COMMENT {columnComment}] [AFTER {columnAfter}]
+`,
 
--- 主键相关SQL --
-
---  primary keys select sql start --
+		// 主键 相关 SQL
+		PrimaryKeysSelect: `
 SELECT
     key_column_usage.COLUMN_NAME columnName,
     table_constraints.TABLE_NAME tableName,
@@ -151,19 +126,16 @@ JOIN information_schema.key_column_usage USING (CONSTRAINT_NAME,TABLE_SCHEMA,TAB
 WHERE table_constraints.TABLE_SCHEMA='{ownerName}'
   AND table_constraints.TABLE_NAME='{tableName}'
   AND table_constraints.CONSTRAINT_TYPE='PRIMARY KEY'
---  primary keys select sql end --
-
---  primary key add sql start --
+`,
+		PrimaryKeyAdd: `
 ALTER TABLE [{ownerName}.]{tableName} ADD PRIMARY KEY ({columnNames})
---  primary key add sql end --
-
---  primary key delete sql start --
+`,
+		PrimaryKeyDelete: `
 ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
---  primary key delete sql end --
+`,
 
--- 索引相关SQL --
-
---  indexes select sql start --
+		// 索引 相关 SQL
+		IndexesSelect: `
 SELECT
     INDEX_NAME indexName,
     COLUMN_NAME columnName,
@@ -183,14 +155,12 @@ WHERE TABLE_SCHEMA='{ownerName}'
       AND table_constraints.TABLE_NAME='{tableName}'
       AND table_constraints.CONSTRAINT_TYPE='PRIMARY KEY'
 )
-
---  indexes select sql end --
-
---  index add sql start --
+`,
+		IndexAdd: `
 ALTER TABLE [{ownerName}.]{tableName} ADD [PRIMARY KEY | UNIQUE | FULLTEXT | INDEX] {indexName} ({columnNames}) [COMMENT {columnComment}]
---  index add sql end --
-
---  index delete sql start --
+`,
+		IndexDelete: `
 ALTER TABLE [{ownerName}.]{tableName} DROP INDEX
---  index delete sql end --
-`
+`,
+	}
+)

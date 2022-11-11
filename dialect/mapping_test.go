@@ -21,51 +21,51 @@ ALTER TABLE [{ownerName}.]{tableName} ADD {indexType} {indexName} ({columnNames}
 { }}
 `
 
-	sqlStatement, err := sqlStatementParse(content)
+	statement, err := statementParse(content)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("sql-template:", sqlStatement.GetTemplate())
-	fmt.Println("sql-statement:", sqlStatement.GetTemplate())
-	testOut(sqlStatement, 0)
+	fmt.Println("sql-template:", statement.GetTemplate())
+	fmt.Println("sql-statement:", statement.GetTemplate())
+	testOut(statement, 0)
 }
 
-func testOut(sqlStatement SqlStatement, tab int) {
-	if sqlStatement == nil {
+func testOut(statement Statement, tab int) {
+	if statement == nil {
 		return
 	}
 
-	cr := *sqlStatement.GetChildren()
-	*sqlStatement.GetChildren() = []SqlStatement{}
-	bs, _ := json.Marshal(sqlStatement)
+	cr := *statement.GetChildren()
+	*statement.GetChildren() = []Statement{}
+	bs, _ := json.Marshal(statement)
 	for i := 0; i < tab; i++ {
 		fmt.Print("\t")
 	}
-	fmt.Print(reflect.TypeOf(sqlStatement).String() + ":")
-	*sqlStatement.GetChildren() = cr
+	fmt.Print(reflect.TypeOf(statement).String() + ":")
+	*statement.GetChildren() = cr
 	fmt.Println("", string(bs))
-	switch data := sqlStatement.(type) {
-	case *IfSqlStatement:
+	switch data := statement.(type) {
+	case *IfStatement:
 		for i := 0; i < tab+1; i++ {
 			fmt.Print("\t")
 		}
 		fmt.Println("if condition:")
 		testOut(data.ConditionExpression, tab+2)
-	case *ElseIfSqlStatement:
+	case *ElseIfStatement:
 		for i := 0; i < tab+1; i++ {
 			fmt.Print("\t")
 		}
 		fmt.Println("else if condition:")
 		testOut(data.ConditionExpression, tab+2)
 	}
-	if sqlStatement.GetChildren() != nil {
-		for _, node := range *sqlStatement.GetChildren() {
+	if statement.GetChildren() != nil {
+		for _, node := range *statement.GetChildren() {
 			testOut(node, tab+1)
 		}
 	}
-	switch stat := sqlStatement.(type) {
-	case *IfSqlStatement:
+	switch stat := statement.(type) {
+	case *IfStatement:
 		for _, one := range stat.ElseIfs {
 			testOut(one, tab)
 		}
@@ -89,15 +89,15 @@ ALTER TABLE [{ownerName}.]{tableName} ADD {indexType} {indexName} ({columnNames}
 { }
 `
 
-	sqlStatement, err := sqlStatementParse(content)
+	statement, err := statementParse(content)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("sql-template:", sqlStatement.GetTemplate())
-	bs, _ := json.Marshal(sqlStatement)
+	fmt.Println("sql-template:", statement.GetTemplate())
+	bs, _ := json.Marshal(statement)
 	fmt.Println("sql-statement:", string(bs))
-	testOut(sqlStatement, 0)
+	testOut(statement, 0)
 	statementContext := NewStatementContext()
 	statementContext.SetData("ownerName", "库名")
 	statementContext.SetData("tableName", "表名")
@@ -108,7 +108,7 @@ ALTER TABLE [{ownerName}.]{tableName} ADD {indexType} {indexName} ({columnNames}
 
 	statementContext.AddMethod("EqualFold", StringEqualFold)
 
-	text, err := sqlStatement.Format(statementContext)
+	text, err := statement.Format(statementContext)
 	if err != nil {
 		panic(err)
 	}
@@ -136,17 +136,12 @@ func TestSplitOperator(t *testing.T) {
 }
 
 func TestMappingSql(t *testing.T) {
-
-	mappingSql, err := ParseMapping(mappingMySql)
+	mapping := MappingMysql
+	sqlMappingStatement, err := NewSqlMappingStatement(mapping)
 	if err != nil {
 		panic(err)
 	}
-
-	for key, value := range mappingSql.SqlTemplates {
-		fmt.Println(*key, ":sql-template:", value.GetTemplate())
-		bs, _ := json.Marshal(value.Children)
-		fmt.Println(*key, ":children:", string(bs))
-	}
+	testOut(sqlMappingStatement.OwnersSelect, 0)
 }
 
 func method1() string {

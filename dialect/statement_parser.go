@@ -4,22 +4,22 @@ import (
 	"strings"
 )
 
-func sqlStatementParse(content string) (sqlStatement *RootSqlStatement, err error) {
-	parser := &SqlStatementParser{
+func statementParse(content string) (statement *RootStatement, err error) {
+	parser := &StatementParser{
 		content: strings.Split(content, ""),
 	}
-	sqlStatement, err = parser.parse()
+	statement, err = parser.parse()
 	return
 }
 
-type SqlStatementParser struct {
+type StatementParser struct {
 	content       []string
 	contentLen    int
 	curIndex      int // 当前索引
 	curRowStart   int // 当前行开始索引
 	curStr        string
-	curStatement  SqlStatement
-	curParent     SqlStatement
+	curStatement  Statement
+	curParent     Statement
 	curRow        int // 当前行
 	curCol        int // 当前列
 	bracketLevel  int // “{}” 层级
@@ -27,12 +27,12 @@ type SqlStatementParser struct {
 	inStringLevel int
 	inStringPack  string
 
-	curIf     *IfSqlStatement
-	curElseIf *ElseIfSqlStatement
-	curElse   *ElseSqlStatement
+	curIf     *IfStatement
+	curElseIf *ElseIfStatement
+	curElse   *ElseStatement
 }
 
-func (this_ *SqlStatementParser) reset() {
+func (this_ *StatementParser) reset() {
 
 	this_.contentLen = len(this_.content)
 	this_.curRow = 0
@@ -53,12 +53,12 @@ func (this_ *SqlStatementParser) reset() {
 	this_.curElse = nil
 }
 
-func (this_ *SqlStatementParser) parse() (sqlStatement *RootSqlStatement, err error) {
-	sqlStatement = &RootSqlStatement{
-		AbstractSqlStatement: &AbstractSqlStatement{},
+func (this_ *StatementParser) parse() (statement *RootStatement, err error) {
+	statement = &RootStatement{
+		AbstractStatement: &AbstractStatement{},
 	}
 	this_.reset()
-	this_.curParent = sqlStatement
+	this_.curParent = statement
 	err = this_.parseStr()
 	if err != nil {
 		return
@@ -66,15 +66,15 @@ func (this_ *SqlStatementParser) parse() (sqlStatement *RootSqlStatement, err er
 	return
 }
 
-func (this_ *SqlStatementParser) parseStr() (err error) {
+func (this_ *StatementParser) parseStr() (err error) {
 	if this_.contentLen <= this_.curIndex {
 		if this_.curStr != "" {
-			var sqlStatements []SqlStatement
-			sqlStatements, err = parseTextSqlStatement(this_.curStr, this_.curParent)
+			var statements []Statement
+			statements, err = parseTextStatement(this_.curStr, this_.curParent)
 			if err != nil {
 				return
 			}
-			*this_.curParent.GetChildren() = append(*this_.curParent.GetChildren(), sqlStatements...)
+			*this_.curParent.GetChildren() = append(*this_.curParent.GetChildren(), statements...)
 		}
 		return
 	}
@@ -123,7 +123,7 @@ func (this_ *SqlStatementParser) parseStr() (err error) {
 	return
 }
 
-func (this_ *SqlStatementParser) checkStatement() (err error) {
+func (this_ *StatementParser) checkStatement() (err error) {
 	var startIndex int
 	var endIndex int
 	defer func() {
@@ -133,7 +133,7 @@ func (this_ *SqlStatementParser) checkStatement() (err error) {
 	}()
 
 	switch this_.curStatement.(type) {
-	case *IfSqlStatement:
+	case *IfStatement:
 		if startIndex, endIndex, err = this_.checkElseIfStatement(); err != nil || startIndex != endIndex {
 			return
 		}
@@ -144,7 +144,7 @@ func (this_ *SqlStatementParser) checkStatement() (err error) {
 			return
 		}
 		break
-	case *ElseIfSqlStatement:
+	case *ElseIfStatement:
 		if startIndex, endIndex, err = this_.checkElseIfStatement(); err != nil || startIndex != endIndex {
 			return
 		}
@@ -155,7 +155,7 @@ func (this_ *SqlStatementParser) checkStatement() (err error) {
 			return
 		}
 		break
-	case *ElseSqlStatement:
+	case *ElseStatement:
 		if startIndex, endIndex, err = this_.checkIfEndStatement(); err != nil || startIndex != endIndex {
 			return
 		}

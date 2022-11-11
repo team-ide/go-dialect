@@ -40,13 +40,13 @@ func splitOperator(content string) (res []string, err error) {
 	return
 }
 
-func parseExpressionStatement(content string, parent SqlStatement) (expressionStatement *ExpressionStatement, err error) {
+func parseExpressionStatement(content string, parent Statement) (expressionStatement *ExpressionStatement, err error) {
 	content = strings.TrimSpace(content)
 
-	var sqlStatements []SqlStatement
+	var statements []Statement
 
 	var level int
-	var levelStatement = make(map[int]SqlStatement)
+	var levelStatement = make(map[int]Statement)
 	var str string
 
 	var inStringPack string
@@ -57,7 +57,7 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 
 	strList := strings.Split(content, "")
 
-	processStr := func(str string, statements *[]SqlStatement, thisParent SqlStatement) (err error) {
+	processStr := func(str string, statements *[]Statement, thisParent Statement) (err error) {
 		if str == "" {
 			return
 		}
@@ -73,7 +73,7 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 			if isOperator(one) {
 				statement := &ExpressionOperatorStatement{
 					Operator: one,
-					AbstractSqlStatement: &AbstractSqlStatement{
+					AbstractStatement: &AbstractStatement{
 						Parent:  thisParent,
 						Content: one,
 					},
@@ -84,7 +84,7 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 				if e != nil {
 					statement := &ExpressionIdentifierStatement{
 						Identifier: one,
-						AbstractSqlStatement: &AbstractSqlStatement{
+						AbstractStatement: &AbstractStatement{
 							Parent:  thisParent,
 							Content: one,
 						},
@@ -93,7 +93,7 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 				} else {
 					statement := &ExpressionNumberStatement{
 						Value: number,
-						AbstractSqlStatement: &AbstractSqlStatement{
+						AbstractStatement: &AbstractStatement{
 							Parent:  thisParent,
 							Content: one,
 						},
@@ -136,14 +136,14 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 				}
 			}
 		}
-		var thisParentChildren *[]SqlStatement
+		var thisParentChildren *[]Statement
 		var thisParent = parent
 		if levelStatement[level] == nil {
-			thisParentChildren = &sqlStatements
+			thisParentChildren = &statements
 		} else {
 			thisParent = levelStatement[level].GetParent()
 			if thisParent == parent {
-				thisParentChildren = &sqlStatements
+				thisParentChildren = &statements
 			} else {
 				thisParentChildren = levelStatement[level].GetParent().GetChildren()
 			}
@@ -169,7 +169,7 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 			stringValue = strings.TrimPrefix(stringValue, stringPackChars[packCharIndex])
 			stringStatement := &ExpressionStringStatement{
 				Value: stringValue,
-				AbstractSqlStatement: &AbstractSqlStatement{
+				AbstractStatement: &AbstractStatement{
 					Parent:  thisParent,
 					Content: str,
 				},
@@ -186,7 +186,7 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 					err = errors.New("sql template [" + content + "] parse match start error")
 					return
 				}
-				var statement SqlStatement
+				var statement Statement
 				var splitOperatorValues []string
 				splitOperatorValues, err = splitOperator(str)
 				if err != nil {
@@ -205,7 +205,7 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 					} else {
 						statement = &ExpressionFuncStatement{
 							Func: one,
-							AbstractSqlStatement: &AbstractSqlStatement{
+							AbstractStatement: &AbstractStatement{
 								Parent:  thisParent,
 								Content: one,
 							},
@@ -214,7 +214,7 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 				}
 				if statement == nil {
 					statement = &ExpressionBracketsStatement{
-						AbstractSqlStatement: &AbstractSqlStatement{
+						AbstractStatement: &AbstractStatement{
 							Parent: thisParent,
 						},
 					}
@@ -253,14 +253,14 @@ func parseExpressionStatement(content string, parent SqlStatement) (expressionSt
 		}
 	}
 	if str != "" {
-		err = processStr(str, &sqlStatements, parent)
+		err = processStr(str, &statements, parent)
 		if err != nil {
 			return
 		}
 	}
 	expressionStatement = &ExpressionStatement{
-		AbstractSqlStatement: &AbstractSqlStatement{
-			Children: sqlStatements,
+		AbstractStatement: &AbstractStatement{
+			Children: statements,
 		},
 	}
 	return
