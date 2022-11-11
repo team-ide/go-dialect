@@ -1,25 +1,27 @@
 package dialect
 
 type OwnerModel struct {
-	Name             string `json:"name,omitempty"`
-	Comment          string `json:"comment,omitempty"`
-	Password         string `json:"password,omitempty"`
-	CharacterSetName string `json:"characterSetName,omitempty"`
-	CollationName    string `json:"collationName,omitempty"`
-	Error            string `json:"error,omitempty"`
+	OwnerName             string `json:"ownerName,omitempty"`
+	OwnerComment          string `json:"ownerComment,omitempty"`
+	OwnerPassword         string `json:"ownerPassword,omitempty"`
+	OwnerCharacterSetName string `json:"ownerCharacterSetName,omitempty"`
+	OwnerCollationName    string `json:"ownerCollationName,omitempty"`
+
+	Error string `json:"error,omitempty"`
 }
 
 type TableModel struct {
-	Name       string         `json:"name,omitempty"`
-	Comment    string         `json:"comment,omitempty"`
-	ColumnList []*ColumnModel `json:"columnList,omitempty"`
-	IndexList  []*IndexModel  `json:"indexList,omitempty"`
+	TableName    string         `json:"tableName,omitempty"`
+	TableComment string         `json:"tableComment,omitempty"`
+	ColumnList   []*ColumnModel `json:"columnList,omitempty"`
+	IndexList    []*IndexModel  `json:"indexList,omitempty"`
 
-	CharacterSetName string `json:"characterSetName,omitempty"`
+	TableCharacterSetName string `json:"tableCharacterSetName,omitempty"`
 
 	OwnerName string `json:"ownerName,omitempty"`
-	Sql       string `json:"sql,omitempty"`
-	Error     string `json:"error,omitempty"`
+
+	Sql   string `json:"sql,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
 func (this_ *TableModel) AddColumn(column *ColumnModel) *ColumnModel {
@@ -29,7 +31,7 @@ func (this_ *TableModel) AddColumn(column *ColumnModel) *ColumnModel {
 func (this_ *TableModel) FindColumnByName(name string) *ColumnModel {
 	if len(this_.ColumnList) > 0 {
 		for _, one := range this_.ColumnList {
-			if one.Name == name {
+			if one.ColumnName == name {
 				return one
 			}
 		}
@@ -79,24 +81,25 @@ func (this_ *TableModel) AddIndex(models ...*IndexModel) {
 }
 
 type ColumnModel struct {
-	Name             string `json:"name,omitempty"`
-	Comment          string `json:"comment,omitempty"`
-	Type             string `json:"type,omitempty"`
-	Length           int    `json:"length,omitempty"`
-	Decimal          int    `json:"decimal,omitempty"`
-	PrimaryKey       bool   `json:"primaryKey,omitempty"`
-	NotNull          bool   `json:"notNull,omitempty"`
-	Default          string `json:"default,omitempty"`
-	BeforeColumn     string `json:"beforeColumn,omitempty"`
-	CharacterSetName string `json:"characterSetName,omitempty"`
+	ColumnName             string `json:"columnName,omitempty"`
+	ColumnComment          string `json:"columnComment,omitempty"`
+	ColumnType             string `json:"columnType,omitempty"`
+	ColumnLength           int    `json:"columnLength,omitempty"`
+	ColumnDecimal          int    `json:"columnDecimal,omitempty"`
+	PrimaryKey             bool   `json:"primaryKey,omitempty"`
+	ColumnNotNull          bool   `json:"columnNotNull,omitempty"`
+	ColumnDefault          string `json:"columnDefault,omitempty"`
+	ColumnBeforeColumn     string `json:"columnBeforeColumn,omitempty"`
+	ColumnCharacterSetName string `json:"columnCharacterSetName,omitempty"`
 
-	Defaults                 []string `json:"defaults,omitempty"`
-	DefaultCurrentTimestamp  bool     `json:"defaultCurrentTimestamp"`
-	OnUpdateCurrentTimestamp bool     `json:"onUpdateCurrentTimestamp"`
-	Extra                    string   `json:"extra,omitempty"`
-	OwnerName                string   `json:"ownerName,omitempty"`
-	TableName                string   `json:"tableName,omitempty"`
-	Error                    string   `json:"error,omitempty"`
+	ColumnDefaults                 []string `json:"columnDefaults,omitempty"`
+	ColumnDefaultCurrentTimestamp  bool     `json:"columnDefaultCurrentTimestamp"`
+	ColumnOnUpdateCurrentTimestamp bool     `json:"columnOnUpdateCurrentTimestamp"`
+	ColumnExtra                    string   `json:"columnExtra,omitempty"`
+	OwnerName                      string   `json:"ownerName,omitempty"`
+	TableName                      string   `json:"tableName,omitempty"`
+
+	Error string `json:"error,omitempty"`
 }
 
 type PrimaryKeyModel struct {
