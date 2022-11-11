@@ -206,6 +206,22 @@ func (this_ *SqlMappingStatement) TableRenameSql(param *ParamModel, owner *Owner
 	return
 }
 
+func (this_ *SqlMappingStatement) TableDeleteSql(param *ParamModel, owner *OwnerModel, table *TableModel) (sqlList []string, err error) {
+	sqlList, err = this_.FormatSql(this_.TableDelete, param, owner, table)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (this_ *SqlMappingStatement) TableCommentSql(param *ParamModel, owner *OwnerModel, table *TableModel) (sqlList []string, err error) {
+	sqlList, err = this_.FormatSql(this_.TableComment, param, owner, table)
+	if err != nil {
+		return
+	}
+	return
+}
+
 func (this_ *SqlMappingStatement) ColumnsSelectSql(param *ParamModel, owner *OwnerModel, table *TableModel) (sqlInfo string, err error) {
 	sqlList, err := this_.FormatSql(this_.ColumnsSelect, param, owner, table)
 	if err != nil {
@@ -228,6 +244,46 @@ func (this_ *SqlMappingStatement) ColumnSelectSql(param *ParamModel, owner *Owne
 	return
 }
 
+func (this_ *SqlMappingStatement) ColumnAddSql(param *ParamModel, owner *OwnerModel, table *TableModel, column *ColumnModel) (sqlList []string, err error) {
+	sqlList, err = this_.FormatSql(this_.ColumnAdd, param, owner, table, column)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (this_ *SqlMappingStatement) ColumnUpdateSql(param *ParamModel, owner *OwnerModel, table *TableModel, column *ColumnModel) (sqlList []string, err error) {
+	sqlList, err = this_.FormatSql(this_.ColumnUpdate, param, owner, table, column)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (this_ *SqlMappingStatement) ColumnDeleteSql(param *ParamModel, owner *OwnerModel, table *TableModel, column *ColumnModel) (sqlList []string, err error) {
+	sqlList, err = this_.FormatSql(this_.ColumnDelete, param, owner, table, column)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (this_ *SqlMappingStatement) ColumnRenameSql(param *ParamModel, owner *OwnerModel, table *TableModel, column *ColumnModel) (sqlList []string, err error) {
+	sqlList, err = this_.FormatSql(this_.ColumnRename, param, owner, table, column)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (this_ *SqlMappingStatement) ColumnCommentSql(param *ParamModel, owner *OwnerModel, table *TableModel, column *ColumnModel) (sqlList []string, err error) {
+	sqlList, err = this_.FormatSql(this_.ColumnComment, param, owner, table, column)
+	if err != nil {
+		return
+	}
+	return
+}
+
 func (this_ *SqlMappingStatement) PrimaryKeysSelectSql(param *ParamModel, owner *OwnerModel, table *TableModel) (sqlInfo string, err error) {
 	sqlList, err := this_.FormatSql(this_.PrimaryKeysSelect, param, owner, table)
 	if err != nil {
@@ -239,6 +295,22 @@ func (this_ *SqlMappingStatement) PrimaryKeysSelectSql(param *ParamModel, owner 
 	return
 }
 
+func (this_ *SqlMappingStatement) PrimaryKeyAddSql(param *ParamModel, owner *OwnerModel, table *TableModel, primaryKey *PrimaryKeyModel) (sqlList []string, err error) {
+	sqlList, err = this_.FormatSql(this_.PrimaryKeyAdd, param, owner, table, primaryKey)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (this_ *SqlMappingStatement) PrimaryKeyDeleteSql(param *ParamModel, owner *OwnerModel, table *TableModel, primaryKey *PrimaryKeyModel) (sqlList []string, err error) {
+	sqlList, err = this_.FormatSql(this_.PrimaryKeyDelete, param, owner, table, primaryKey)
+	if err != nil {
+		return
+	}
+	return
+}
+
 func (this_ *SqlMappingStatement) IndexesSelectSql(param *ParamModel, owner *OwnerModel, table *TableModel) (sqlInfo string, err error) {
 	sqlList, err := this_.FormatSql(this_.IndexesSelect, param, owner, table)
 	if err != nil {
@@ -246,6 +318,22 @@ func (this_ *SqlMappingStatement) IndexesSelectSql(param *ParamModel, owner *Own
 	}
 	if len(sqlList) > 0 {
 		sqlInfo = sqlList[0]
+	}
+	return
+}
+
+func (this_ *SqlMappingStatement) IndexAddSql(param *ParamModel, owner *OwnerModel, table *TableModel, index *IndexModel) (sqlList []string, err error) {
+	sqlList, err = this_.FormatSql(this_.IndexAdd, param, owner, table, index)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (this_ *SqlMappingStatement) IndexDeleteSql(param *ParamModel, owner *OwnerModel, table *TableModel, index *IndexModel) (sqlList []string, err error) {
+	sqlList, err = this_.FormatSql(this_.IndexDelete, param, owner, table, index)
+	if err != nil {
+		return
 	}
 	return
 }
