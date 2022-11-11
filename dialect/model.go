@@ -1,5 +1,16 @@
 package dialect
 
+type ParamModel struct {
+	OwnerNamePack      *bool   `json:"ownerNamePack,omitempty"`
+	OwnerNamePackChar  *string `json:"ownerNamePackChar,omitempty"`
+	TableNamePack      *bool   `json:"tableNamePack,omitempty"`
+	TableNamePackChar  *string `json:"tableNamePackChar,omitempty"`
+	ColumnNamePack     *bool   `json:"columnNamePack,omitempty"`
+	ColumnNamePackChar *string `json:"columnNamePackChar,omitempty"`
+
+	CustomData map[string]interface{} `json:"customData,omitempty"`
+}
+
 type OwnerModel struct {
 	OwnerName             string `json:"ownerName,omitempty"`
 	OwnerComment          string `json:"ownerComment,omitempty"`
@@ -12,6 +23,7 @@ type OwnerModel struct {
 
 type TableModel struct {
 	TableName    string         `json:"tableName,omitempty"`
+	OldTableName string         `json:"oldTableName,omitempty"`
 	TableComment string         `json:"tableComment,omitempty"`
 	ColumnList   []*ColumnModel `json:"columnList,omitempty"`
 	IndexList    []*IndexModel  `json:"indexList,omitempty"`
