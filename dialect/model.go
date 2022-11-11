@@ -62,15 +62,6 @@ func (this_ *TableModel) FindIndexByName(name string) *IndexModel {
 	return nil
 }
 
-func (this_ *TableModel) AddPrimaryKey(models ...*PrimaryKeyModel) {
-	for _, model := range models {
-		find := this_.FindColumnByName(model.ColumnName)
-		if find != nil {
-			find.PrimaryKey = true
-		}
-	}
-}
-
 func (this_ *TableModel) AddIndex(models ...*IndexModel) {
 
 	for _, model := range models {
@@ -94,13 +85,19 @@ func (this_ *TableModel) AddIndex(models ...*IndexModel) {
 
 type ColumnModel struct {
 	ColumnName             string `json:"columnName,omitempty"`
+	OldColumnName          string `json:"oldColumnName,omitempty"`
 	ColumnComment          string `json:"columnComment,omitempty"`
+	OldColumnComment       string `json:"oldColumnComment,omitempty"`
 	ColumnType             string `json:"columnType,omitempty"`
+	OldColumnType          string `json:"oldColumnType,omitempty"`
 	ColumnLength           int    `json:"columnLength,omitempty"`
+	OldColumnLength        int    `json:"oldColumnLength,omitempty"`
 	ColumnDecimal          int    `json:"columnDecimal,omitempty"`
-	PrimaryKey             bool   `json:"primaryKey,omitempty"`
+	OldColumnDecimal       int    `json:"oldColumnDecimal,omitempty"`
 	ColumnNotNull          bool   `json:"columnNotNull,omitempty"`
+	OldColumnNotNull       bool   `json:"oldColumnNotNull,omitempty"`
 	ColumnDefault          string `json:"columnDefault,omitempty"`
+	OldColumnDefault       string `json:"oldColumnDefault,omitempty"`
 	ColumnBeforeColumn     string `json:"columnBeforeColumn,omitempty"`
 	ColumnCharacterSetName string `json:"columnCharacterSetName,omitempty"`
 
