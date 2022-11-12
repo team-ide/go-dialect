@@ -23,7 +23,6 @@ type OwnerModel struct {
 
 type TableModel struct {
 	TableName    string         `json:"tableName,omitempty"`
-	OldTableName string         `json:"oldTableName,omitempty"`
 	TableComment string         `json:"tableComment,omitempty"`
 	ColumnList   []*ColumnModel `json:"columnList,omitempty"`
 	IndexList    []*IndexModel  `json:"indexList,omitempty"`
@@ -85,19 +84,12 @@ func (this_ *TableModel) AddIndex(models ...*IndexModel) {
 
 type ColumnModel struct {
 	ColumnName             string `json:"columnName,omitempty"`
-	OldColumnName          string `json:"oldColumnName,omitempty"`
 	ColumnComment          string `json:"columnComment,omitempty"`
-	OldColumnComment       string `json:"oldColumnComment,omitempty"`
 	ColumnType             string `json:"columnType,omitempty"`
-	OldColumnType          string `json:"oldColumnType,omitempty"`
 	ColumnLength           int    `json:"columnLength,omitempty"`
-	OldColumnLength        int    `json:"oldColumnLength,omitempty"`
 	ColumnDecimal          int    `json:"columnDecimal,omitempty"`
-	OldColumnDecimal       int    `json:"oldColumnDecimal,omitempty"`
 	ColumnNotNull          bool   `json:"columnNotNull,omitempty"`
-	OldColumnNotNull       bool   `json:"oldColumnNotNull,omitempty"`
 	ColumnDefault          string `json:"columnDefault,omitempty"`
-	OldColumnDefault       string `json:"oldColumnDefault,omitempty"`
 	ColumnBeforeColumn     string `json:"columnBeforeColumn,omitempty"`
 	ColumnCharacterSetName string `json:"columnCharacterSetName,omitempty"`
 
