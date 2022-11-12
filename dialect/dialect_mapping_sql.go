@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -524,6 +525,7 @@ func (this_ *mappingDialect) IndexAddSql(param *ParamModel, ownerName string, ta
 	if err != nil {
 		return
 	}
+	fmt.Println("index add sql:", sqlList)
 	return
 }
 
