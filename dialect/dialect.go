@@ -1,6 +1,7 @@
 package dialect
 
 import (
+	"errors"
 	"reflect"
 	"strconv"
 	"strings"
@@ -16,96 +17,91 @@ type Dialect interface {
 	GetColumnTypeInfos() (columnTypeInfoList []*ColumnTypeInfo)
 	GetColumnTypeInfo(typeName string) (columnTypeInfo *ColumnTypeInfo, err error)
 	FormatColumnType(column *ColumnModel) (columnType string, err error)
-	FormatDefaultValue(column *ColumnModel) (defaultValue string)
-	ToColumnTypeInfo(columnType string) (columnTypeInfo *ColumnTypeInfo, length, decimal int, err error)
+	//FormatDefaultValue(column *ColumnModel) (defaultValue string)
+	//ToColumnTypeInfo(columnType string) (columnTypeInfo *ColumnTypeInfo, length, decimal int, err error)
 
-	PackOwner(ownerName string) string
-	PackTable(tableName string) string
-	PackColumn(columnName string) string
-	PackColumns(columnNames []string) string
-	PackValueForSql(column *ColumnModel, value interface{}) string
+	OwnerNamePack(param *ParamModel, ownerName string) string
+	TableNamePack(param *ParamModel, tableName string) string
+	ColumnNamePack(param *ParamModel, columnName string) string
+	ColumnNamesPack(param *ParamModel, columnNames []string) string
+	SqlValuePack(param *ParamModel, column *ColumnModel, value interface{}) string
 	// IsSqlEnd 判断SQL是否以 分号 结尾
 	IsSqlEnd(sqlInfo string) bool
 	// SqlSplit 根据 分号 分割多条SQL
 	SqlSplit(sqlInfo string) []string
 
 	OwnerModel(data map[string]interface{}) (owner *OwnerModel, err error)
-	OwnersSelectSql() (sql string, err error)
-	OwnerSelectSql(ownerName string) (sql string, err error)
-	OwnerChangeSql(ownerName string) (sql string, err error)
-	OwnerCreateSql(owner *OwnerModel) (sqlList []string, err error)
-	OwnerDeleteSql(ownerName string) (sqlList []string, err error)
+	OwnersSelectSql(param *ParamModel) (sql string, err error)
+	OwnerSelectSql(param *ParamModel, ownerName string) (sql string, err error)
+	OwnerCreateSql(param *ParamModel, owner *OwnerModel) (sqlList []string, err error)
+	OwnerDeleteSql(param *ParamModel, ownerName string) (sqlList []string, err error)
 
 	TableModel(data map[string]interface{}) (table *TableModel, err error)
-	TablesSelectSql(ownerName string) (sql string, err error)
-	TableSelectSql(ownerName string, tableName string) (sql string, err error)
-	TableCreateSql(ownerName string, table *TableModel) (sqlList []string, err error)
-	TableCommentSql(ownerName string, tableName string, comment string) (sqlList []string, err error)
-	TableRenameSql(ownerName string, oldTableName string, newTableName string) (sqlList []string, err error)
-	TableDeleteSql(ownerName string, tableName string) (sqlList []string, err error)
+	TablesSelectSql(param *ParamModel, ownerName string) (sql string, err error)
+	TableSelectSql(param *ParamModel, ownerName string, tableName string) (sql string, err error)
+	TableCreateSql(param *ParamModel, ownerName string, table *TableModel) (sqlList []string, err error)
+	TableCommentSql(param *ParamModel, ownerName string, tableName string, tableComment string) (sqlList []string, err error)
+	TableRenameSql(param *ParamModel, ownerName string, tableName string, newTableName string) (sqlList []string, err error)
+	TableDeleteSql(param *ParamModel, ownerName string, tableName string) (sqlList []string, err error)
 
 	ColumnModel(data map[string]interface{}) (table *ColumnModel, err error)
-	ColumnsSelectSql(ownerName string, tableName string) (sql string, err error)
-	ColumnSelectSql(ownerName string, tableName string, columnName string) (sql string, err error)
-	ColumnAddSql(ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error)
-	ColumnCommentSql(ownerName string, tableName string, columnName string, comment string) (sqlList []string, err error)
-	ColumnUpdateSql(ownerName string, tableName string, oldColumn *ColumnModel, newColumn *ColumnModel) (sqlList []string, err error)
-	ColumnDeleteSql(ownerName string, tableName string, columnName string) (sqlList []string, err error)
+	ColumnsSelectSql(param *ParamModel, ownerName string, tableName string) (sql string, err error)
+	ColumnSelectSql(param *ParamModel, ownerName string, tableName string, columnName string) (sql string, err error)
+	ColumnAddSql(param *ParamModel, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error)
+	ColumnCommentSql(param *ParamModel, ownerName string, tableName string, columnName string, columnComment string) (sqlList []string, err error)
+	ColumnUpdateSql(param *ParamModel, ownerName string, tableName string, column *ColumnModel, newColumn *ColumnModel) (sqlList []string, err error)
+	ColumnDeleteSql(param *ParamModel, ownerName string, tableName string, columnName string) (sqlList []string, err error)
 
 	PrimaryKeyModel(data map[string]interface{}) (primaryKey *PrimaryKeyModel, err error)
-	PrimaryKeysSelectSql(ownerName string, tableName string) (sql string, err error)
-	PrimaryKeyAddSql(ownerName string, tableName string, primaryKeys []string) (sqlList []string, err error)
-	PrimaryKeyDeleteSql(ownerName string, tableName string) (sqlList []string, err error)
+	PrimaryKeysSelectSql(param *ParamModel, ownerName string, tableName string) (sql string, err error)
+	PrimaryKeyAddSql(param *ParamModel, ownerName string, tableName string, columnNames []string) (sqlList []string, err error)
+	PrimaryKeyDeleteSql(param *ParamModel, ownerName string, tableName string) (sqlList []string, err error)
 
 	IndexModel(data map[string]interface{}) (index *IndexModel, err error)
-	IndexesSelectSql(ownerName string, tableName string) (sql string, err error)
-	IndexAddSql(ownerName string, tableName string, index *IndexModel) (sqlList []string, err error)
-	IndexDeleteSql(ownerName string, tableName string, indexName string) (sqlList []string, err error)
+	IndexesSelectSql(param *ParamModel, ownerName string, tableName string) (sql string, err error)
+	IndexAddSql(param *ParamModel, ownerName string, tableName string, index *IndexModel) (sqlList []string, err error)
+	IndexDeleteSql(param *ParamModel, ownerName string, tableName string, indexName string) (sqlList []string, err error)
 
-	InsertSql(insert *InsertModel) (sqlList []string, err error)
-	InsertDataListSql(ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, batchSqlList []string, err error)
+	//InsertSql(insert *InsertModel) (sqlList []string, err error)
+	//InsertDataListSql(ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, batchSqlList []string, err error)
 }
 
 var (
-	Mysql          = NewMysqlDialect()
-	MysqlType      = &Type{Name: "mysql"}
-	Sqlite         = NewSqliteDialect()
-	SqliteType     = &Type{Name: "sqlite"}
-	Oracle         = NewOracleDialect()
-	OracleType     = &Type{Name: "oracle"}
-	DaMen          = NewDaMenDialect()
-	DaMenType      = &Type{Name: "damen"}
-	KinBase        = NewKinBaseDialect()
-	KinBaseType    = &Type{Name: "kinbase"}
-	ShenTong       = NewShenTongDialect()
-	ShenTongType   = &Type{Name: "shentong"}
-	Postgresql     = NewPostgresqlDialect()
-	PostgresqlType = &Type{Name: "postgresql"}
+	TypeMysql      = &Type{Name: "mysql"}
+	TypeSqlite     = &Type{Name: "sqlite"}
+	TypeOracle     = &Type{Name: "oracle"}
+	TypeDaMen      = &Type{Name: "damen"}
+	TypeKinBase    = &Type{Name: "kinbase"}
+	TypeShenTong   = &Type{Name: "shentong"}
+	TypePostgresql = &Type{Name: "postgresql"}
 )
 
-func GetDialect(dialectType string) (dia Dialect) {
+func NewDialect(dialectType string) (dia Dialect, err error) {
 	switch strings.ToLower(dialectType) {
 	case "mysql":
-		dia = Mysql
+		dia, err = NewMappingDialect(NewMappingMysql())
 		break
 	case "sqlite", "sqlite3":
-		dia = Sqlite
+		dia, err = NewMappingDialect(NewMappingSqlite())
 		break
 	case "damen", "dm":
-		dia = DaMen
+		dia, err = NewMappingDialect(NewMappingDaMen())
 		break
 	case "kingbase", "kb":
-		dia = KinBase
+		dia, err = NewMappingDialect(NewMappingKinBase())
 		break
 	case "oracle":
-		dia = Oracle
+		dia, err = NewMappingDialect(NewMappingOracle())
 		break
 	case "shentong", "st":
-		dia = ShenTong
+		dia, err = NewMappingDialect(NewMappingShenTong())
 		break
 	case "postgresql", "ps":
-		dia = Postgresql
+		dia, err = NewMappingDialect(NewMappingPostgresql())
 		break
+	default:
+		err = errors.New("dialect type [" + dialectType + "] not support ")
+		return
 	}
 	return
 }

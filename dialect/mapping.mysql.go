@@ -1,7 +1,8 @@
 package dialect
 
-var (
-	MappingMysql = &SqlMapping{
+func NewMappingMysql() (mapping *SqlMapping) {
+	mapping = &SqlMapping{
+		dialectType: TypeMysql,
 		// 库或所属者 相关 SQL
 		OwnersSelect: `
 SELECT
@@ -163,4 +164,6 @@ ALTER TABLE [{ownerName}.]{tableName} ADD [PRIMARY KEY | UNIQUE | FULLTEXT | IND
 ALTER TABLE [{ownerName}.]{tableName} DROP INDEX
 `,
 	}
-)
+
+	return
+}

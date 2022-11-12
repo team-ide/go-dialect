@@ -103,6 +103,17 @@ type ColumnModel struct {
 	Error string `json:"error,omitempty"`
 }
 
+type ColumnTypeInfo struct {
+	Name       string `json:"name,omitempty"`
+	TypeFormat string `json:"typeFormat,omitempty"`
+	IsNumber   bool   `json:"isNumber,omitempty"`
+	IsString   bool   `json:"isString,omitempty"`
+	IsDateTime bool   `json:"isDateTime,omitempty"`
+	IsBytes    bool   `json:"isBytes,omitempty"`
+	MinLength  int    `json:"minLength,omitempty"`
+	MaxLength  int    `json:"maxLength,omitempty"`
+}
+
 type PrimaryKeyModel struct {
 	Columns    []string `json:"columns,omitempty"`
 	ColumnName string   `json:"columnName,omitempty"`

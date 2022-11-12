@@ -1,22 +1,22 @@
-package dialect
+package back
 
-func NewShenTongDialect() *ShenTongDialect {
+func NewKinBaseDialect() *KinBaseDialect {
 
 	dialect := NewOracleDialect()
-	dialect.dialectType = ShenTongType
+	dialect.dialectType = KinBaseType
 
-	res := &ShenTongDialect{
+	res := &KinBaseDialect{
 		OracleDialect: dialect,
 	}
 	res.init()
 	return res
 }
 
-type ShenTongDialect struct {
+type KinBaseDialect struct {
 	*OracleDialect
 }
 
-func (this_ *ShenTongDialect) init() {
+func (this_ *KinBaseDialect) init() {
 	/** 数值类型 **/
 
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BIT", TypeFormat: "NUMBER($l, $d)", HasLength: false, IsNumber: true})
@@ -100,8 +100,60 @@ func (this_ *ShenTongDialect) init() {
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_FLOAT8", TypeFormat: "_FLOAT8", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "ANYARRAY", TypeFormat: "ANYARRAY", HasLength: true, IsString: true})
 
+	// 神通
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARBINARY", TypeFormat: "VARBINARY($l)", HasLength: true, IsString: true})
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BFILE", TypeFormat: "BFILE", HasLength: true, IsString: true})
 
 	this_.AddFuncTypeInfo(&FuncTypeInfo{Name: "md5", Format: "md5"})
+}
+
+func (this_ *KinBaseDialect) ColumnUpdateSql(ownerName string, tableName string, oldColumn *ColumnModel, newColumn *ColumnModel) (sqlList []string, err error) {
+
+	if oldColumn.Name != newColumn.Name {
+		var sqlList_ []string
+		sqlList_, err = this_.ColumnRenameSql(ownerName, tableName, oldColumn.Name, newColumn.Name)
+		if err != nil {
+			return
+		}
+		sqlList = append(sqlList, sqlList_...)
+	}
+
+	if oldColumn.Type != newColumn.Type ||
+		oldColumn.Length != newColumn.Length ||
+		oldColumn.Decimal != newColumn.Decimal ||
+		oldColumn.Default != newColumn.Default ||
+		oldColumn.NotNull != newColumn.NotNull ||
+		oldColumn.BeforeColumn != newColumn.BeforeColumn {
+		var columnType string
+		columnType, err = this_.FormatColumnType(newColumn)
+		if err != nil {
+			return
+		}
+
+		var sql string
+		sql = `ALTER TABLE `
+
+		if ownerName != "" {
+			sql += this_.PackOwner(ownerName) + "."
+		}
+		sql += this_.PackTable(tableName)
+
+		sql += ` ALTER COLUMN `
+		sql += this_.PackColumn(newColumn.Name)
+		sql += ` TYPE `
+		sql += ` ` + columnType + ``
+		if newColumn.Default == "" {
+			sql += " DEFAULT NULL"
+		} else {
+			sql += " " + this_.FormatDefaultValue(newColumn)
+		}
+		if newColumn.NotNull {
+			sql += ` NOT NULL`
+		}
+		sql += ``
+
+		sqlList = append(sqlList, sql)
+	}
+
+	return
 }

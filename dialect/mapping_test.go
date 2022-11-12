@@ -136,12 +136,10 @@ func TestSplitOperator(t *testing.T) {
 }
 
 func TestMappingSql(t *testing.T) {
-	mapping := MappingMysql
-	sqlMappingStatement, err := NewSqlMappingStatement(mapping)
+	_, err := NewDialect(TypeMysql.Name)
 	if err != nil {
 		panic(err)
 	}
-	testOut(sqlMappingStatement.OwnersSelect, 0)
 }
 
 func method1() string {
