@@ -205,7 +205,7 @@ func (this_ *taskSync) syncTable(workDb *sql.DB, sourceOwnerName string, sourceT
 
 	this_.addProgress(progress)
 
-	newTableDetail, err := TableDetail(this_.db, this_.dia, this_.Param, sourceOwnerName, sourceTableName)
+	newTableDetail, err := TableDetail(this_.db, this_.dia, this_.Param, sourceOwnerName, sourceTableName, false)
 	if err != nil {
 		return
 	}
@@ -213,7 +213,7 @@ func (this_ *taskSync) syncTable(workDb *sql.DB, sourceOwnerName string, sourceT
 		err = errors.New("source db table [" + sourceOwnerName + "." + sourceTableName + "] is not exist")
 		return
 	}
-	oldTableDetail, err := TableDetail(this_.targetDb, this_.targetDialect, this_.Param, targetOwnerName, targetTableName)
+	oldTableDetail, err := TableDetail(this_.targetDb, this_.targetDialect, this_.Param, targetOwnerName, targetTableName, false)
 	if err != nil {
 		return
 	}

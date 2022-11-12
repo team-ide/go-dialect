@@ -250,7 +250,7 @@ func (this_ *taskImport) importTable(workDb *sql.DB, ownerName string, path stri
 
 	this_.addProgress(progress)
 
-	tableDetail, err := TableDetail(workDb, this_.dia, this_.Param, ownerName, targetTableName)
+	tableDetail, err := TableDetail(workDb, this_.dia, this_.Param, ownerName, targetTableName, false)
 	if err != nil {
 		return
 	}

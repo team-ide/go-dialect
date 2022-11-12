@@ -224,7 +224,7 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 
 	this_.addProgress(progress)
 
-	tableDetail, err := TableDetail(this_.db, this_.dia, this_.Param, sourceOwnerName, sourceTableName)
+	tableDetail, err := TableDetail(this_.db, this_.dia, this_.Param, sourceOwnerName, sourceTableName, false)
 	if err != nil {
 		return
 	}

@@ -153,6 +153,14 @@ func (this_ *mappingDialect) TableCreateSql(param *ParamModel, ownerName string,
 	if err != nil {
 		return
 	}
+	var indexAddSqlList []string
+	for _, index := range table.IndexList {
+		indexAddSqlList, err = this_.IndexAddSql(param, ownerName, table.TableName, index)
+		if err != nil {
+			return
+		}
+		sqlList = append(sqlList, indexAddSqlList...)
+	}
 	return
 }
 
@@ -291,14 +299,25 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 			}
 		}
 	}
-
-	columnTypeInfo, err := this_.GetColumnTypeInfo(column.ColumnDataType)
-	if err != nil {
-		return
+	if GetStringValue(data["isNotNull"]) == "1" {
+		column.ColumnNotNull = true
 	}
 	var columnType string
 	if data["columnType"] != nil {
 		columnType = data["columnType"].(string)
+	}
+	if column.ColumnDataType == "" {
+		if strings.Contains(columnType, "(") {
+			column.ColumnDataType = columnType[:strings.Index(columnType, "(")]
+		} else {
+			column.ColumnDataType = columnType
+		}
+	}
+
+	columnTypeInfo, err := this_.GetColumnTypeInfo(column.ColumnDataType)
+	if err != nil {
+		//fmt.Println(data)
+		return
 	}
 	if columnTypeInfo.FullColumnByColumnType != nil {
 		err = columnTypeInfo.FullColumnByColumnType(columnType, column)

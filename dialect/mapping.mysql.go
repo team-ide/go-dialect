@@ -170,10 +170,14 @@ WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
 )
 `,
 		IndexAdd: `
-ALTER TABLE [{ownerName}.]{tableName} ADD [PRIMARY KEY | UNIQUE | FULLTEXT | INDEX] {indexName} ({columnNames}) [COMMENT {columnComment}]
+{ if indexType == '' }
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD INDEX {indexName} ({columnNamesPack}) [COMMENT {sqlValuePack(indexComment)}]
+{ else }
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD {indexType} {indexName} ({columnNamesPack}) [COMMENT {sqlValuePack(indexComment)}]
+{ }
 `,
 		IndexDelete: `
-ALTER TABLE [{ownerName}.]{tableName} DROP INDEX
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP INDEX {indexName}
 `,
 	}
 

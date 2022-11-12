@@ -94,8 +94,11 @@ SQL方言
 
 docker run -itd --name mysql-3306 -m 1024m -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql:5.7
 
-# 导出 mysql 数据库的 mysql 库 为 mysql 的 sql
-go run . -do export -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -fileType sql -exportDir temp/export/test -exportOwner mysql -exportDialect mysql
+# 导出 mysql 数据库的 mysql,information_schema,performance_schema,sys 库 为 mysql 的 sql
+go run . -do export -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -fileType sql -exportDir temp/export/test -exportOwner mysql,information_schema,performance_schema,sys -exportDialect mysql
+
+# 导出 mysql 数据库的 mysql,information_schema,performance_schema,sys 库 为 sqlite 的 sql
+go run . -do export -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -fileType sql -exportDir temp/export/test -exportOwner mysql,information_schema,performance_schema,sys -exportDialect sqlite
 
 # 导入 sqlite 的 sql 到 mysql 的 DB1 库
 go run . -do import -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -fileType sql -importOwner DB1=temp/export/test/mysql.sql  -importOwnerCreateIfNotExist true
@@ -107,12 +110,20 @@ go run . -do export -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 
 # 导入 sqlite 的 sql 到 sqlite
 go run . -do import -sourceDialect sqlite -sourceDatabase temp/sqlite.db -fileType sql -importOwner main=temp/export/test/sqlite.sql
 
+# 导出 sqlite 的 main 到 sqlite
+go run . -do export -sourceDialect sqlite -sourceDatabase temp/sqlite.mysql -fileType sql -exportDir temp/export/test -exportOwner main=main -exportDialect sqlite
 
 # 同步 mysql 数据库的 mysql 库 到 mysql 数据库的 DB2
 go run . -do sync -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -targetDialect mysql -targetHost 127.0.0.1 -targetPort 3306 -targetUser root -targetPassword 123456 -syncOwner mysql=DB2 -syncOwnerCreateIfNotExist true
+go run . -do sync -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -targetDialect mysql -targetHost 127.0.0.1 -targetPort 3306 -targetUser root -targetPassword 123456 -syncOwner information_schema=DB3 -syncOwnerCreateIfNotExist true
+go run . -do sync -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -targetDialect mysql -targetHost 127.0.0.1 -targetPort 3306 -targetUser root -targetPassword 123456 -syncOwner performance_schema=DB4 -syncOwnerCreateIfNotExist true
+go run . -do sync -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -targetDialect mysql -targetHost 127.0.0.1 -targetPort 3306 -targetUser root -targetPassword 123456 -syncOwner sys=DB5 -syncOwnerCreateIfNotExist true
 
 # 同步 mysql 数据库的 mysql 库 到 sqlite
 go run . -do sync -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -targetDialect sqlite -targetDatabase temp/sqlite.mysql -syncOwner mysql=main
+go run . -do sync -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -targetDialect sqlite -targetDatabase temp/sqlite.mysql -syncOwner information_schema=main
+go run . -do sync -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -targetDialect sqlite -targetDatabase temp/sqlite.mysql -syncOwner performance_schema=main
+go run . -do sync -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -targetDialect sqlite -targetDatabase temp/sqlite.mysql -syncOwner sys=main
 
 
 docker run -itd --name oracle-1521 -p 1521:1521 teamide/oracle-xe-11g:1.0

@@ -31,7 +31,7 @@ func TablesSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ow
 	return
 }
 
-func TableSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string) (one *dialect.TableModel, err error) {
+func TableSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string, ignoreError bool) (one *dialect.TableModel, err error) {
 	sqlInfo, err := dia.TableSelectSql(param, ownerName, tableName)
 	if err != nil {
 		return
@@ -46,6 +46,10 @@ func TableSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	for _, data := range dataList {
 		model, e := dia.TableModel(data)
 		if e != nil {
+			if !ignoreError {
+				err = e
+				return
+			}
 			model = &dialect.TableModel{
 				Error: e.Error(),
 			}
@@ -56,7 +60,7 @@ func TableSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	return
 }
 
-func TableDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string) (table *dialect.TableModel, err error) {
+func TableDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string, ignoreError bool) (table *dialect.TableModel, err error) {
 	sqlInfo, err := dia.TableSelectSql(param, ownerName, tableName)
 	if err != nil {
 		return
@@ -78,15 +82,27 @@ func TableDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 		} else {
 			model.ColumnList, e = ColumnsSelect(db, dia, param, ownerName, model.TableName)
 			if e != nil {
+				if !ignoreError {
+					err = e
+					return
+				}
 				model.Error = e.Error()
 			} else {
 				ps, e := PrimaryKeysSelect(db, dia, param, ownerName, model.TableName)
 				if e != nil {
+					if !ignoreError {
+						err = e
+						return
+					}
 					model.Error = e.Error()
 				} else {
 					model.AddPrimaryKey(ps...)
 					is, e := IndexesSelect(db, dia, param, ownerName, model.TableName)
 					if e != nil {
+						if !ignoreError {
+							err = e
+							return
+						}
 						model.Error = e.Error()
 					} else {
 						model.AddIndex(is...)
