@@ -97,6 +97,7 @@ func (this_ *StatementContext) SetJSONData(data interface{}) (err error) {
 	if err != nil {
 		return
 	}
+	this_.SetMapData(dataMap)
 	return
 }
 

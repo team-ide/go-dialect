@@ -5,8 +5,8 @@ import (
 	"github.com/team-ide/go-dialect/dialect"
 )
 
-func ColumnsSelect(db *sql.DB, dia dialect.Dialect, ownerName string, tableName string) (list []*dialect.ColumnModel, err error) {
-	sqlInfo, err := dia.ColumnsSelectSql(ownerName, tableName)
+func ColumnsSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string) (list []*dialect.ColumnModel, err error) {
+	sqlInfo, err := dia.ColumnsSelectSql(param, ownerName, tableName)
 	if err != nil {
 		return
 	}

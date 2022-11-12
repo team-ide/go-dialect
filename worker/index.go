@@ -5,8 +5,8 @@ import (
 	"github.com/team-ide/go-dialect/dialect"
 )
 
-func PrimaryKeysSelect(db *sql.DB, dia dialect.Dialect, ownerName string, tableName string) (list []*dialect.PrimaryKeyModel, err error) {
-	sqlInfo, err := dia.PrimaryKeysSelectSql(ownerName, tableName)
+func PrimaryKeysSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string) (list []*dialect.PrimaryKeyModel, err error) {
+	sqlInfo, err := dia.PrimaryKeysSelectSql(param, ownerName, tableName)
 	if err != nil {
 		return
 	}
@@ -29,8 +29,8 @@ func PrimaryKeysSelect(db *sql.DB, dia dialect.Dialect, ownerName string, tableN
 	return
 }
 
-func IndexesSelect(db *sql.DB, dia dialect.Dialect, ownerName string, tableName string) (list []*dialect.IndexModel, err error) {
-	sqlInfo, err := dia.IndexesSelectSql(ownerName, tableName)
+func IndexesSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string) (list []*dialect.IndexModel, err error) {
+	sqlInfo, err := dia.IndexesSelectSql(param, ownerName, tableName)
 	if err != nil {
 		return
 	}

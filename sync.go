@@ -21,7 +21,10 @@ func doSync() {
 	if err != nil {
 		panic(err)
 	}
-	dia := dialect.GetDialect(*sourceDialect)
+	dia, err := dialect.NewDialect(*sourceDialect)
+	if err != nil {
+		panic(err)
+	}
 	if db == nil || dia == nil {
 		panic("sourceDialect [" + *sourceDialect + "] not support")
 	}
@@ -30,7 +33,10 @@ func doSync() {
 	if err != nil {
 		panic(err)
 	}
-	targetDia := dialect.GetDialect(*targetDialect)
+	targetDia, err := dialect.NewDialect(*targetDialect)
+	if err != nil {
+		panic(err)
+	}
 	if targetDb == nil || targetDia == nil {
 		panic("targetDialect [" + *targetDialect + "] not support")
 	}
@@ -46,13 +52,7 @@ func doSync() {
 				workDb = targetDb
 				return
 			}
-			changeSql, _ := targetDia.OwnerChangeSql(ownerName)
-
-			if changeSql != "" {
-				workDb, err = getDbInfo(*targetDialect, *targetUser, password, *targetHost, *targetPort, ownerName)
-			} else {
-				workDb, err = getDbInfo(*targetDialect, ownerName, password, *targetHost, *targetPort, *targetDatabase)
-			}
+			workDb, err = getDbInfo(*targetDialect, *targetUser, password, *targetHost, *targetPort, ownerName)
 			return
 		},
 		&worker.TaskSyncParam{
@@ -62,7 +62,7 @@ func doSync() {
 			OwnerCreateIfNotExist: *syncOwnerCreateIfNotExist == "1" || *syncOwnerCreateIfNotExist == "true",
 			OwnerCreatePassword:   password,
 			FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
-				return tableName + "_" + index.Name
+				return tableName + "_" + index.IndexName
 			},
 			OnProgress: func(progress *worker.TaskProgress) {
 				bs, err := json.Marshal(progress)

@@ -20,6 +20,7 @@ type ConvertParser struct {
 	dest    dialect.Dialect
 	sqlList []string
 	destSql string
+	Param   *dialect.ParamModel
 }
 
 func (this_ *ConvertParser) GetSrcSql() (srcSql string) {
@@ -85,7 +86,7 @@ func (this_ *ConvertParser) parse(stmt_ sqlparser.Statement) (err error) {
 		if err != nil {
 			return err
 		}
-		sqlList, err := this_.dest.InsertSql(insert)
+		sqlList, err := this_.dest.InsertSql(this_.Param, insert)
 		if err != nil {
 			return err
 		}
@@ -99,7 +100,7 @@ func (this_ *ConvertParser) parse(stmt_ sqlparser.Statement) (err error) {
 		if err != nil {
 			return err
 		}
-		sqlList, err := this_.dest.TableCreateSql(databaseName, table)
+		sqlList, err := this_.dest.TableCreateSql(this_.Param, databaseName, table)
 		if err != nil {
 			return err
 		}
@@ -110,7 +111,7 @@ func (this_ *ConvertParser) parse(stmt_ sqlparser.Statement) (err error) {
 func parseCreateTable(stmt *sqlparser.CreateTable) (databaseName string, table *dialect.TableModel, err error) {
 	table = &dialect.TableModel{}
 	databaseName = stmt.GetTable().Qualifier.String()
-	table.Name = stmt.GetTable().Name.String()
+	table.TableName = stmt.GetTable().Name.String()
 
 	tableSpec := stmt.GetTableSpec()
 	if tableSpec == nil {
@@ -121,29 +122,29 @@ func parseCreateTable(stmt *sqlparser.CreateTable) (databaseName string, table *
 			continue
 		}
 		column := &dialect.ColumnModel{}
-		column.Name = tableSpecColumn.Name.String()
-		column.Type = tableSpecColumn.Type.Type
+		column.ColumnName = tableSpecColumn.Name.String()
+		column.ColumnDataType = tableSpecColumn.Type.Type
 		if tableSpecColumn.Type.Length != nil {
-			column.Length, _ = dialect.StringToInt(tableSpecColumn.Type.Length.Val)
+			column.ColumnLength, _ = dialect.StringToInt(tableSpecColumn.Type.Length.Val)
 		}
 		if tableSpecColumn.Type.Scale != nil {
-			column.Decimal, _ = dialect.StringToInt(tableSpecColumn.Type.Scale.Val)
+			column.ColumnDecimal, _ = dialect.StringToInt(tableSpecColumn.Type.Scale.Val)
 		}
 		if tableSpecColumn.Type.Options != nil {
 			if tableSpecColumn.Type.Options.Comment != nil {
-				column.Comment = tableSpecColumn.Type.Options.Comment.Val
+				column.ColumnComment = tableSpecColumn.Type.Options.Comment.Val
 			}
 			if tableSpecColumn.Type.Options.Null != nil {
-				column.NotNull = true
+				column.ColumnNotNull = true
 			}
 			if tableSpecColumn.Type.Options.Default != nil {
 				buf := sqlparser.NewTrackedBuffer(nil)
 				tableSpecColumn.Type.Options.Default.Format(buf)
-				column.Default = buf.String()
-				column.Default = strings.TrimLeft(column.Default, "'")
-				column.Default = strings.TrimRight(column.Default, "'")
-				column.Default = strings.TrimLeft(column.Default, "\"")
-				column.Default = strings.TrimRight(column.Default, "\"")
+				column.ColumnDefault = buf.String()
+				column.ColumnDefault = strings.TrimLeft(column.ColumnDefault, "'")
+				column.ColumnDefault = strings.TrimRight(column.ColumnDefault, "'")
+				column.ColumnDefault = strings.TrimLeft(column.ColumnDefault, "\"")
+				column.ColumnDefault = strings.TrimRight(column.ColumnDefault, "\"")
 			}
 		}
 		table.AddColumn(column)
@@ -162,18 +163,18 @@ func parseCreateTable(stmt *sqlparser.CreateTable) (databaseName string, table *
 
 		for _, indexColumn := range tableSpecIndex.Columns {
 			index := &dialect.IndexModel{}
-			index.Name = tableSpecIndex.Info.Name.String()
+			index.IndexName = tableSpecIndex.Info.Name.String()
 			index.ColumnName = indexColumn.Column.String()
 			for _, option := range tableSpecIndex.Options {
 				if option == nil || option.Value == nil {
 					continue
 				}
 				if option.Name == "COMMENT" {
-					index.Comment = option.Value.Val
+					index.IndexComment = option.Value.Val
 				}
 			}
 			if tableSpecIndex.Info.Unique {
-				index.Type = "unique"
+				index.IndexType = "unique"
 			}
 
 			table.AddIndex(index)
@@ -184,7 +185,7 @@ func parseCreateTable(stmt *sqlparser.CreateTable) (databaseName string, table *
 			continue
 		}
 		if option.Name == "COMMENT" {
-			table.Comment = option.Value.Val
+			table.TableComment = option.Value.Val
 		}
 	}
 

@@ -77,7 +77,7 @@ func (this_ *dataSourceCsv) Read(columnList []*dialect.ColumnModel, onRead func(
 				rowInfo = strings.TrimSpace(rowInfo)
 				if rowInfo != "" {
 					rowInfo = strings.ReplaceAll(rowInfo, this_.GetLinefeed(), "\n")
-					err = readRow(rowInfo, separator, columnList, onRead)
+					err = readRow(this_.Dia, rowInfo, separator, columnList, onRead)
 					if err != nil {
 						return
 					}
@@ -97,7 +97,7 @@ func (this_ *dataSourceCsv) Read(columnList []*dialect.ColumnModel, onRead func(
 	}
 	rowInfo = strings.TrimSpace(rowInfo)
 	if rowInfo != "" {
-		err = readRow(rowInfo, separator, columnList, onRead)
+		err = readRow(this_.Dia, rowInfo, separator, columnList, onRead)
 		if err != nil {
 			return
 		}
@@ -147,7 +147,7 @@ func (this_ *dataSourceCsv) Write(data *DataSourceData) (err error) {
 	}
 	var valueList []string
 	for _, column := range data.ColumnList {
-		str := dialect.GetStringValue(data.Data[column.Name])
+		str := dialect.GetStringValue(data.Data[column.ColumnName])
 		str = strings.ReplaceAll(str, "\r\n", this_.GetLinefeed())
 		str = strings.ReplaceAll(str, "\n", this_.GetLinefeed())
 		str = strings.ReplaceAll(str, "\r", this_.GetLinefeed())

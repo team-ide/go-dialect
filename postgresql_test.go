@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	PostgresqlDb *sql.DB
+	PostgresqlDb      *sql.DB
+	PostgresqlDialect dialect.Dialect
 )
 
 func initPostgresql() {
@@ -20,22 +21,26 @@ func initPostgresql() {
 	if err != nil {
 		panic(err)
 	}
+	PostgresqlDialect, err = dialect.NewDialect(dialect.TypePostgresql.Name)
+	if err != nil {
+		panic(err)
+	}
 	return
 }
 
 func TestPostgresqlLoad(t *testing.T) {
 	initPostgresql()
-	owners(PostgresqlDb, dialect.Postgresql)
+	owners(PostgresqlDb, PostgresqlDialect)
 }
 
 func TestPostgresqlDDL(t *testing.T) {
 	initPostgresql()
 	//testTableDelete(PostgresqlDb, dialect.Postgresql, param, "", getTable().Name)
-	testDLL(PostgresqlDb, dialect.Postgresql, "")
+	testDLL(PostgresqlDb, PostgresqlDialect, "")
 }
 
 func TestPostgresqlSql(t *testing.T) {
 	initPostgresql()
 	sqlInfo := loadSql("temp/sql_kinbase.sql")
-	testSql(PostgresqlDb, dialect.Postgresql, "ROOT", sqlInfo)
+	testSql(PostgresqlDb, PostgresqlDialect, "ROOT", sqlInfo)
 }

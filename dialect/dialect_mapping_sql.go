@@ -1,6 +1,10 @@
 package dialect
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strconv"
+	"strings"
+)
 
 func (this_ *mappingDialect) OwnersSelectSql(param *ParamModel) (sqlInfo string, err error) {
 	sqlList, err := this_.FormatSql(this_.OwnersSelect, param)
@@ -112,17 +116,85 @@ func (this_ *mappingDialect) TableModel(data map[string]interface{}) (table *Tab
 }
 
 func (this_ *mappingDialect) TableCreateSql(param *ParamModel, ownerName string, table *TableModel) (sqlList []string, err error) {
+	var tableCreateColumnContent string
+
+	var tableCreateColumnSql string
+	for i, column := range table.ColumnList {
+		tableCreateColumnSql, err = this_.TableCreateColumnSql(param, column)
+		if err != nil {
+			return
+		}
+		tableCreateColumnContent += "    " + tableCreateColumnSql
+		if i < len(table.ColumnList)-1 {
+			tableCreateColumnContent += ",\n"
+		}
+	}
+	var tableCreatePrimaryKeyContent string
+	if len(table.PrimaryKeys) > 0 {
+		tableCreatePrimaryKeyContent, err = this_.TableCreatePrimaryKeySql(param, table.PrimaryKeys)
+		if len(strings.TrimSpace(tableCreatePrimaryKeyContent)) > 0 {
+			tableCreatePrimaryKeyContent = "    " + tableCreatePrimaryKeyContent
+			if len(strings.TrimSpace(tableCreateColumnContent)) > 0 {
+				tableCreateColumnContent += ","
+			}
+		}
+	}
+	if err != nil {
+		return
+	}
 	sqlList, err = this_.FormatSql(this_.TableCreate, param,
+		table,
 		map[string]string{
-			"ownerName": ownerName,
+			"ownerName":                    ownerName,
+			"tableCreateColumnContent":     tableCreateColumnContent,
+			"tableCreatePrimaryKeyContent": tableCreatePrimaryKeyContent,
 		},
-		table)
+	)
 	if err != nil {
 		return
 	}
 	return
 }
 
+func (this_ *mappingDialect) TableCreateColumnSql(param *ParamModel, column *ColumnModel) (sqlInfo string, err error) {
+	columnTypePack, err := this_.ColumnTypePack(column)
+	if err != nil {
+		return
+	}
+	columnDefaultPack, err := this_.ColumnDefaultPack(param, column)
+	if err != nil {
+		return
+	}
+	sqlList, err := this_.FormatSql(this_.TableCreateColumn, param,
+		column,
+		map[string]string{
+			"columnTypePack":    columnTypePack,
+			"columnDefaultPack": columnDefaultPack,
+		},
+	)
+	if err != nil {
+		return
+	}
+	if len(sqlList) > 0 {
+		sqlInfo = sqlList[0]
+	}
+	return
+}
+
+func (this_ *mappingDialect) TableCreatePrimaryKeySql(param *ParamModel, primaryKeys []string) (sqlInfo string, err error) {
+	sqlList, err := this_.FormatSql(this_.TableCreatePrimaryKey, param,
+		map[string]interface{}{
+			"primaryKeys": primaryKeys,
+		},
+	)
+	if err != nil {
+		return
+	}
+	if len(sqlList) > 0 {
+		sqlInfo = sqlList[0]
+	}
+	return
+}
 func (this_ *mappingDialect) TableRenameSql(param *ParamModel, ownerName string, tableName string, newTableName string) (sqlList []string, err error) {
 	sqlList, err = this_.FormatSql(this_.TableRename, param,
 		map[string]string{
@@ -210,16 +282,61 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 	if err != nil {
 		return
 	}
+
+	if data["isNullable"] != nil {
+		isNullable, ok := data["isNullable"].(string)
+		if ok {
+			if strings.EqualFold(isNullable, "no") {
+				column.ColumnNotNull = true
+			}
+		}
+	}
+
+	columnTypeInfo, err := this_.GetColumnTypeInfo(column.ColumnDataType)
+	if err != nil {
+		return
+	}
+	var columnType string
+	if data["columnType"] != nil {
+		columnType = data["columnType"].(string)
+	}
+	if columnTypeInfo.FullColumnByColumnType != nil {
+		err = columnTypeInfo.FullColumnByColumnType(columnType, column)
+		if err != nil {
+			return
+		}
+	} else {
+		if strings.Contains(columnType, "(") {
+			lengthStr := columnType[strings.Index(columnType, "(")+1 : strings.Index(columnType, ")")]
+			if strings.Contains(lengthStr, ",") {
+				column.ColumnLength, _ = strconv.Atoi(lengthStr[0:strings.Index(lengthStr, ",")])
+				column.ColumnDecimal, _ = strconv.Atoi(lengthStr[strings.Index(lengthStr, ",")+1:])
+			} else {
+				column.ColumnLength, _ = strconv.Atoi(lengthStr)
+			}
+		}
+	}
 	return
 }
 
 func (this_ *mappingDialect) ColumnAddSql(param *ParamModel, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error) {
+
+	columnTypePack, err := this_.ColumnTypePack(column)
+	if err != nil {
+		return
+	}
+	columnDefaultPack, err := this_.ColumnDefaultPack(param, column)
+	if err != nil {
+		return
+	}
 	sqlList, err = this_.FormatSql(this_.ColumnAdd, param,
-		map[string]string{
-			"ownerName": ownerName,
-			"tableName": tableName,
-		},
 		column,
+		map[string]string{
+			"ownerName":         ownerName,
+			"tableName":         tableName,
+			"columnTypePack":    columnTypePack,
+			"columnDefaultPack": columnDefaultPack,
+		},
 	)
 	if err != nil {
 		return
@@ -229,11 +346,12 @@ func (this_ *mappingDialect) ColumnAddSql(param *ParamModel, ownerName string, t
 
 func (this_ *mappingDialect) ColumnUpdateSql(param *ParamModel, ownerName string, tableName string, column *ColumnModel, newColumn *ColumnModel) (sqlList []string, err error) {
 	sqlList, err = this_.FormatSql(this_.ColumnUpdate, param,
+		column,
+		newColumn,
 		map[string]string{
 			"ownerName": ownerName,
 			"tableName": tableName,
 		},
-		column,
 	)
 	if err != nil {
 		return
@@ -378,11 +496,12 @@ func (this_ *mappingDialect) IndexModel(data map[string]interface{}) (index *Ind
 
 func (this_ *mappingDialect) IndexAddSql(param *ParamModel, ownerName string, tableName string, index *IndexModel) (sqlList []string, err error) {
 	sqlList, err = this_.FormatSql(this_.IndexAdd, param,
+		index,
 		map[string]string{
 			"ownerName": ownerName,
 			"tableName": tableName,
 		},
-		index)
+	)
 	if err != nil {
 		return
 	}

@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	OracleDb *sql.DB
+	OracleDb      *sql.DB
+	OracleDialect dialect.Dialect
 )
 
 func initOracle() {
@@ -22,22 +23,26 @@ func initOracle() {
 	if err != nil {
 		panic(err)
 	}
+	OracleDialect, err = dialect.NewDialect(dialect.TypeOracle.Name)
+	if err != nil {
+		panic(err)
+	}
 
 	return
 }
 
 func TestOracleLoad(t *testing.T) {
 	initOracle()
-	owners(OracleDb, dialect.Oracle)
+	owners(OracleDb, OracleDialect)
 }
 
 func TestOracleDDL(t *testing.T) {
 	initOracle()
-	testDLL(OracleDb, dialect.Oracle, "")
+	testDLL(OracleDb, OracleDialect, "")
 }
 
 func TestOracleSql(t *testing.T) {
 	initOracle()
 	sqlInfo := loadSql("temp/sql_oracle.sql")
-	testSql(OracleDb, dialect.Oracle, "ROOT", sqlInfo)
+	testSql(OracleDb, OracleDialect, "ROOT", sqlInfo)
 }

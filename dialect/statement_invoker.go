@@ -190,9 +190,9 @@ func StatementsFindValue(statements []Statement, statementContext *StatementCont
 	var data interface{}
 	for _, one := range statements {
 		switch statement := one.(type) {
-		case *ExpressionFuncStatement:
-			data, err = statement.GetValue(statementContext)
-			break
+		//case *ExpressionFuncStatement:
+		//	data, err = statement.GetValue(statementContext)
+		//	break
 		case *ExpressionIdentifierStatement:
 			data, err = statement.GetValue(statementContext)
 			break

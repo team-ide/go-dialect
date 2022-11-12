@@ -27,12 +27,14 @@ type mappingDialect struct {
 	OwnerCreate  *RootStatement
 	OwnerDelete  *RootStatement
 
-	TablesSelect *RootStatement
-	TableSelect  *RootStatement
-	TableCreate  *RootStatement
-	TableDelete  *RootStatement
-	TableComment *RootStatement
-	TableRename  *RootStatement
+	TablesSelect          *RootStatement
+	TableSelect           *RootStatement
+	TableCreate           *RootStatement
+	TableCreateColumn     *RootStatement
+	TableCreatePrimaryKey *RootStatement
+	TableDelete           *RootStatement
+	TableComment          *RootStatement
+	TableRename           *RootStatement
 
 	ColumnsSelect *RootStatement
 	ColumnSelect  *RootStatement
@@ -83,8 +85,34 @@ func (this_ *mappingDialect) init() (err error) {
 	return
 }
 
+type StatementScript struct {
+	*ParamModel
+	Dialect
+}
+
+func (this_ StatementScript) sqlValuePack(value interface{}) (res string) {
+
+	res = this_.SqlValuePack(this_.ParamModel, nil, value)
+	return
+}
+
+func (this_ StatementScript) columnNotNull(columnNotNull interface{}) (res string) {
+	if isTrue(columnNotNull) {
+		res = "NOT NULL"
+	}
+	return
+}
+
 func (this_ *mappingDialect) NewStatementContext(param *ParamModel, dataList ...interface{}) (statementContext *StatementContext, err error) {
 	statementContext = NewStatementContext()
+
+	statementScript := &StatementScript{
+		ParamModel: param,
+		Dialect:    this_,
+	}
+	statementContext.AddMethod("sqlValuePack", statementScript.sqlValuePack)
+	statementContext.AddMethod("columnNotNull", statementScript.columnNotNull)
+
 	if this_.MethodCache != nil {
 		for name, method := range this_.MethodCache {
 			statementContext.AddMethod(name, method)
@@ -107,45 +135,65 @@ func (this_ *mappingDialect) NewStatementContext(param *ParamModel, dataList ...
 		}
 	}
 
+	ownerNamePack := ""
 	ownerName, _ := statementContext.GetData("ownerName")
 	if ownerName != nil && ownerName != "" {
-		statementContext.SetData("ownerNamePack", this_.OwnerNamePack(param, ownerName.(string)))
+		ownerNamePack = this_.OwnerNamePack(param, ownerName.(string))
 	}
+	statementContext.SetData("ownerNamePack", ownerNamePack)
+
+	tableNamePack := ""
 	tableName, _ := statementContext.GetData("tableName")
 	if tableName != nil && tableName != "" {
-		statementContext.SetData("tableNamePack", this_.TableNamePack(param, tableName.(string)))
+		tableNamePack = this_.TableNamePack(param, tableName.(string))
 	}
-	oldTableName, _ := statementContext.GetData("oldTableName")
-	if oldTableName != nil && oldTableName != "" {
-		statementContext.SetData("oldTableNamePack", this_.TableNamePack(param, oldTableName.(string)))
-	}
+	statementContext.SetData("tableNamePack", tableNamePack)
+
+	newTableNamePack := ""
 	newTableName, _ := statementContext.GetData("newTableName")
 	if newTableName != nil && newTableName != "" {
-		statementContext.SetData("newTableNamePack", this_.TableNamePack(param, newTableName.(string)))
+		newTableNamePack = this_.TableNamePack(param, newTableName.(string))
 	}
+	statementContext.SetData("newTableNamePack", newTableNamePack)
+
+	columnNamePack := ""
 	columnName, _ := statementContext.GetData("columnName")
 	if columnName != nil && columnName != "" {
-		statementContext.SetData("columnNamePack", this_.ColumnNamePack(param, columnName.(string)))
+		columnNamePack = this_.ColumnNamePack(param, columnName.(string))
 	}
-	oldColumnName, _ := statementContext.GetData("oldColumnName")
-	if oldColumnName != nil && oldColumnName != "" {
-		statementContext.SetData("oldColumnNamePack", this_.ColumnNamePack(param, oldColumnName.(string)))
-	}
+	statementContext.SetData("columnNamePack", columnNamePack)
+
+	newColumnNamePack := ""
 	newColumnName, _ := statementContext.GetData("newColumnName")
 	if newColumnName != nil && newColumnName != "" {
-		statementContext.SetData("newColumnNamePack", this_.ColumnNamePack(param, newColumnName.(string)))
+		newColumnNamePack = this_.ColumnNamePack(param, newColumnName.(string))
 	}
-	columnNamesStr, _ := statementContext.GetData("columnNamesStr")
-	if columnNamesStr != nil && columnNamesStr != "" {
-		statementContext.SetData("columnNamesStrPack", this_.ColumnNamesStrPack(param, columnNamesStr.(string)))
-	}
+	statementContext.SetData("newColumnNamePack", newColumnNamePack)
+
+	columnNamesPack := ""
 	columnNames, _ := statementContext.GetData("columnNames")
 	if columnNames != nil {
-		columnNamesList, ok := columnNames.([]string)
-		if ok {
-			statementContext.SetData("columnNamesPack", this_.ColumnNamesPack(param, columnNamesList))
+		list := columnNames.([]interface{})
+		var stringList []string
+		for _, one := range list {
+			stringList = append(stringList, one.(string))
 		}
+		columnNamesPack = this_.ColumnNamesPack(param, stringList)
 	}
+	statementContext.SetData("columnNamesPack", columnNamesPack)
+
+	primaryKeysPack := ""
+	primaryKeys, _ := statementContext.GetData("primaryKeys")
+	if primaryKeys != nil {
+		list := primaryKeys.([]interface{})
+		var stringList []string
+		for _, one := range list {
+			stringList = append(stringList, one.(string))
+		}
+		primaryKeysPack = this_.ColumnNamesPack(param, stringList)
+	}
+	statementContext.SetData("primaryKeysPack", primaryKeysPack)
+
 	return
 }
 
@@ -162,5 +210,12 @@ func (this_ *mappingDialect) FormatSql(statement Statement, param *ParamModel, d
 		return
 	}
 	sqlList = this_.SqlSplit(sqlInfo)
+
+	//fmt.Println("FormatSql sql data cache")
+	//fmt.Println(statementContext.dataCache)
+	//fmt.Println("FormatSql sql list")
+	//for _, sqlOne := range sqlList {
+	//	fmt.Println("sql:", sqlOne)
+	//}
 	return
 }

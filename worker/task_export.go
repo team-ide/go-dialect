@@ -129,7 +129,7 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (err error) {
 
 	this_.addProgress(progress)
 
-	ownerOne, err := OwnerSelect(this_.db, this_.dia, owner.SourceName)
+	ownerOne, err := OwnerSelect(this_.db, this_.dia, this_.Param, owner.SourceName)
 	if err != nil {
 		return
 	}
@@ -142,13 +142,13 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (err error) {
 
 	if len(tables) == 0 {
 		var list []*dialect.TableModel
-		list, err = TablesSelect(this_.db, this_.dia, owner.SourceName)
+		list, err = TablesSelect(this_.db, this_.dia, this_.Param, owner.SourceName)
 		if err != nil {
 			return
 		}
 		for _, one := range list {
 			tables = append(tables, &TaskExportTable{
-				SourceName: one.Name,
+				SourceName: one.TableName,
 			})
 		}
 	}
@@ -224,7 +224,7 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 
 	this_.addProgress(progress)
 
-	tableDetail, err := TableDetail(this_.db, this_.dia, sourceOwnerName, sourceTableName)
+	tableDetail, err := TableDetail(this_.db, this_.dia, this_.Param, sourceOwnerName, sourceTableName)
 	if err != nil {
 		return
 	}
@@ -273,20 +273,20 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 func (this_ *taskExport) exportTableStruct(ownerDataSource DataSource, tableDataSource DataSource, tableDetail *dialect.TableModel, targetOwnerName string, targetTableName string) (err error) {
 
 	progress := &TaskProgress{
-		Title: "导出表结构[" + tableDetail.OwnerName + "." + tableDetail.Name + "] 到 [" + targetOwnerName + "." + targetTableName + "]",
+		Title: "导出表结构[" + tableDetail.OwnerName + "." + tableDetail.TableName + "] 到 [" + targetOwnerName + "." + targetTableName + "]",
 	}
 	var oldOwnerName = tableDetail.OwnerName
-	var oldTableName = tableDetail.Name
+	var oldTableName = tableDetail.TableName
 	tableDetail.OwnerName = targetOwnerName
 	if this_.ExportAppendOwner {
 		tableDetail.OwnerName = targetOwnerName
 	} else {
 		tableDetail.OwnerName = ""
 	}
-	tableDetail.Name = targetTableName
+	tableDetail.TableName = targetTableName
 	defer func() {
 		tableDetail.OwnerName = oldOwnerName
-		tableDetail.Name = oldTableName
+		tableDetail.TableName = oldTableName
 
 		if e := recover(); e != nil {
 			err = errors.New(fmt.Sprint(e))
@@ -304,13 +304,13 @@ func (this_ *taskExport) exportTableStruct(ownerDataSource DataSource, tableData
 
 	if this_.FormatIndexName != nil {
 		for _, index := range tableDetail.IndexList {
-			index.Name = this_.FormatIndexName(tableDetail.OwnerName, tableDetail.Name, index)
+			index.IndexName = this_.FormatIndexName(tableDetail.OwnerName, tableDetail.TableName, index)
 		}
 	}
 
 	// 导出结构体
 
-	lines, err := this_.targetDialect.TableCreateSql(tableDetail.OwnerName, tableDetail)
+	lines, err := this_.targetDialect.TableCreateSql(this_.Param, tableDetail.OwnerName, tableDetail)
 
 	for _, line := range lines {
 		dataSourceData := &DataSourceData{
@@ -337,7 +337,7 @@ func (this_ *taskExport) exportTableStruct(ownerDataSource DataSource, tableData
 func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSource DataSource, tableDetail *dialect.TableModel, targetOwnerName string, targetTableName string) (err error) {
 
 	progress := &TaskProgress{
-		Title: "导出表数据[" + tableDetail.OwnerName + "." + tableDetail.Name + "] 到 [" + targetOwnerName + "." + targetTableName + "]",
+		Title: "导出表数据[" + tableDetail.OwnerName + "." + tableDetail.TableName + "] 到 [" + targetOwnerName + "." + targetTableName + "]",
 	}
 	defer func() {
 		if e := recover(); e != nil {
@@ -357,14 +357,14 @@ func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSo
 	selectSqlInfo := "SELECT "
 	var columnNames []string
 	for _, one := range tableDetail.ColumnList {
-		columnNames = append(columnNames, one.Name)
+		columnNames = append(columnNames, one.ColumnName)
 	}
-	selectSqlInfo += this_.dia.PackColumns(columnNames)
+	selectSqlInfo += this_.dia.ColumnNamesPack(this_.Param, columnNames)
 	selectSqlInfo += " FROM "
 	if tableDetail.OwnerName != "" {
-		selectSqlInfo += this_.dia.PackOwner(tableDetail.OwnerName) + "."
+		selectSqlInfo += this_.dia.OwnerNamePack(this_.Param, tableDetail.OwnerName) + "."
 	}
-	selectSqlInfo += this_.dia.PackTable(tableDetail.Name)
+	selectSqlInfo += this_.dia.TableNamePack(this_.Param, tableDetail.TableName)
 
 	list, err := DoQuery(this_.db, selectSqlInfo)
 	if err != nil {
@@ -410,7 +410,7 @@ func (this_ *taskExport) exportDataList(ownerDataSource DataSource, tableDataSou
 	if this_.ExportAppendOwner {
 		sqlOwner = targetOwnerName
 	}
-	sqlList, batchSqlList, err := this_.targetDialect.InsertDataListSql(sqlOwner, targetTableName, columnList, dataList)
+	sqlList, batchSqlList, err := this_.targetDialect.InsertDataListSql(this_.Param, sqlOwner, targetTableName, columnList, dataList)
 	if err != nil {
 		return
 	}

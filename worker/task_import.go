@@ -122,7 +122,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 	//
 	if this_.ImportOwnerCreateIfNotExist {
 		var ownerOne *dialect.OwnerModel
-		ownerOne, err = OwnerSelect(this_.db, this_.dia, ownerName)
+		ownerOne, err = OwnerSelect(this_.db, this_.dia, this_.Param, ownerName)
 		if err != nil {
 			return
 		}
@@ -130,10 +130,10 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 			this_.addProgress(&TaskProgress{
 				Title: "导入[" + owner.Name + "] 不存在，创建",
 			})
-			_, err = OwnerCreate(this_.db, this_.dia, &dialect.OwnerModel{
-				Name:             ownerName,
-				Password:         this_.ImportOwnerCreatePassword,
-				CharacterSetName: "utf8mb4",
+			_, err = OwnerCreate(this_.db, this_.dia, this_.Param, &dialect.OwnerModel{
+				OwnerName:             ownerName,
+				OwnerPassword:         this_.ImportOwnerCreatePassword,
+				OwnerCharacterSetName: "utf8mb4",
 			})
 			if err != nil {
 				return
@@ -250,7 +250,7 @@ func (this_ *taskImport) importTable(workDb *sql.DB, ownerName string, path stri
 
 	this_.addProgress(progress)
 
-	tableDetail, err := TableDetail(workDb, this_.dia, ownerName, targetTableName)
+	tableDetail, err := TableDetail(workDb, this_.dia, this_.Param, ownerName, targetTableName)
 	if err != nil {
 		return
 	}
@@ -291,7 +291,7 @@ func (this_ *taskImport) importTable(workDb *sql.DB, ownerName string, path stri
 func (this_ *taskImport) importTableData(workDb *sql.DB, tableDataSource DataSource, tableDetail *dialect.TableModel, targetOwnerName string, targetTableName string) (err error) {
 
 	progress := &TaskProgress{
-		Title: "导入表数据[" + tableDetail.OwnerName + "." + tableDetail.Name + "] 到 [" + targetOwnerName + "." + targetTableName + "]",
+		Title: "导入表数据[" + tableDetail.OwnerName + "." + tableDetail.TableName + "] 到 [" + targetOwnerName + "." + targetTableName + "]",
 	}
 	defer func() {
 		if e := recover(); e != nil {
@@ -360,7 +360,7 @@ func (this_ *taskImport) importDataList(workDb *sql.DB, dataList []map[string]in
 
 	this_.addProgress(progress)
 
-	_, sqlList, err := this_.dia.InsertDataListSql(ownerName, tableName, columnList, dataList)
+	_, sqlList, err := this_.dia.InsertDataListSql(this_.Param, ownerName, tableName, columnList, dataList)
 	if err != nil {
 		return
 	}

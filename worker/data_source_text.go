@@ -77,7 +77,7 @@ func (this_ *dataSourceText) Read(columnList []*dialect.ColumnModel, onRead func
 				rowInfo = strings.TrimSpace(rowInfo)
 				if rowInfo != "" {
 					rowInfo = strings.ReplaceAll(rowInfo, this_.GetLinefeed(), "\n")
-					err = readRow(rowInfo, separator, columnList, onRead)
+					err = readRow(this_.Dia, rowInfo, separator, columnList, onRead)
 					if err != nil {
 						return
 					}
@@ -97,7 +97,7 @@ func (this_ *dataSourceText) Read(columnList []*dialect.ColumnModel, onRead func
 	}
 	rowInfo = strings.TrimSpace(rowInfo)
 	if rowInfo != "" {
-		err = readRow(rowInfo, separator, columnList, onRead)
+		err = readRow(this_.Dia, rowInfo, separator, columnList, onRead)
 		if err != nil {
 			return
 		}
@@ -107,12 +107,12 @@ func (this_ *dataSourceText) Read(columnList []*dialect.ColumnModel, onRead func
 
 func GetColumnNames(columnList []*dialect.ColumnModel) (columnNames []string) {
 	for _, column := range columnList {
-		columnNames = append(columnNames, column.Name)
+		columnNames = append(columnNames, column.ColumnName)
 	}
 	return
 }
 
-func readRow(rowInfo string, separator string, columnList []*dialect.ColumnModel, onRead func(data *DataSourceData) (err error)) (err error) {
+func readRow(dia dialect.Dialect, rowInfo string, separator string, columnList []*dialect.ColumnModel, onRead func(data *DataSourceData) (err error)) (err error) {
 	calls := strings.Split(rowInfo, separator)
 	data := make(map[string]interface{})
 	if len(calls) != len(columnList) {
@@ -121,16 +121,21 @@ func readRow(rowInfo string, separator string, columnList []*dialect.ColumnModel
 	}
 	for i, column := range columnList {
 		v := calls[i]
-		if !column.NotNull && v == "" {
+		if !column.ColumnNotNull && v == "" {
 			continue
 		}
-		if strings.EqualFold(column.Type, "timestamp") {
+		var info *dialect.ColumnTypeInfo
+		info, err = dia.GetColumnTypeInfo(column.ColumnDataType)
+		if err != nil {
+			return
+		}
+		if info.IsDateTime || info.IsNumber {
 			if v == "" {
 				continue
 			}
 		}
 
-		data[column.Name] = v
+		data[column.ColumnName] = v
 	}
 	err = onRead(&DataSourceData{
 		HasData: true,
@@ -181,7 +186,7 @@ func (this_ *dataSourceText) Write(data *DataSourceData) (err error) {
 	}
 	var valueList []string
 	for _, column := range data.ColumnList {
-		str := dialect.GetStringValue(data.Data[column.Name])
+		str := dialect.GetStringValue(data.Data[column.ColumnName])
 		str = strings.ReplaceAll(str, "\r\n", this_.GetLinefeed())
 		str = strings.ReplaceAll(str, "\n", this_.GetLinefeed())
 		str = strings.ReplaceAll(str, "\r", this_.GetLinefeed())

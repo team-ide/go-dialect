@@ -33,6 +33,7 @@ type Task struct {
 	dia        dialect.Dialect
 	db         *sql.DB
 	do         func() (err error)
+	Param      *dialect.ParamModel
 }
 
 type TaskProgress struct {

@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	ShenTongDb *sql.DB
+	ShenTongDb      *sql.DB
+	ShenTongDialect dialect.Dialect
 )
 
 func initShenTong() {
@@ -21,21 +22,25 @@ func initShenTong() {
 	if err != nil {
 		panic(err)
 	}
+	ShenTongDialect, err = dialect.NewDialect(dialect.TypeShenTong.Name)
+	if err != nil {
+		panic(err)
+	}
 	return
 }
 
 func TestShenTongLoad(t *testing.T) {
 	initShenTong()
-	owners(ShenTongDb, dialect.ShenTong)
+	owners(ShenTongDb, ShenTongDialect)
 }
 
 func TestShenTongDDL(t *testing.T) {
 	initShenTong()
-	testDLL(ShenTongDb, dialect.ShenTong, "")
+	testDLL(ShenTongDb, ShenTongDialect, "")
 }
 
 func TestShenTongSql(t *testing.T) {
 	initShenTong()
 	sqlInfo := loadSql("temp/sql_shentong.sql")
-	testSql(ShenTongDb, dialect.ShenTong, "SYSDBA", sqlInfo)
+	testSql(ShenTongDb, ShenTongDialect, "SYSDBA", sqlInfo)
 }

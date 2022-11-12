@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	SqliteDb *sql.DB
+	SqliteDb      *sql.DB
+	SqliteDialect dialect.Dialect
 )
 
 func initSqlite() (dbContext context.Context) {
@@ -22,21 +23,25 @@ func initSqlite() (dbContext context.Context) {
 	if err != nil {
 		panic(err)
 	}
+	SqliteDialect, err = dialect.NewDialect(dialect.TypeSqlite.Name)
+	if err != nil {
+		panic(err)
+	}
 	return
 }
 
 func TestSqliteLoad(t *testing.T) {
 	initSqlite()
-	owners(SqliteDb, dialect.Sqlite)
+	owners(SqliteDb, SqliteDialect)
 }
 
 func TestSqliteDDL(t *testing.T) {
 	initSqlite()
-	testDLL(SqliteDb, dialect.Sqlite, "")
+	testDLL(SqliteDb, SqliteDialect, "")
 }
 
 func TestSqliteSql(t *testing.T) {
 	initSqlite()
 	sqlInfo := loadSql("temp/sql_sqlite.sql")
-	testSql(SqliteDb, dialect.Sqlite, "SYSDBA", sqlInfo)
+	testSql(SqliteDb, SqliteDialect, "SYSDBA", sqlInfo)
 }

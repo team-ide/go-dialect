@@ -21,7 +21,10 @@ func doImport() {
 	if err != nil {
 		panic(err)
 	}
-	dia := dialect.GetDialect(*sourceDialect)
+	dia, err := dialect.NewDialect(*sourceDialect)
+	if err != nil {
+		panic(err)
+	}
 	if db == nil || dia == nil {
 		panic("sourceDialect [" + *sourceDialect + "] not support")
 	}
@@ -43,12 +46,8 @@ func doImport() {
 				workDb = db
 				return
 			}
-			changeSql, _ := dia.OwnerChangeSql(ownerName)
-			if changeSql != "" {
-				workDb, err = getDbInfo(*sourceDialect, *sourceUser, password, *sourceHost, *sourcePort, ownerName)
-			} else {
-				workDb, err = getDbInfo(*sourceDialect, ownerName, password, *sourceHost, *sourcePort, *sourceDatabase)
-			}
+
+			workDb, err = getDbInfo(*sourceDialect, ownerName, password, *sourceHost, *sourcePort, *sourceDatabase)
 			return
 		},
 		&worker.TaskImportParam{
@@ -56,7 +55,7 @@ func doImport() {
 			ImportOwnerCreateIfNotExist: *importOwnerCreateIfNotExist == "1" || *importOwnerCreateIfNotExist == "true",
 			ImportOwnerCreatePassword:   password,
 			FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
-				return tableName + "_" + index.Name
+				return tableName + "_" + index.IndexName
 			},
 			DataSourceType: dataSourceType,
 			OnProgress: func(progress *worker.TaskProgress) {

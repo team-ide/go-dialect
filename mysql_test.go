@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	MysqlDb *sql.DB
+	MysqlDb      *sql.DB
+	MysqlDialect dialect.Dialect
 )
 
 func initMysql() {
@@ -21,34 +22,38 @@ func initMysql() {
 	if err != nil {
 		panic(err)
 	}
+	MysqlDialect, err = dialect.NewDialect(dialect.TypeMysql.Name)
+	if err != nil {
+		panic(err)
+	}
 	return
 }
 
 func TestMysqlLoad(t *testing.T) {
 	initMysql()
-	owners(MysqlDb, dialect.Mysql)
+	owners(MysqlDb, MysqlDialect)
 }
 
 func TestMysqlDDL(t *testing.T) {
 	initMysql()
 	owner := &dialect.OwnerModel{
-		Name: "TEST_DB",
+		OwnerName: "TEST_DB",
 	}
-	testOwnerDelete(MysqlDb, dialect.Mysql, owner.Name)
-	testOwnerCreate(MysqlDb, dialect.Mysql, owner)
+	testOwnerDelete(MysqlDb, MysqlDialect, owner.OwnerName)
+	testOwnerCreate(MysqlDb, MysqlDialect, owner)
 
-	testDLL(MysqlDb, dialect.Mysql, owner.Name)
+	testDLL(MysqlDb, MysqlDialect, owner.OwnerName)
 }
 
 func TestMysqlSql(t *testing.T) {
 	initMysql()
 	sqlInfo := loadSql("sql_mysql.sql")
 	owner := &dialect.OwnerModel{
-		Name: "TEST_DB",
+		OwnerName: "TEST_DB",
 	}
-	testOwnerDelete(MysqlDb, dialect.Mysql, owner.Name)
-	testOwnerCreate(MysqlDb, dialect.Mysql, owner)
-	sqlInfo = "use " + owner.Name + ";\n" + sqlInfo
+	testOwnerDelete(MysqlDb, MysqlDialect, owner.OwnerName)
+	testOwnerCreate(MysqlDb, MysqlDialect, owner)
+	sqlInfo = "use " + owner.OwnerName + ";\n" + sqlInfo
 
-	testSql(MysqlDb, dialect.Mysql, owner.Name, sqlInfo)
+	testSql(MysqlDb, MysqlDialect, owner.OwnerName, sqlInfo)
 }

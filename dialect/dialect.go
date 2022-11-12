@@ -16,7 +16,7 @@ type Dialect interface {
 	DialectType() (dialectType *Type)
 	GetColumnTypeInfos() (columnTypeInfoList []*ColumnTypeInfo)
 	GetColumnTypeInfo(typeName string) (columnTypeInfo *ColumnTypeInfo, err error)
-	FormatColumnType(column *ColumnModel) (columnType string, err error)
+	ColumnTypePack(column *ColumnModel) (columnTypePack string, err error)
 	//FormatDefaultValue(column *ColumnModel) (defaultValue string)
 	//ToColumnTypeInfo(columnType string) (columnTypeInfo *ColumnTypeInfo, length, decimal int, err error)
 
@@ -25,6 +25,7 @@ type Dialect interface {
 	ColumnNamePack(param *ParamModel, columnName string) string
 	ColumnNamesPack(param *ParamModel, columnNames []string) string
 	SqlValuePack(param *ParamModel, column *ColumnModel, value interface{}) string
+	ColumnDefaultPack(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error)
 	// IsSqlEnd 判断SQL是否以 分号 结尾
 	IsSqlEnd(sqlInfo string) bool
 	// SqlSplit 根据 分号 分割多条SQL
@@ -62,8 +63,9 @@ type Dialect interface {
 	IndexAddSql(param *ParamModel, ownerName string, tableName string, index *IndexModel) (sqlList []string, err error)
 	IndexDeleteSql(param *ParamModel, ownerName string, tableName string, indexName string) (sqlList []string, err error)
 
-	//InsertSql(insert *InsertModel) (sqlList []string, err error)
-	//InsertDataListSql(ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, batchSqlList []string, err error)
+	InsertSql(param *ParamModel, insert *InsertModel) (sqlList []string, err error)
+
+	InsertDataListSql(param *ParamModel, ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, batchSqlList []string, err error)
 }
 
 var (
@@ -132,7 +134,7 @@ func packingValues(packingCharacter string, values []string) string {
 	return res
 }
 
-func packingValue(columnTypeInfo *ColumnTypeInfo, packingCharacter string, appendCharacter string, value interface{}) string {
+func packingValue(column *ColumnModel, columnTypeInfo *ColumnTypeInfo, packingCharacter string, escapeChar string, value interface{}) string {
 	if value == nil {
 		return "NULL"
 	}
@@ -141,7 +143,7 @@ func packingValue(columnTypeInfo *ColumnTypeInfo, packingCharacter string, appen
 		if vOf.IsNil() {
 			return "NULL"
 		}
-		return packingValue(columnTypeInfo, packingCharacter, appendCharacter, vOf.Elem().Interface())
+		return packingValue(column, columnTypeInfo, packingCharacter, escapeChar, vOf.Elem().Interface())
 	}
 
 	baseValue, isBaseValue := GetBaseTypeValue(value)
@@ -199,20 +201,35 @@ func packingValue(columnTypeInfo *ColumnTypeInfo, packingCharacter string, appen
 		break
 	}
 
-	if columnTypeInfo != nil && columnTypeInfo.IsNumber {
-		if valueString == "" {
-			return "NULL"
+	if columnTypeInfo != nil {
+		if columnTypeInfo.SqlValuePack != nil {
+			return columnTypeInfo.SqlValuePack(valueString)
 		}
-		return valueString
+	}
+	if valueString == "" && column != nil && column.ColumnNotNull && column.ColumnDefault == "" {
+
+	} else {
+		if columnTypeInfo != nil {
+			if columnTypeInfo.IsNumber {
+				if valueString == "" {
+					return "NULL"
+				}
+				return valueString
+			} else if columnTypeInfo.IsEnum {
+				if valueString == "" {
+					return "NULL"
+				}
+			}
+		}
 	}
 
 	if packingCharacter == "" {
 		return valueString
 	}
-	return formatStringValue(packingCharacter, appendCharacter, valueString)
+	return formatStringValue(packingCharacter, escapeChar, valueString)
 }
 
-func formatStringValue(packingCharacter string, appendCharacter string, valueString string) string {
+func formatStringValue(packingCharacter string, escapeChar string, valueString string) string {
 	if packingCharacter == "" {
 		return valueString
 	}
@@ -223,10 +240,10 @@ func formatStringValue(packingCharacter string, appendCharacter string, valueStr
 		s := valueString[i]
 		switch s {
 		case packingCharacter[0]:
-			out += appendCharacter + packingCharacter
+			out += escapeChar + packingCharacter
 			break
 		case '\\':
-			if appendCharacter == "\\" {
+			if escapeChar == "\\" {
 				out += "\\"
 			}
 			out += "\\"

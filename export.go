@@ -24,12 +24,18 @@ func doExport() {
 	if err != nil {
 		panic(err)
 	}
-	dia := dialect.GetDialect(*sourceDialect)
+	dia, err := dialect.NewDialect(*sourceDialect)
+	if err != nil {
+		panic(err)
+	}
 	if db == nil || dia == nil {
 		panic("sourceDialect [" + *sourceDialect + "] not support")
 	}
 
-	exportDia := dialect.GetDialect(*exportDialect)
+	exportDia, err := dialect.NewDialect(*exportDialect)
+	if err != nil {
+		panic(err)
+	}
 	dataSourceType := worker.GetDataSource(*fileType)
 	if dataSourceType == nil {
 		panic("fileType [" + *fileType + "] not support")
@@ -44,7 +50,7 @@ func doExport() {
 		Dir:               *exportDir,
 		ExportBatchSql:    true,
 		FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
-			return tableName + "_" + index.Name
+			return tableName + "_" + index.IndexName
 		},
 		DataSourceType: dataSourceType,
 		OnProgress: func(progress *worker.TaskProgress) {

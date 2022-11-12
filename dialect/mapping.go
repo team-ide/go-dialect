@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,12 +20,14 @@ type SqlMapping struct {
 	OwnerCreate  string
 	OwnerDelete  string
 
-	TablesSelect string
-	TableSelect  string
-	TableCreate  string
-	TableDelete  string
-	TableComment string
-	TableRename  string
+	TablesSelect          string
+	TableSelect           string
+	TableCreate           string
+	TableCreateColumn     string
+	TableCreatePrimaryKey string
+	TableDelete           string
+	TableComment          string
+	TableRename           string
 
 	ColumnsSelect string
 	ColumnSelect  string
@@ -46,6 +49,8 @@ type SqlMapping struct {
 	OwnerNamePackChar  string
 	TableNamePackChar  string
 	ColumnNamePackChar string
+	SqlValuePackChar   string
+	SqlValueEscapeChar string
 
 	MethodCache map[string]interface{}
 }
@@ -63,6 +68,10 @@ func (this_ *SqlMapping) GetColumnTypeInfos() (columnTypeInfoList []*ColumnTypeI
 func (this_ *SqlMapping) AddColumnTypeInfo(columnTypeInfo *ColumnTypeInfo) {
 	this_.columnTypeInfoCacheLock.Lock()
 	defer this_.columnTypeInfoCacheLock.Unlock()
+
+	if this_.columnTypeInfoCache == nil {
+		this_.columnTypeInfoCache = make(map[string]*ColumnTypeInfo)
+	}
 
 	key := strings.ToLower(columnTypeInfo.Name)
 	find := this_.columnTypeInfoCache[key]
@@ -86,24 +95,37 @@ func (this_ *SqlMapping) AddColumnTypeInfo(columnTypeInfo *ColumnTypeInfo) {
 }
 
 func (this_ *SqlMapping) GetColumnTypeInfo(typeName string) (columnTypeInfo *ColumnTypeInfo, err error) {
+	if typeName == "" {
+		err = errors.New("dialect [" + this_.DialectType().Name + "] GetColumnTypeInfo column type name is null")
+		return
+	}
 	this_.columnTypeInfoCacheLock.Lock()
 	defer this_.columnTypeInfoCacheLock.Unlock()
+
+	if this_.columnTypeInfoCache == nil {
+		this_.columnTypeInfoCache = make(map[string]*ColumnTypeInfo)
+	}
 
 	key := strings.ToLower(typeName)
 	columnTypeInfo = this_.columnTypeInfoCache[key]
 	if columnTypeInfo == nil {
-		err = errors.New("dialect [" + this_.DialectType().Name + "] not support type [" + typeName + "]")
+		err = errors.New("dialect [" + this_.DialectType().Name + "] GetColumnTypeInfo not support column type name [" + typeName + "]")
+		fmt.Println(err)
 		return
 	}
 	return
 }
 
-func (this_ *SqlMapping) FormatColumnType(column *ColumnModel) (columnType string, err error) {
-	columnTypeInfo, err := this_.GetColumnTypeInfo(column.ColumnType)
+func (this_ *SqlMapping) ColumnTypePack(column *ColumnModel) (columnTypePack string, err error) {
+	columnTypeInfo, err := this_.GetColumnTypeInfo(column.ColumnDataType)
 	if err != nil {
 		return
 	}
-	columnType = columnTypeInfo.TypeFormat
+	if columnTypeInfo.ColumnTypePack != nil {
+		columnTypePack, err = columnTypeInfo.ColumnTypePack(column)
+		return
+	}
+	columnTypePack = columnTypeInfo.Format
 	lStr := ""
 	dStr := ""
 	if column.ColumnLength >= 0 {
@@ -116,11 +138,11 @@ func (this_ *SqlMapping) FormatColumnType(column *ColumnModel) (columnType strin
 		lStr = ""
 		dStr = ""
 	}
-	columnType = strings.ReplaceAll(columnType, "$l", lStr)
-	columnType = strings.ReplaceAll(columnType, "$d", dStr)
-	columnType = strings.ReplaceAll(columnType, " ", "")
-	columnType = strings.ReplaceAll(columnType, ",)", ")")
-	columnType = strings.TrimSuffix(columnType, "(,)")
-	columnType = strings.TrimSuffix(columnType, "()")
+	columnTypePack = strings.ReplaceAll(columnTypePack, "$l", lStr)
+	columnTypePack = strings.ReplaceAll(columnTypePack, "$d", dStr)
+	columnTypePack = strings.ReplaceAll(columnTypePack, " ", "")
+	columnTypePack = strings.ReplaceAll(columnTypePack, ",)", ")")
+	columnTypePack = strings.TrimSuffix(columnTypePack, "(,)")
+	columnTypePack = strings.TrimSuffix(columnTypePack, "()")
 	return
 }

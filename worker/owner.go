@@ -5,8 +5,8 @@ import (
 	"github.com/team-ide/go-dialect/dialect"
 )
 
-func OwnersSelect(db *sql.DB, dia dialect.Dialect) (list []*dialect.OwnerModel, err error) {
-	sqlInfo, err := dia.OwnersSelectSql()
+func OwnersSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel) (list []*dialect.OwnerModel, err error) {
+	sqlInfo, err := dia.OwnersSelectSql(param)
 	if err != nil {
 		return
 	}
@@ -29,8 +29,8 @@ func OwnersSelect(db *sql.DB, dia dialect.Dialect) (list []*dialect.OwnerModel, 
 	return
 }
 
-func OwnerSelect(db *sql.DB, dia dialect.Dialect, ownerName string) (one *dialect.OwnerModel, err error) {
-	sqlInfo, err := dia.OwnerSelectSql(ownerName)
+func OwnerSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string) (one *dialect.OwnerModel, err error) {
+	sqlInfo, err := dia.OwnerSelectSql(param, ownerName)
 	if err != nil {
 		return
 	}
@@ -54,8 +54,8 @@ func OwnerSelect(db *sql.DB, dia dialect.Dialect, ownerName string) (one *dialec
 	return
 }
 
-func OwnerCreate(db *sql.DB, dia dialect.Dialect, owner *dialect.OwnerModel) (created bool, err error) {
-	sqlList, err := dia.OwnerCreateSql(owner)
+func OwnerCreate(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, owner *dialect.OwnerModel) (created bool, err error) {
+	sqlList, err := dia.OwnerCreateSql(param, owner)
 	if err != nil {
 		return
 	}
@@ -63,22 +63,6 @@ func OwnerCreate(db *sql.DB, dia dialect.Dialect, owner *dialect.OwnerModel) (cr
 		return
 	}
 	_, err = DoExec(db, sqlList)
-	if err != nil {
-		return
-	}
-	created = true
-	return
-}
-
-func OwnerChange(db *sql.DB, dia dialect.Dialect, ownerName string) (created bool, err error) {
-	sqlInfo, err := dia.OwnerChangeSql(ownerName)
-	if err != nil {
-		return
-	}
-	if sqlInfo == "" {
-		return
-	}
-	_, err = DoExec(db, []string{sqlInfo})
 	if err != nil {
 		return
 	}

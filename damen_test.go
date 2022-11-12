@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	DaMenDb *sql.DB
+	DaMenDb      *sql.DB
+	DaMenDialect dialect.Dialect
 )
 
 func initDaMen() {
@@ -21,22 +22,26 @@ func initDaMen() {
 	if err != nil {
 		panic(err)
 	}
+	DaMenDialect, err = dialect.NewDialect(dialect.TypeDaMen.Name)
+	if err != nil {
+		panic(err)
+	}
 	return
 }
 
 func TestDaMenLoad(t *testing.T) {
 	initDaMen()
-	owners(DaMenDb, dialect.DaMen)
+	owners(DaMenDb, DaMenDialect)
 }
 
 func TestDaMenDDL(t *testing.T) {
 	initDaMen()
 	//testTableDelete(DaMenDb, dialect.DaMen, param, "", getTable().Name)
-	testDLL(DaMenDb, dialect.DaMen, "")
+	testDLL(DaMenDb, DaMenDialect, "")
 }
 
 func TestDaMenSql(t *testing.T) {
 	initDaMen()
 	sqlInfo := loadSql("temp/sql_damen.sql")
-	testSql(DaMenDb, dialect.DaMen, "SYSDBA", sqlInfo)
+	testSql(DaMenDb, DaMenDialect, "SYSDBA", sqlInfo)
 }

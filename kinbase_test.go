@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	KinBaseDb *sql.DB
+	KinBaseDb      *sql.DB
+	KinBaseDialect dialect.Dialect
 )
 
 func initKinBase() {
@@ -21,21 +22,25 @@ func initKinBase() {
 	if err != nil {
 		panic(err)
 	}
+	KinBaseDialect, err = dialect.NewDialect(dialect.TypeKinBase.Name)
+	if err != nil {
+		panic(err)
+	}
 	return
 }
 
 func TestKinBaseLoad(t *testing.T) {
 	initKinBase()
-	owners(KinBaseDb, dialect.KinBase)
+	owners(KinBaseDb, KinBaseDialect)
 }
 
 func TestKinBaseDDL(t *testing.T) {
 	initKinBase()
-	testDLL(KinBaseDb, dialect.KinBase, "")
+	testDLL(KinBaseDb, KinBaseDialect, "")
 }
 
 func TestKinBaseSql(t *testing.T) {
 	initKinBase()
 	sqlInfo := loadSql("temp/sql_kinbase.sql")
-	testSql(KinBaseDb, dialect.KinBase, "SYSDBA", sqlInfo)
+	testSql(KinBaseDb, KinBaseDialect, "SYSDBA", sqlInfo)
 }

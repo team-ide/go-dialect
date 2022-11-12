@@ -51,15 +51,37 @@ func (this_ *mappingDialect) ColumnNamesPack(param *ParamModel, columnNames []st
 }
 
 func (this_ *mappingDialect) SqlValuePack(param *ParamModel, column *ColumnModel, value interface{}) string {
+	char := this_.SqlValuePackChar
+	escapeChar := this_.SqlValueEscapeChar
+	if param != nil {
+		if param.SqlValuePackChar != nil {
+			char = *param.SqlValuePackChar
+		}
+		if param.SqlValueEscapeChar != nil {
+			escapeChar = *param.SqlValueEscapeChar
+		}
+	}
 	var columnTypeInfo *ColumnTypeInfo
 	if column != nil {
-		//columnTypeInfo, _ = this_.GetColumnTypeInfo(column.Type)
+		columnTypeInfo, _ = this_.GetColumnTypeInfo(column.ColumnDataType)
 	}
-	return packingValue(columnTypeInfo, `'`, `'`, value)
+	return packingValue(column, columnTypeInfo, char, escapeChar, value)
 }
 
-func (this_ *mappingDialect) ColumnNamesStrPack(param *ParamModel, columnNamesStr string) string {
-	return this_.ColumnNamesPack(param, strings.Split(columnNamesStr, ","))
+func (this_ *mappingDialect) ColumnDefaultPack(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
+	var columnTypeInfo *ColumnTypeInfo
+	if column != nil {
+		columnTypeInfo, _ = this_.GetColumnTypeInfo(column.ColumnDataType)
+	}
+	if columnTypeInfo != nil && columnTypeInfo.ColumnDefaultPack != nil {
+		columnDefaultPack, err = columnTypeInfo.ColumnDefaultPack(param, column)
+		return
+	}
+	if column.ColumnDefault == "" {
+		return
+	}
+	columnDefaultPack = this_.SqlValuePack(param, column, column.ColumnDefault)
+	return
 }
 
 func (this_ *mappingDialect) IsSqlEnd(sqlStr string) (isSqlEnd bool) {
@@ -168,6 +190,100 @@ func (this_ *mappingDialect) SqlSplit(sqlStr string) (sqlList []string) {
 		sqlOne = strings.ReplaceAll(sqlOne, `|-`+cacheKey+`-|`, `''`)
 		sqlOne = strings.ReplaceAll(sqlOne, `|--`+cacheKey+`--|`, `""`)
 		sqlList = append(sqlList, sqlOne)
+	}
+	return
+}
+
+func (this_ *mappingDialect) InsertSql(param *ParamModel, insert *InsertModel) (sqlList []string, err error) {
+
+	sql := "INSERT INTO "
+	if insert.OwnerName != "" {
+		sql += this_.OwnerNamePack(param, insert.OwnerName) + "."
+	}
+	sql += "" + this_.TableNamePack(param, insert.TableName)
+
+	sql += "(" + this_.ColumnNamesPack(param, insert.Columns) + ")"
+	sql += ` VALUES `
+
+	for rowIndex, row := range insert.Rows {
+		if rowIndex > 0 {
+			sql += `, `
+		}
+		sql += `( `
+
+		for valueIndex, value := range row {
+			if valueIndex > 0 {
+				sql += `, `
+			}
+			switch value.Type {
+			case ValueTypeString:
+				sql += this_.SqlValuePack(param, nil, value.Value)
+				break
+			case ValueTypeNumber:
+				sql += value.Value
+				break
+			case ValueTypeFunc:
+
+				var funcStr = value.Value
+				//funcStr, err = this_.FormatFunc(funcStr)
+				//if err != nil {
+				//	return
+				//}
+				sql += funcStr
+				break
+			}
+		}
+
+		sql += `) `
+	}
+
+	sqlList = append(sqlList, sql)
+	return
+}
+func (this_ *mappingDialect) InsertDataListSql(param *ParamModel, ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, batchSqlList []string, err error) {
+	var batchSqlCache = make(map[string]string)
+	var batchSqlIndexCache = make(map[string]int)
+	var columnNames []string
+	for _, one := range columnList {
+		columnNames = append(columnNames, one.ColumnName)
+	}
+	for _, data := range dataList {
+		var columnList_ []string
+		var values = "("
+		for _, column := range columnList {
+			str := this_.SqlValuePack(param, column, data[column.ColumnName])
+			if strings.EqualFold(str, "null") {
+				continue
+			}
+			columnList_ = append(columnList_, column.ColumnName)
+			values += str + ", "
+		}
+		values = strings.TrimSuffix(values, ", ")
+		values += ")"
+
+		insertSqlInfo := "INSERT INTO "
+		if ownerName != "" {
+			insertSqlInfo += this_.OwnerNamePack(param, ownerName) + "."
+		}
+		insertSqlInfo += this_.TableNamePack(param, tableName)
+		insertSqlInfo += " ("
+		insertSqlInfo += this_.ColumnNamesPack(param, columnList_)
+		insertSqlInfo += ") VALUES "
+
+		sqlList = append(sqlList, insertSqlInfo+values)
+
+		key := strings.Join(columnList_, ",")
+		find, ok := batchSqlCache[key]
+		if ok {
+			find += ",\n" + values
+			batchSqlCache[key] = find
+			batchSqlList[batchSqlIndexCache[key]] = find
+		} else {
+			find = insertSqlInfo + "\n" + values
+			batchSqlIndexCache[key] = len(batchSqlCache)
+			batchSqlCache[key] = find
+			batchSqlList = append(batchSqlList, find)
+		}
 	}
 	return
 }
