@@ -2,6 +2,9 @@ package dialect
 
 import (
 	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"reflect"
 	"regexp"
@@ -114,12 +117,17 @@ func GetStringValue(value interface{}) string {
 		return string(v)
 	case sql.NullString:
 		return v.String
+	case []interface{}:
+		bs, _ := json.Marshal(v)
+		return string(bs)
 	default:
 		baseValue, isBaseType := GetBaseTypeValue(value)
 		if isBaseType {
 			return GetStringValue(baseValue)
 		}
-		panic("value type [" + reflect.TypeOf(value).String() + "] not support")
+		err := errors.New("value type [" + reflect.TypeOf(value).String() + "] not support,value :" + fmt.Sprintf("%s", value))
+		fmt.Println("GetStringValue error ", err)
+		panic(err)
 	}
 	return ""
 }
