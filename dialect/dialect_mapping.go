@@ -51,6 +51,7 @@ type mappingDialect struct {
 	IndexesSelect   *RootStatement
 	IndexAdd        *RootStatement
 	IndexDelete     *RootStatement
+	IndexTypeFormat *RootStatement
 	IndexNameFormat *RootStatement
 }
 
@@ -103,6 +104,30 @@ func (this_ StatementScript) columnNotNull(columnNotNull interface{}) (res strin
 	return
 }
 
+func (this_ StatementScript) equalFold(arg1 interface{}, arg2 interface{}) bool {
+	if arg1 == arg2 {
+		return true
+	}
+	str1 := GetStringValue(arg1)
+	str2 := GetStringValue(arg2)
+	return strings.EqualFold(str1, str2)
+}
+
+func (this_ StatementScript) joins(joinList interface{}, joinObj interface{}) (res string) {
+	if joinList == nil {
+		return
+	}
+	list, ok := joinList.([]string)
+	if !ok {
+		objList := joinList.([]interface{})
+		for _, one := range objList {
+			list = append(list, GetStringValue(one))
+		}
+	}
+	res = strings.Join(list, GetStringValue(joinObj))
+	return
+}
+
 func (this_ *mappingDialect) NewStatementContext(param *ParamModel, dataList ...interface{}) (statementContext *StatementContext, err error) {
 	statementContext = NewStatementContext()
 
@@ -112,6 +137,8 @@ func (this_ *mappingDialect) NewStatementContext(param *ParamModel, dataList ...
 	}
 	statementContext.AddMethod("sqlValuePack", statementScript.sqlValuePack)
 	statementContext.AddMethod("columnNotNull", statementScript.columnNotNull)
+	statementContext.AddMethod("joins", statementScript.joins)
+	statementContext.AddMethod("equalFold", statementScript.equalFold)
 
 	if this_.MethodCache != nil {
 		for name, method := range this_.MethodCache {
@@ -193,6 +220,13 @@ func (this_ *mappingDialect) NewStatementContext(param *ParamModel, dataList ...
 		primaryKeysPack = this_.ColumnNamesPack(param, stringList)
 	}
 	statementContext.SetData("primaryKeysPack", primaryKeysPack)
+
+	indexNamePack := ""
+	indexName, _ := statementContext.GetData("indexName")
+	if indexName != nil && indexName != "" {
+		indexNamePack = this_.ColumnNamePack(param, indexName.(string))
+	}
+	statementContext.SetData("indexNamePack", indexNamePack)
 
 	return
 }
