@@ -145,10 +145,24 @@ type ColumnTypeInfo struct {
 	// IsExtend 如果 非 当前 数据库能支持的类型 设置该属性
 	IsExtend bool `json:"isExtend,omitempty"`
 
-	ColumnDefaultPack      func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) `-`
-	ColumnTypePack         func(column *ColumnModel) (columnTypePack string, err error)                       `-`
-	SqlValuePack           func(value string) (sqlValue string)                                               `-`
-	FullColumnByColumnType func(columnType string, column *ColumnModel) (err error)                           `-`
+	ColumnDefaultPack      func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) `json:"-"`
+	ColumnTypePack         func(column *ColumnModel) (columnTypePack string, err error)                       `json:"-"`
+	SqlValuePack           func(value string) (sqlValue string)                                               `json:"-"`
+	FullColumnByColumnType func(columnType string, column *ColumnModel) (err error)                           `json:"-"`
+}
+
+type IndexTypeInfo struct {
+	Name   string `json:"name,omitempty"`
+	Format string `json:"format,omitempty"`
+
+	// IsExtend 如果 非 当前 数据库能支持的类型 设置该属性
+	IsExtend bool `json:"isExtend,omitempty"`
+
+	OnlySupportDataTypes []string `json:"onlySupportDataTypes"`
+	NotSupportDataTypes  []string `json:"notSupportDataTypes"`
+
+	IndexTypeFormat func(index *IndexModel) (indexTypeFormat string, err error)                                                        `json:"-"`
+	IndexNameFormat func(param *ParamModel, ownerName string, tableName string, index *IndexModel) (indexNameFormat string, err error) `json:"-"`
 }
 
 type PrimaryKeyModel struct {

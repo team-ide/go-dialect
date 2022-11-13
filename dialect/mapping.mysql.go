@@ -61,8 +61,9 @@ WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
 CREATE TABLE [{ownerNamePack}.]{tableNamePack}(
 { tableCreateColumnContent }
 { tableCreatePrimaryKeyContent }
-)[CHARACTER SET {tableCharacterSetName}] [COMMENT {sqlValuePack(tableComment)}]
+)[CHARACTER SET {tableCharacterSetName}]
 `,
+		TableCreateColumnHasComment: true,
 		TableCreateColumn: `
 	{columnNamePack} {columnTypePack} [CHARACTER SET {columnCharacterSetName}] [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)} [COMMENT {sqlValuePack(columnComment)}]
 `,
@@ -70,13 +71,13 @@ CREATE TABLE [{ownerNamePack}.]{tableNamePack}(
 PRIMARY KEY ({primaryKeysPack})
 `,
 		TableComment: `
-ALTER TABLE [{ownerName}.]{tableName} COMMENT '{tableComment}'
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} COMMENT {sqlValuePack(tableComment)}
 `,
 		TableRename: `
-ALTER TABLE [{ownerName}.]{oldTableName} RENAME AS {newTableName}
+ALTER TABLE [{ownerNamePack}.]{oldTableNamePack} RENAME AS {newTableNamePack}
 `,
 		TableDelete: `
-DROP TABLE IF EXISTS [{ownerName}.]{tableName}
+DROP TABLE IF EXISTS [{ownerNamePack}.]{tableNamePack}
 `,
 
 		// 字段 相关 SQL
@@ -88,7 +89,7 @@ SELECT
     EXTRA columnExtra,
     TABLE_NAME tableName,
     TABLE_SCHEMA ownerName,
-    CHARACTER_SET_NAME characterSetName,
+    CHARACTER_SET_NAME columnCharacterSetName,
     IS_NULLABLE isNullable,
     DATA_TYPE columnDataType,
     COLUMN_TYPE columnType
@@ -104,7 +105,7 @@ SELECT
     EXTRA columnExtra,
     TABLE_NAME tableName,
     TABLE_SCHEMA ownerName,
-    CHARACTER_SET_NAME characterSetName,
+    CHARACTER_SET_NAME columnCharacterSetName,
     IS_NULLABLE isNullable,
     DATA_TYPE columnDataType,
     COLUMN_TYPE columnType
@@ -175,22 +176,15 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD {indexType} [{indexNamePack}] 
 		IndexDelete: `
 ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP INDEX {indexNamePack}
 `,
-		IndexTypeFormat: `
-{ if equalFold(indexType, "UNIQUE") }
-UNIQUE
-{ else if equalFold(indexType, "FULLTEXT") }
-FULLTEXT
-{ else if equalFold(indexType, "SPATIAL") }
-SPATIAL
-{ else }
-INDEX
-{ }
-`,
-		IndexNameFormat: `
-[{ownerName}_][{tableName}_]{joins(columnNames, ',')}
-`,
 	}
 
+	AppendMysqlColumnType(mapping)
+	AppendMysqlIndexType(mapping)
+
+	return
+}
+
+func AppendMysqlColumnType(mapping *SqlMapping) {
 	/** 数值类型 **/
 	/**
 	MySQL 支持所有标准 SQL 数值数据类型。
@@ -235,7 +229,7 @@ INDEX
 	*/
 
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "DEC", Format: "DEC($l, $d)", IsNumber: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "DECIMAL", Format: "DOUBLE($l, $d)", IsNumber: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "DECIMAL", Format: "DECIMAL($l, $d)", IsNumber: true})
 
 	/** 日期/时间类型 **/
 	/**
@@ -294,10 +288,6 @@ INDEX
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "MEDIUMTEXT", Format: "MEDIUMTEXT", IsString: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONGTEXT", Format: "LONGTEXT", IsString: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "ENUM", IsString: true, IsEnum: true,
-		ColumnTypePack: func(column *ColumnModel) (columnTypePack string, err error) {
-			columnTypePack = "ENUM(" + packingValues("'", column.ColumnEnums) + ")"
-			return
-		},
 		FullColumnByColumnType: func(columnType string, column *ColumnModel) (err error) {
 			if strings.Contains(columnType, "(") {
 				setStr := columnType[strings.Index(columnType, "(")+1 : strings.Index(columnType, ")")]
@@ -313,10 +303,6 @@ INDEX
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONGBLOB", Format: "LONGBLOB", IsString: true})
 
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SET", IsString: true, IsEnum: true,
-		ColumnTypePack: func(column *ColumnModel) (columnTypePack string, err error) {
-			columnTypePack = "SET(" + packingValues("'", column.ColumnEnums) + ")"
-			return
-		},
 		FullColumnByColumnType: func(columnType string, column *ColumnModel) (err error) {
 			if strings.Contains(columnType, "(") {
 				setStr := columnType[strings.Index(columnType, "(")+1 : strings.Index(columnType, ")")]
@@ -327,5 +313,29 @@ INDEX
 		},
 	})
 
-	return
+	// sqlite
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "REAL", Format: "DOUBLE($l, $d)", IsNumber: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NUMERIC", Format: "DECIMAL($l, $d)", IsNumber: true, IsExtend: true})
+
+	// oracle
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARCHAR2", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NUMBER", Format: "DECIMAL($l, $d)", IsNumber: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CLOB", Format: "LONGTEXT", IsString: true, IsExtend: true})
+
+}
+
+func AppendMysqlIndexType(mapping *SqlMapping) {
+
+	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "", Format: "INDEX",
+		NotSupportDataTypes: []string{"TEXT"},
+	})
+	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "INDEX", Format: "INDEX",
+		NotSupportDataTypes: []string{"TEXT"},
+	})
+	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "UNIQUE", Format: "UNIQUE",
+		NotSupportDataTypes: []string{"TEXT"},
+	})
+	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "FULLTEXT", Format: "FULLTEXT", OnlySupportDataTypes: []string{"CHAR", "VARCHAR", "TEXT"}})
+	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "SPATIAL", Format: "SPATIAL", OnlySupportDataTypes: []string{"GEOMETRY", "POINT", "LINESTRING", "POLYGON"}})
+
 }

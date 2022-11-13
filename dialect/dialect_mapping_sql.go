@@ -2,7 +2,6 @@ package dialect
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -154,13 +153,31 @@ func (this_ *mappingDialect) TableCreateSql(param *ParamModel, ownerName string,
 	if err != nil {
 		return
 	}
-	var indexAddSqlList []string
+
+	var sqlList_ []string
+
+	sqlList_, err = this_.TableCommentSql(param, ownerName, table.TableName, table.TableComment)
+	if err != nil {
+		return
+	}
+	sqlList = append(sqlList, sqlList_...)
+
+	if !this_.TableCreateColumnHasComment {
+		for _, column := range table.ColumnList {
+			sqlList_, err = this_.ColumnCommentSql(param, ownerName, table.TableName, column.ColumnName, column.ColumnComment)
+			if err != nil {
+				return
+			}
+			sqlList = append(sqlList, sqlList_...)
+		}
+	}
+
 	for _, index := range table.IndexList {
-		indexAddSqlList, err = this_.IndexAddSql(param, ownerName, table.TableName, index)
+		sqlList_, err = this_.IndexAddSql(param, ownerName, table.TableName, index)
 		if err != nil {
 			return
 		}
-		sqlList = append(sqlList, indexAddSqlList...)
+		sqlList = append(sqlList, sqlList_...)
 	}
 	return
 }
@@ -516,7 +533,16 @@ func (this_ *mappingDialect) IndexModel(data map[string]interface{}) (index *Ind
 
 func (this_ *mappingDialect) IndexAddSql(param *ParamModel, ownerName string, tableName string, index *IndexModel) (sqlList []string, err error) {
 
-	indexName, err := this_.IndexNameFormatSql(param, ownerName, tableName, index)
+	indexType, err := this_.IndexTypeFormat(index)
+	if err != nil {
+		return
+	}
+	indexType = strings.TrimSpace(indexType)
+	if indexType == "" {
+		return
+	}
+
+	indexName, err := this_.IndexNameFormat(param, ownerName, tableName, index)
 	if err != nil {
 		return
 	}
@@ -524,16 +550,6 @@ func (this_ *mappingDialect) IndexAddSql(param *ParamModel, ownerName string, ta
 	if indexName == "" {
 		indexName = index.IndexName
 	}
-
-	indexType, err := this_.IndexTypeFormatSql(param, ownerName, tableName, index)
-	if err != nil {
-		return
-	}
-	indexType = strings.TrimSpace(indexType)
-	if indexType == "" {
-		indexType = index.IndexType
-	}
-
 	sqlList, err = this_.FormatSql(this_.IndexAdd, param,
 		index,
 		map[string]string{
@@ -546,7 +562,7 @@ func (this_ *mappingDialect) IndexAddSql(param *ParamModel, ownerName string, ta
 	if err != nil {
 		return
 	}
-	fmt.Println("index add sql:", sqlList)
+	//fmt.Println("index add sql:", sqlList)
 	return
 }
 
@@ -560,39 +576,6 @@ func (this_ *mappingDialect) IndexDeleteSql(param *ParamModel, ownerName string,
 	)
 	if err != nil {
 		return
-	}
-	return
-}
-
-func (this_ *mappingDialect) IndexTypeFormatSql(param *ParamModel, ownerName string, tableName string, index *IndexModel) (sqlInfo string, err error) {
-	sqlList, err := this_.FormatSql(this_.IndexTypeFormat, param,
-		index,
-		map[string]string{
-			"ownerName": ownerName,
-			"tableName": tableName,
-		},
-	)
-	if err != nil {
-		return
-	}
-	if len(sqlList) > 0 {
-		sqlInfo = sqlList[0]
-	}
-	return
-}
-func (this_ *mappingDialect) IndexNameFormatSql(param *ParamModel, ownerName string, tableName string, index *IndexModel) (sqlInfo string, err error) {
-	sqlList, err := this_.FormatSql(this_.IndexNameFormat, param,
-		index,
-		map[string]string{
-			"ownerName": ownerName,
-			"tableName": tableName,
-		},
-	)
-	if err != nil {
-		return
-	}
-	if len(sqlList) > 0 {
-		sqlInfo = sqlList[0]
 	}
 	return
 }

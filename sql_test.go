@@ -6,48 +6,85 @@ import (
 	"testing"
 )
 
-var (
-	tableMysql   *dialect.TableModel
-	mappingMysql = dialect.NewMappingMysql()
-	dialectMysql dialect.Dialect
-)
+var testDialectList []*testDialect
+var testDialectCache = make(map[string]*testDialect)
 
-func init() {
+type testDialect struct {
+	table   *dialect.TableModel
+	mapping *dialect.SqlMapping
+	dialect dialect.Dialect
+}
+
+func (this_ *testDialect) init() {
+	this_.table = this_.mapping.GenDemoTable()
 	var err error
-	dialectMysql, err = dialect.NewMappingDialect(mappingMysql)
+	this_.dialect, err = dialect.NewMappingDialect(this_.mapping)
 	if err != nil {
 		panic(err)
-	}
-	tableMysql = &dialect.TableModel{}
-	tableMysql.TableName = "TEST_TB_1"
-	tableMysql.ColumnList = mappingMysql.GenColumns()
-	for _, column := range tableMysql.ColumnList {
-		if len(tableMysql.PrimaryKeys) > 3 {
-			continue
-		}
-		tableMysql.PrimaryKeys = append(tableMysql.PrimaryKeys, column.ColumnName)
-	}
-	for i, column := range tableMysql.ColumnList {
-		if len(tableMysql.IndexList) > 3 {
-			continue
-		}
-		indexType := "INDEX"
-		if i%2 == 0 {
-			indexType = "UNIQUE"
-		}
-		tableMysql.AddIndex(&dialect.IndexModel{
-			ColumnName: column.ColumnName,
-			IndexType:  indexType,
-		})
 	}
 }
 
-func TestMysqlTable(t *testing.T) {
-	sqlList, err := dialectMysql.TableCreateSql(nil, "", tableMysql)
+func init() {
+	appendTestDialectMysql()
+	appendTestDialectSqlite()
+	appendTestDialectOracle()
+}
+
+func appendTestDialectMysql() {
+	one := &testDialect{}
+	testDialectCache["mysql"] = one
+	testDialectList = append(testDialectList, one)
+	one.mapping = dialect.NewMappingMysql()
+	one.init()
+}
+
+func appendTestDialectSqlite() {
+	one := &testDialect{}
+	testDialectCache["sqlite"] = one
+	testDialectList = append(testDialectList, one)
+	one.mapping = dialect.NewMappingSqlite()
+	one.init()
+}
+
+func appendTestDialectOracle() {
+	one := &testDialect{}
+	testDialectCache["oracle"] = one
+	testDialectList = append(testDialectList, one)
+	one.mapping = dialect.NewMappingOracle()
+	one.init()
+}
+
+func TestAllTable(t *testing.T) {
+	for _, one := range testDialectList {
+		sqlList, err := one.dialect.TableCreateSql(nil, "", one.table)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("-----dialect [" + one.dialect.DialectType().Name + "] create table sql---")
+		for _, sqlOne := range sqlList {
+			fmt.Println(sqlOne, ";")
+		}
+
+		for _, to := range testDialectList {
+			if to == one {
+				continue
+			}
+			toTable(one, to)
+		}
+	}
+}
+
+func toTable(from *testDialect, to *testDialect) {
+	sqlList, err := to.dialect.TableCreateSql(nil, "", from.table)
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] to dialect [" + to.dialect.DialectType().Name + "] create table sql---")
 	for _, sqlOne := range sqlList {
-		fmt.Println(sqlOne)
+		fmt.Println(sqlOne, ";")
 	}
+}
+
+func TestToTable(t *testing.T) {
+	toTable(testDialectCache["oracle"], testDialectCache["mysql"])
 }

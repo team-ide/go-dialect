@@ -48,11 +48,9 @@ type mappingDialect struct {
 	PrimaryKeyAdd     *RootStatement
 	PrimaryKeyDelete  *RootStatement
 
-	IndexesSelect   *RootStatement
-	IndexAdd        *RootStatement
-	IndexDelete     *RootStatement
-	IndexTypeFormat *RootStatement
-	IndexNameFormat *RootStatement
+	IndexesSelect *RootStatement
+	IndexAdd      *RootStatement
+	IndexDelete   *RootStatement
 }
 
 func (this_ *mappingDialect) init() (err error) {

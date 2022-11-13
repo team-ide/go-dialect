@@ -1,9 +1,7 @@
 package dialect
 
 import (
-	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 )
@@ -15,19 +13,24 @@ type SqlMapping struct {
 	columnTypeInfoCache     map[string]*ColumnTypeInfo
 	columnTypeInfoCacheLock sync.Mutex
 
+	indexTypeInfoList      []*IndexTypeInfo
+	indexTypeInfoCache     map[string]*IndexTypeInfo
+	indexTypeInfoCacheLock sync.Mutex
+
 	OwnersSelect string
 	OwnerSelect  string
 	OwnerCreate  string
 	OwnerDelete  string
 
-	TablesSelect          string
-	TableSelect           string
-	TableCreate           string
-	TableCreateColumn     string
-	TableCreatePrimaryKey string
-	TableDelete           string
-	TableComment          string
-	TableRename           string
+	TablesSelect                string
+	TableSelect                 string
+	TableCreate                 string
+	TableCreateColumn           string
+	TableCreateColumnHasComment bool
+	TableCreatePrimaryKey       string
+	TableDelete                 string
+	TableComment                string
+	TableRename                 string
 
 	ColumnsSelect string
 	ColumnSelect  string
@@ -41,11 +44,9 @@ type SqlMapping struct {
 	PrimaryKeyAdd     string
 	PrimaryKeyDelete  string
 
-	IndexesSelect   string
-	IndexAdd        string
-	IndexDelete     string
-	IndexTypeFormat string
-	IndexNameFormat string
+	IndexesSelect string
+	IndexAdd      string
+	IndexDelete   string
 
 	OwnerNamePackChar  string
 	TableNamePackChar  string
@@ -61,28 +62,22 @@ func (this_ *SqlMapping) DialectType() (dialectType *Type) {
 	return
 }
 
-func (this_ *SqlMapping) GetColumnTypeInfos() (columnTypeInfoList []*ColumnTypeInfo) {
-	list := this_.columnTypeInfoList
-	for _, one := range list {
-		if one.IsExtend {
-			continue
-		}
-		columnTypeInfoList = append(columnTypeInfoList, one)
+func (this_ *SqlMapping) GenDemoTable() (table *TableModel) {
+	table = &TableModel{
+		TableName:    "TABLE_DEMO",
+		TableComment: "TABLE_DEMO_comment",
 	}
-	return
-}
-
-func (this_ *SqlMapping) GenColumns() (columnList []*ColumnModel) {
-	list := this_.GetColumnTypeInfos()
-	for i, one := range list {
+	columnTypeInfos := this_.GetColumnTypeInfos()
+	var lastIndexColumnIndex int
+	for i, columnTypeInfo := range columnTypeInfos {
 		column := &ColumnModel{}
 		column.ColumnName = fmt.Sprintf("column_%d", i)
-		column.ColumnDataType = one.Name
+		column.ColumnDataType = columnTypeInfo.Name
 		column.ColumnLength = 5
 		column.ColumnDecimal = 2
 		column.ColumnComment = fmt.Sprintf("column_%d-comment", i)
 
-		if one.IsEnum {
+		if columnTypeInfo.IsEnum {
 			column.ColumnEnums = append(column.ColumnEnums, "option1")
 			column.ColumnEnums = append(column.ColumnEnums, "option2")
 		}
@@ -90,89 +85,42 @@ func (this_ *SqlMapping) GenColumns() (columnList []*ColumnModel) {
 		if i%3 == 0 {
 			column.ColumnNotNull = true
 		}
-		columnList = append(columnList, column)
+		table.AddColumn(column)
+		if len(table.PrimaryKeys) > 2 {
+			continue
+		}
+		lastIndexColumnIndex = i
+		if !strings.EqualFold(columnTypeInfo.Name, "text") &&
+			!strings.EqualFold(columnTypeInfo.Name, "blob") {
+			table.PrimaryKeys = append(table.PrimaryKeys, column.ColumnName)
+		}
 	}
-	return
-}
-
-func (this_ *SqlMapping) AddColumnTypeInfo(columnTypeInfo *ColumnTypeInfo) {
-	this_.columnTypeInfoCacheLock.Lock()
-	defer this_.columnTypeInfoCacheLock.Unlock()
-
-	if this_.columnTypeInfoCache == nil {
-		this_.columnTypeInfoCache = make(map[string]*ColumnTypeInfo)
-	}
-
-	key := strings.ToLower(columnTypeInfo.Name)
-	find := this_.columnTypeInfoCache[key]
-	this_.columnTypeInfoCache[key] = columnTypeInfo
-	if find == nil {
-		this_.columnTypeInfoList = append(this_.columnTypeInfoList, columnTypeInfo)
-	} else {
-		var list = this_.columnTypeInfoList
-		var newList []*ColumnTypeInfo
-		for _, one := range list {
-			if one == find {
-				newList = append(newList, columnTypeInfo)
-			} else {
-				newList = append(newList, one)
+	indexTypeInfos := this_.GetIndexTypeInfos()
+	for _, indexTypeInfo := range indexTypeInfos {
+		index := &IndexModel{}
+		for i, column := range table.ColumnList {
+			if i <= lastIndexColumnIndex {
+				continue
+			}
+			if len(indexTypeInfo.OnlySupportDataTypes) > 0 {
+				if StringsIndex(indexTypeInfo.OnlySupportDataTypes, strings.ToUpper(column.ColumnDataType)) < 0 {
+					continue
+				}
+			}
+			if StringsIndex(indexTypeInfo.NotSupportDataTypes, strings.ToUpper(column.ColumnDataType)) >= 0 {
+				continue
+			}
+			lastIndexColumnIndex = i
+			index.ColumnNames = append(index.ColumnNames, column.ColumnName)
+			if len(index.ColumnNames) >= 2 {
+				break
 			}
 		}
-		this_.columnTypeInfoList = newList
+		if len(index.ColumnNames) == 0 {
+			continue
+		}
+		index.IndexType = indexTypeInfo.Name
+		table.AddIndex(index)
 	}
-
-	return
-}
-
-func (this_ *SqlMapping) GetColumnTypeInfo(typeName string) (columnTypeInfo *ColumnTypeInfo, err error) {
-	if typeName == "" {
-		err = errors.New("dialect [" + this_.DialectType().Name + "] GetColumnTypeInfo column type name is null")
-		return
-	}
-	this_.columnTypeInfoCacheLock.Lock()
-	defer this_.columnTypeInfoCacheLock.Unlock()
-
-	if this_.columnTypeInfoCache == nil {
-		this_.columnTypeInfoCache = make(map[string]*ColumnTypeInfo)
-	}
-
-	key := strings.ToLower(typeName)
-	columnTypeInfo = this_.columnTypeInfoCache[key]
-	if columnTypeInfo == nil {
-		err = errors.New("dialect [" + this_.DialectType().Name + "] GetColumnTypeInfo not support column type name [" + typeName + "]")
-		fmt.Println(err)
-		return
-	}
-	return
-}
-
-func (this_ *SqlMapping) ColumnTypePack(column *ColumnModel) (columnTypePack string, err error) {
-	columnTypeInfo, err := this_.GetColumnTypeInfo(column.ColumnDataType)
-	if err != nil {
-		return
-	}
-	if columnTypeInfo.ColumnTypePack != nil {
-		columnTypePack, err = columnTypeInfo.ColumnTypePack(column)
-		return
-	}
-	columnTypePack = columnTypeInfo.Format
-	lStr := ""
-	dStr := ""
-	if column.ColumnLength >= 0 {
-		lStr = strconv.Itoa(column.ColumnLength)
-	}
-	if column.ColumnDecimal >= 0 {
-		dStr = strconv.Itoa(column.ColumnDecimal)
-	}
-	if column.ColumnLength == 0 && column.ColumnDecimal == 0 {
-		lStr = ""
-		dStr = ""
-	}
-	columnTypePack = strings.ReplaceAll(columnTypePack, "$l", lStr)
-	columnTypePack = strings.ReplaceAll(columnTypePack, "$d", dStr)
-	columnTypePack = strings.ReplaceAll(columnTypePack, " ", "")
-	columnTypePack = strings.ReplaceAll(columnTypePack, ",)", ")")
-	columnTypePack = strings.TrimSuffix(columnTypePack, "(,)")
-	columnTypePack = strings.TrimSuffix(columnTypePack, "()")
 	return
 }
