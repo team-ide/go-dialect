@@ -170,10 +170,24 @@ WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
 )
 `,
 		IndexAdd: `
-ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD {indexType} [{indexName}] ({columnNamesPack}) [COMMENT {sqlValuePack(indexComment)}]
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD {indexType} [{indexNamePack}] ({columnNamesPack}) [COMMENT {sqlValuePack(indexComment)}]
 `,
 		IndexDelete: `
-ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP INDEX {indexName}
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP INDEX {indexNamePack}
+`,
+		IndexTypeFormat: `
+{ if equalFold(indexType, "UNIQUE") }
+UNIQUE
+{ else if equalFold(indexType, "FULLTEXT") }
+FULLTEXT
+{ else if equalFold(indexType, "SPATIAL") }
+SPATIAL
+{ else }
+INDEX
+{ }
+`,
+		IndexNameFormat: `
+[{ownerName}_][{tableName}_]{joins(columnNames, ',')}
 `,
 	}
 
@@ -222,8 +236,6 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP INDEX {indexName}
 
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "DEC", Format: "DEC($l, $d)", IsNumber: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "DECIMAL", Format: "DOUBLE($l, $d)", IsNumber: true})
-
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NUMBER", Format: "NUMBER($l, $d)", IsNumber: true})
 
 	/** 日期/时间类型 **/
 	/**
@@ -277,9 +289,9 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP INDEX {indexName}
 
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CHAR", Format: "CHAR($l)", IsString: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARCHAR", Format: "VARCHAR($l)", IsString: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TINYTEXT", Format: "TINYTEXT($l)", IsString: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TINYTEXT", Format: "TINYTEXT", IsString: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TEXT", Format: "TEXT($l)", IsString: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "MEDIUMTEXT", Format: "MEDIUMTEXT($l)", IsString: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "MEDIUMTEXT", Format: "MEDIUMTEXT", IsString: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONGTEXT", Format: "LONGTEXT", IsString: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "ENUM", IsString: true, IsEnum: true,
 		ColumnTypePack: func(column *ColumnModel) (columnTypePack string, err error) {
@@ -295,9 +307,9 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP INDEX {indexName}
 			return
 		},
 	})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TINYBLOB", Format: "TINYBLOB($l)", IsString: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TINYBLOB", Format: "TINYBLOB", IsString: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BLOB", Format: "BLOB($l)", IsString: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "MEDIUMBLOB", Format: "MEDIUMBLOB($l)", IsString: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "MEDIUMBLOB", Format: "MEDIUMBLOB", IsString: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONGBLOB", Format: "LONGBLOB", IsString: true})
 
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SET", IsString: true, IsEnum: true,
