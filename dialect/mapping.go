@@ -44,6 +44,7 @@ type SqlMapping struct {
 	IndexesSelect   string
 	IndexAdd        string
 	IndexDelete     string
+	IndexTypeFormat string
 	IndexNameFormat string
 
 	OwnerNamePackChar  string
@@ -61,7 +62,36 @@ func (this_ *SqlMapping) DialectType() (dialectType *Type) {
 }
 
 func (this_ *SqlMapping) GetColumnTypeInfos() (columnTypeInfoList []*ColumnTypeInfo) {
-	columnTypeInfoList = this_.columnTypeInfoList
+	list := this_.columnTypeInfoList
+	for _, one := range list {
+		if one.IsExtend {
+			continue
+		}
+		columnTypeInfoList = append(columnTypeInfoList, one)
+	}
+	return
+}
+
+func (this_ *SqlMapping) GenColumns() (columnList []*ColumnModel) {
+	list := this_.GetColumnTypeInfos()
+	for i, one := range list {
+		column := &ColumnModel{}
+		column.ColumnName = fmt.Sprintf("column_%d", i)
+		column.ColumnDataType = one.Name
+		column.ColumnLength = 5
+		column.ColumnDecimal = 2
+		column.ColumnComment = fmt.Sprintf("column_%d-comment", i)
+
+		if one.IsEnum {
+			column.ColumnEnums = append(column.ColumnEnums, "option1")
+			column.ColumnEnums = append(column.ColumnEnums, "option2")
+		}
+
+		if i%3 == 0 {
+			column.ColumnNotNull = true
+		}
+		columnList = append(columnList, column)
+	}
 	return
 }
 
