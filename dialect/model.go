@@ -80,7 +80,10 @@ func (this_ *TableModel) AddPrimaryKey(models ...*PrimaryKeyModel) {
 func (this_ *TableModel) AddIndex(models ...*IndexModel) {
 
 	for _, model := range models {
-		find := this_.FindIndexByName(model.IndexName)
+		var find *IndexModel
+		if model.IndexName != "" {
+			find = this_.FindIndexByName(model.IndexName)
+		}
 		columnNames := model.ColumnNames
 		if model.ColumnName != "" && StringsIndex(columnNames, model.ColumnName) < 0 {
 			columnNames = append(columnNames, model.ColumnName)
