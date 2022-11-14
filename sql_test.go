@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-dialect/worker"
+	"github.com/team-ide/go-driver/db_dm"
+	"github.com/team-ide/go-driver/db_kingbase_v8r3"
 	"github.com/team-ide/go-driver/db_mysql"
 	"github.com/team-ide/go-driver/db_oracle"
+	"github.com/team-ide/go-driver/db_shentong"
 	"github.com/team-ide/go-driver/db_sqlite3"
 	"testing"
 )
@@ -36,6 +39,9 @@ func init() {
 	appendTestDialectMysql()
 	appendTestDialectSqlite()
 	appendTestDialectOracle()
+	appendTestDialectShenTong()
+	appendTestDialectDM()
+	appendTestDialectKinBase()
 }
 
 func appendTestDialectMysql() {
@@ -81,6 +87,60 @@ func appendTestDialectOracle() {
 
 	var err error
 	one.db, err = db_oracle.Open(db_oracle.GetDSN("root", "123456", "127.0.0.1", 1521, "xe"))
+	if err != nil {
+		panic(err)
+	}
+	one.owner = &dialect.OwnerModel{
+		OwnerName:     "TEST_DB",
+		OwnerPassword: "123456",
+	}
+	one.init()
+}
+
+func appendTestDialectDM() {
+	one := &testDialect{}
+	testDialectCache["dm"] = one
+	testDialectList = append(testDialectList, one)
+	one.mapping = dialect.NewMappingDM()
+
+	var err error
+	one.db, err = db_dm.Open(db_dm.GetDSN("SYSDBA", "SYSDBA", "127.0.0.1", 5236))
+	if err != nil {
+		panic(err)
+	}
+	one.owner = &dialect.OwnerModel{
+		OwnerName:     "TEST_DB",
+		OwnerPassword: "123456789",
+	}
+	one.init()
+}
+
+func appendTestDialectKinBase() {
+	one := &testDialect{}
+	testDialectCache["kinbase"] = one
+	testDialectList = append(testDialectList, one)
+	one.mapping = dialect.NewMappingKinBase()
+
+	var err error
+	one.db, err = db_kingbase_v8r3.Open(db_kingbase_v8r3.GetDSN("SYSTEM", "123456", "127.0.0.1", 54321, "TEST"))
+	if err != nil {
+		panic(err)
+	}
+	one.owner = &dialect.OwnerModel{
+		OwnerName:     "TEST_DB",
+		OwnerPassword: "123456",
+	}
+	one.init()
+}
+
+func appendTestDialectShenTong() {
+	one := &testDialect{}
+	testDialectCache["shentong"] = one
+	testDialectList = append(testDialectList, one)
+	one.mapping = dialect.NewMappingShenTong()
+
+	var err error
+	one.db, err = db_shentong.Open(db_shentong.GetDSN("sysdba", "szoscar55", "127.0.0.1", 2003, "OSRDB"))
 	if err != nil {
 		panic(err)
 	}

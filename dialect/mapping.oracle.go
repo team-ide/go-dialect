@@ -247,6 +247,9 @@ func AppendOracleColumnType(mapping *SqlMapping) {
 	// sqlite
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "REAL", Format: "NUMBER($l, $d)", IsNumber: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NUMERIC", Format: "NUMBER($l, $d)", IsNumber: true, IsExtend: true})
+
+	// ShenTong
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BPCHAR", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
 }
 
 func AppendOracleIndexType(mapping *SqlMapping) {

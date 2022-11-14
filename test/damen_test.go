@@ -8,40 +8,40 @@ import (
 )
 
 var (
-	DaMenDb      *sql.DB
-	DaMenDialect dialect.Dialect
+	DMDb      *sql.DB
+	DMDialect dialect.Dialect
 )
 
-func initDaMen() {
-	if DaMenDb != nil {
+func initDM() {
+	if DMDb != nil {
 		return
 	}
 	dsn := db_dm.GetDSN("SYSDBA", "SYSDBA", "127.0.0.1", 5236)
 	var err error
-	DaMenDb, err = db_dm.Open(dsn)
+	DMDb, err = db_dm.Open(dsn)
 	if err != nil {
 		panic(err)
 	}
-	DaMenDialect, err = dialect.NewDialect(dialect.TypeDaMen.Name)
+	DMDialect, err = dialect.NewDialect(dialect.TypeDM.Name)
 	if err != nil {
 		panic(err)
 	}
 	return
 }
 
-func TestDaMenLoad(t *testing.T) {
-	initDaMen()
-	owners(DaMenDb, DaMenDialect)
+func TestDMLoad(t *testing.T) {
+	initDM()
+	owners(DMDb, DMDialect)
 }
 
-func TestDaMenDDL(t *testing.T) {
-	initDaMen()
-	//testTableDelete(DaMenDb, dialect.DaMen, param, "", getTable().Name)
-	testDLL(DaMenDb, DaMenDialect, "")
+func TestDMDDL(t *testing.T) {
+	initDM()
+	//testTableDelete(DMDb, dialect.DM, param, "", getTable().Name)
+	testDLL(DMDb, DMDialect, "")
 }
 
-func TestDaMenSql(t *testing.T) {
-	initDaMen()
-	sqlInfo := loadSql("temp/sql_damen.sql")
-	testSql(DaMenDb, DaMenDialect, "SYSDBA", sqlInfo)
+func TestDMSql(t *testing.T) {
+	initDM()
+	sqlInfo := loadSql("temp/sql_dm.sql")
+	testSql(DMDb, DMDialect, "SYSDBA", sqlInfo)
 }

@@ -322,6 +322,9 @@ func AppendMysqlColumnType(mapping *SqlMapping) {
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NUMBER", Format: "DECIMAL($l, $d)", IsNumber: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CLOB", Format: "LONGTEXT", IsString: true, IsExtend: true})
 
+	// ShenTong
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BPCHAR", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
+
 }
 
 func AppendMysqlIndexType(mapping *SqlMapping) {

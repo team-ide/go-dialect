@@ -8,7 +8,7 @@ SQL方言
 * -do
   * 操作：export(导出)、import(导入)、sync(同步)
 * -sourceDialect
-  * 源 数据库 方言 mysql、sqlite3、damen、kingbase、oracle、shentong
+  * 源 数据库 方言 mysql、sqlite3、dm、kingbase、oracle、shentong
 * -sourceHost
     * 源 数据库 host
 * -sourcePort
@@ -65,7 +65,7 @@ SQL方言
     
 ## 同步参数说明
 * -targetDialect
-  * 目标 数据库 方言 mysql、sqlite3、damen、kingbase、oracle、shentong
+  * 目标 数据库 方言 mysql、sqlite3、dm、kingbase、oracle、shentong
 * -targetHost
   * 目标 数据库 host
 * -targetPort

@@ -1,22 +1,22 @@
 package back
 
-func NewDaMenDialect() *DaMenDialect {
+func NewDMDialect() *DMDialect {
 
 	dialect := NewOracleDialect()
-	dialect.dialectType = DaMenType
+	dialect.dialectType = DMType
 
-	res := &DaMenDialect{
+	res := &DMDialect{
 		OracleDialect: dialect,
 	}
 	res.init()
 	return res
 }
 
-type DaMenDialect struct {
+type DMDialect struct {
 	*OracleDialect
 }
 
-func (this_ *DaMenDialect) init() {
+func (this_ *DMDialect) init() {
 	/** 数值类型 **/
 
 	this_.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BIT", TypeFormat: "NUMBER($l, $d)", HasLength: false, IsNumber: true})

@@ -16,7 +16,7 @@ import (
 var (
 	do = flag.String("do", "", "操作：export(导出)、import(导入)、sync(同步)")
 
-	sourceDialect  = flag.String("sourceDialect", "", "源 数据库 方言 mysql、sqlite3、damen、kingbase、oracle、shentong")
+	sourceDialect  = flag.String("sourceDialect", "", "源 数据库 方言 mysql、sqlite3、dm、kingbase、oracle、shentong")
 	sourceHost     = flag.String("sourceHost", "", "源 数据库 host")
 	sourcePort     = flag.Int("sourcePort", 0, "源 数据库 port")
 	sourceUser     = flag.String("sourceUser", "", "源 数据库 user")
@@ -40,7 +40,7 @@ var (
 	importOwnerCreateIfNotExist = flag.String("importOwnerCreateIfNotExist", "", "导入 库如果不存在，则创建")
 	importOwnerCreatePassword   = flag.String("importOwnerCreatePassword", "", "导入 库创建的密码，只有库为所属者有效，默认为sourcePassword，如：oracle等数据库")
 
-	targetDialect             = flag.String("targetDialect", "", "目标 数据库 方言 mysql、sqlite3、damen、kingbase、oracle、shentong")
+	targetDialect             = flag.String("targetDialect", "", "目标 数据库 方言 mysql、sqlite3、dm、kingbase、oracle、shentong")
 	targetHost                = flag.String("targetHost", "", "目标 数据库 host")
 	targetPort                = flag.Int("targetPort", 0, "目标 数据库 port")
 	targetUser                = flag.String("targetUser", "", "目标 数据库 user")
@@ -86,7 +86,7 @@ func getDbInfo(dbType string, user string, password string, host string, port in
 		dsn := db_sqlite3.GetDSN(database)
 		db, err = db_sqlite3.Open(dsn)
 		break
-	case "damen", "dm":
+	case "dameng", "dm":
 		dsn := db_dm.GetDSN(user, password, host, port)
 		db, err = db_dm.Open(dsn)
 		break

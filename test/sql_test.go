@@ -55,12 +55,12 @@ func saveSql(destSql string, name string) {
 //	}
 //	saveSql(convertParser.GetDestSql(), "temp/sql_kinbase.sql")
 //
-//	convertParser = worker.NewConvertParser(srcSql, dialect.DaMen)
+//	convertParser = worker.NewConvertParser(srcSql, dialect.DM)
 //	err = convertParser.Parse()
 //	if err != nil {
 //		panic(err)
 //	}
-//	saveSql(convertParser.GetDestSql(), "temp/sql_damen.sql")
+//	saveSql(convertParser.GetDestSql(), "temp/sql_dm.sql")
 //
 //	convertParser = worker.NewConvertParser(srcSql, dialect.Sqlite)
 //	err = convertParser.Parse()

@@ -9,6 +9,8 @@ import (
 type SqlMapping struct {
 	dialectType *Type
 
+	CanAppendOwnerName bool
+
 	columnTypeInfoList      []*ColumnTypeInfo
 	columnTypeInfoCache     map[string]*ColumnTypeInfo
 	columnTypeInfoCacheLock sync.Mutex
