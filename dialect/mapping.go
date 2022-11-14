@@ -44,9 +44,10 @@ type SqlMapping struct {
 	PrimaryKeyAdd     string
 	PrimaryKeyDelete  string
 
-	IndexesSelect string
-	IndexAdd      string
-	IndexDelete   string
+	IndexesSelect   string
+	IndexAdd        string
+	IndexDelete     string
+	IndexNameMaxLen int
 
 	OwnerNamePackChar  string
 	TableNamePackChar  string
@@ -112,7 +113,7 @@ func (this_ *SqlMapping) GenDemoTable() (table *TableModel) {
 			}
 			lastIndexColumnIndex = i
 			index.ColumnNames = append(index.ColumnNames, column.ColumnName)
-			if len(index.ColumnNames) >= 2 {
+			if len(index.ColumnNames) >= 1 {
 				break
 			}
 		}

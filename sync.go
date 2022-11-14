@@ -52,6 +52,10 @@ func doSync() {
 				workDb = targetDb
 				return
 			}
+			if *sourceDialect == "mysql" {
+				workDb, err = getDbInfo(*sourceDialect, *sourceUser, password, *sourceHost, *sourcePort, ownerName)
+				return
+			}
 			workDb, err = getDbInfo(*targetDialect, *targetUser, password, *targetHost, *targetPort, ownerName)
 			return
 		},

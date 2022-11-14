@@ -100,6 +100,10 @@ go run . -do export -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 
 # 导出 mysql 数据库的 mysql,information_schema,performance_schema,sys 库 为 sqlite 的 sql
 go run . -do export -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -fileType sql -exportDir temp/export/test -exportOwner mysql,information_schema,performance_schema,sys -exportDialect sqlite
 
+# 导入 mysql 的 sql 到 mysql 的 DB1 库
+go run . -do import -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -fileType sql -importOwner VRV_JOB=temp/VRV_JOB.sql  -importOwnerCreateIfNotExist true
+
+
 # 导入 sqlite 的 sql 到 mysql 的 DB1 库
 go run . -do import -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -fileType sql -importOwner DB1=temp/export/test/mysql.sql  -importOwnerCreateIfNotExist true
 

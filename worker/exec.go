@@ -13,11 +13,13 @@ func DoExec(db *sql.DB, sqlList []string) (errSql string, err error) {
 
 	var lastSql string
 	defer func() {
-		if e := recover(); e != nil {
-			err = errors.New(fmt.Sprint(e))
-		}
 		if err != nil {
 			errSql = lastSql
+		} else {
+			if e := recover(); e != nil {
+				err = errors.New(fmt.Sprint(e))
+				errSql = lastSql
+			}
 		}
 	}()
 

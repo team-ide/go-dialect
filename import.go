@@ -46,7 +46,10 @@ func doImport() {
 				workDb = db
 				return
 			}
-
+			if *sourceDialect == "mysql" {
+				workDb, err = getDbInfo(*sourceDialect, *sourceUser, password, *sourceHost, *sourcePort, ownerName)
+				return
+			}
 			workDb, err = getDbInfo(*sourceDialect, ownerName, password, *sourceHost, *sourcePort, *sourceDatabase)
 			return
 		},

@@ -331,7 +331,30 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 			column.ColumnDataType = columnType
 		}
 	}
-
+	if strings.Contains(column.ColumnDataType, "(") {
+		column.ColumnDataType = column.ColumnDataType[:strings.Index(column.ColumnDataType, "(")]
+	}
+	dataLength := GetStringValue(data["DATA_LENGTH"])
+	if dataLength != "" && dataLength != "0" {
+		column.ColumnLength, err = StringToInt(dataLength)
+		if err != nil {
+			return
+		}
+	}
+	dataPrecision := GetStringValue(data["DATA_PRECISION"])
+	if dataPrecision != "" && dataPrecision != "0" {
+		column.ColumnLength, err = StringToInt(dataPrecision)
+		if err != nil {
+			return
+		}
+	}
+	dataScale := GetStringValue(data["DATA_SCALE"])
+	if dataScale != "" && dataScale != "0" {
+		column.ColumnDecimal, err = StringToInt(dataScale)
+		if err != nil {
+			return
+		}
+	}
 	columnTypeInfo, err := this_.GetColumnTypeInfo(column.ColumnDataType)
 	if err != nil {
 		//fmt.Println(data)
@@ -527,6 +550,16 @@ func (this_ *mappingDialect) IndexModel(data map[string]interface{}) (index *Ind
 	err = json.Unmarshal(bs, index)
 	if err != nil {
 		return
+	}
+
+	if GetStringValue(data["UNIQUENESS"]) == "UNIQUE" {
+		index.IndexType = "unique"
+	}
+	if GetStringValue(data["NON_UNIQUE"]) == "0" {
+		index.IndexType = "unique"
+	}
+	if GetStringValue(data["isUnique"]) == "1" {
+		index.IndexType = "unique"
 	}
 	return
 }

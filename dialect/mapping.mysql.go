@@ -65,7 +65,7 @@ CREATE TABLE [{ownerNamePack}.]{tableNamePack}(
 `,
 		TableCreateColumnHasComment: true,
 		TableCreateColumn: `
-	{columnNamePack} {columnTypePack} [CHARACTER SET {columnCharacterSetName}] [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)} [COMMENT {sqlValuePack(columnComment)}]
+	{columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)} [COMMENT {sqlValuePack(columnComment)}]
 `,
 		TableCreatePrimaryKey: `
 PRIMARY KEY ({primaryKeysPack})
@@ -115,19 +115,19 @@ WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
   AND COLUMN_NAME={sqlValuePack(columnName)}
 `,
 		ColumnAdd: `
-ALTER TABLE [{ownerName}.]{tableName} ADD COLUMN {columnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}]
+ALTER TABLE [{ownerName}.]{tableName} ADD COLUMN {columnName} {columnType} [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}]
 `,
 		ColumnComment: `
-ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {columnName} {columnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}]
+ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {columnName} {columnName} {columnType} [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}]
 `,
 		ColumnDelete: `
 ALTER TABLE [{ownerName}.]{tableName} DROP COLUMN {columnName}
 `,
 		ColumnRename: `
-ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {oldColumnName} {newColumnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}]
+ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {oldColumnName} {newColumnName} {columnType} [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}]
 `,
 		ColumnUpdate: `
-ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {columnName} {columnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}] [AFTER {columnAfter}]
+ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {columnName} {columnName} {columnType} [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}] [AFTER {columnAfter}]
 `,
 
 		// 主键 相关 SQL
@@ -332,6 +332,7 @@ func AppendMysqlIndexType(mapping *SqlMapping) {
 	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "INDEX", Format: "INDEX",
 		NotSupportDataTypes: []string{"TEXT"},
 	})
+	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "NORMAL", Format: "INDEX"})
 	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "UNIQUE", Format: "UNIQUE",
 		NotSupportDataTypes: []string{"TEXT"},
 	})

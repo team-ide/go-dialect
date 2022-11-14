@@ -87,17 +87,23 @@ func (this_ *SqlMapping) IndexNameFormat(param *ParamModel, ownerName string, ta
 		return
 	}
 	if ownerName != "" {
-		indexNameFormat += sortName(ownerName, 4) + "_"
+		indexNameFormat += ownerName + "_"
+		//indexNameFormat += sortName(ownerName, 4) + "_"
 	}
 	if tableName != "" {
-		indexNameFormat += sortName(tableName, 4) + "_"
+		indexNameFormat += tableName + "_"
+		//indexNameFormat += sortName(tableName, 4) + "_"
 	}
-	if index.IndexType != "" {
-		indexNameFormat += sortName(index.IndexType, 4) + "_"
+	if index.IndexType != "" && !strings.EqualFold(index.IndexType, "index") {
+		indexNameFormat += index.IndexType + "_"
+		//indexNameFormat += sortName(index.IndexType, 4) + "_"
 	}
-	maxLength := 30 - len(indexNameFormat)
-	columnNamesStr := strings.Join(index.ColumnNames, "_")
-	indexNameFormat += sortName(columnNamesStr, maxLength)
+	indexNameFormat += strings.Join(index.ColumnNames, "_")
+	//maxLength := 30 - len(indexNameFormat)
+	//columnNamesStr := strings.Join(index.ColumnNames, "_")
+	if this_.IndexNameMaxLen > 0 {
+		indexNameFormat = sortName(indexNameFormat, this_.IndexNameMaxLen)
+	}
 	return
 }
 
@@ -119,15 +125,22 @@ func sortName(name string, size int) (res string) {
 		}
 		rSize := size / len(names)
 
-		for _, s := range ss {
-			size_ := size - len(res)
-			if size_ <= 0 {
+		for i, s := range ss {
+			if len(res) >= size {
 				break
 			}
-			if rSize >= len(s) {
-				res += s
+			if i < len(ss)-1 {
+				if rSize >= len(s)-1 {
+					res += s + "_"
+				} else {
+					res += s[0:rSize-1] + "_"
+				}
 			} else {
-				res += s[0:rSize]
+				if rSize >= len(s) {
+					res += s
+				} else {
+					res += s[0:rSize]
+				}
 			}
 		}
 	} else {

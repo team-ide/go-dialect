@@ -95,6 +95,11 @@ func (this_ StatementScript) sqlValuePack(value interface{}) (res string) {
 	return
 }
 
+func (this_ StatementScript) doubleQuotationMarksPack(value interface{}) (res string) {
+	res = packingValue(nil, nil, "\"", "\\", value)
+	return
+}
+
 func (this_ StatementScript) columnNotNull(columnNotNull interface{}) (res string) {
 	if isTrue(columnNotNull) {
 		res = "NOT NULL"
@@ -137,6 +142,7 @@ func (this_ *mappingDialect) NewStatementContext(param *ParamModel, dataList ...
 	statementContext.AddMethod("columnNotNull", statementScript.columnNotNull)
 	statementContext.AddMethod("joins", statementScript.joins)
 	statementContext.AddMethod("equalFold", statementScript.equalFold)
+	statementContext.AddMethod("doubleQuotationMarksPack", statementScript.doubleQuotationMarksPack)
 
 	if this_.MethodCache != nil {
 		for name, method := range this_.MethodCache {
@@ -229,7 +235,7 @@ func (this_ *mappingDialect) NewStatementContext(param *ParamModel, dataList ...
 	return
 }
 
-func (this_ *mappingDialect) FormatSql(statement Statement, param *ParamModel, dataList ...interface{}) (sqlList []string, err error) {
+func (this_ *mappingDialect) FormatSql(statement *RootStatement, param *ParamModel, dataList ...interface{}) (sqlList []string, err error) {
 	if statement == nil {
 		return
 	}

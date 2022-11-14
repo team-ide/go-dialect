@@ -1,5 +1,7 @@
 package dialect
 
+import "strings"
+
 func NewMappingSqlite() (mapping *SqlMapping) {
 	mapping = &SqlMapping{
 		dialectType: TypeSqlite,
@@ -50,14 +52,12 @@ CREATE TABLE [{ownerNamePack}.]{tableNamePack}(
 )
 `,
 		TableCreateColumn: `
-	{columnNamePack} {columnTypePack} [CHARACTER SET {columnCharacterSetName}] [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
+	{columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
 `,
 		TableCreatePrimaryKey: `
 PRIMARY KEY ({primaryKeysPack})
 `,
-		TableComment: `
-ALTER TABLE [{ownerName}.]{tableName} COMMENT '{tableComment}'
-`,
+		TableComment: ``,
 		TableRename: `
 ALTER TABLE [{ownerName}.]{oldTableName} RENAME AS {newTableName}
 `,
@@ -116,7 +116,7 @@ ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
 		IndexesSelect: `
 SELECT 
 	a.name indexName,
-	a."unique",
+	a."unique" isUnique,
 	b.name columnName 
 FROM pragma_index_list({tableNamePack}) AS a,pragma_index_info(a.name) b 
 WHERE a.origin != "pk"
@@ -154,8 +154,29 @@ func AppendSqliteColumnType(mapping *SqlMapping) {
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "YEAR", Format: "YEAR", IsDateTime: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TIME", Format: "TIME", IsDateTime: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "DATE", Format: "DATE", IsDateTime: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "DATETIME", Format: "DATETIME", IsDateTime: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TIMESTAMP", Format: "TIMESTAMP", IsDateTime: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "DATETIME", Format: "DATETIME", IsDateTime: true,
+		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
+			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
+				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
+				columnDefaultPack = "CURRENT_TIMESTAMP"
+			}
+			//if strings.Contains(strings.ToLower(column.ColumnExtra), "on update current_timestamp") {
+			//	columnDefaultPack += " ON UPDATE CURRENT_TIMESTAMP"
+			//}
+			return
+		}})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TIMESTAMP", Format: "TIMESTAMP", IsDateTime: true,
+		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
+			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
+				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
+				columnDefaultPack = "CURRENT_TIMESTAMP"
+			}
+			//if strings.Contains(strings.ToLower(column.ColumnExtra), "on update current_timestamp") {
+			//	columnDefaultPack += " ON UPDATE CURRENT_TIMESTAMP"
+			//}
+			return
+		},
+	})
 
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CHAR", Format: "CHAR($l)", IsString: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARCHAR", Format: "VARCHAR($l)", IsString: true})
@@ -174,12 +195,19 @@ func AppendSqliteColumnType(mapping *SqlMapping) {
 	// 浮点数
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "REAL", Format: "REAL", IsNumber: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NUMERIC", Format: "NUMERIC", IsNumber: true})
+
+	// oracle
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NUMBER", Format: "NUMBER($l, $d)", IsNumber: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARCHAR2", Format: "VARCHAR2($l)", IsNumber: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CLOB", Format: "CLOB", IsString: true})
+
 }
 
 func AppendSqliteIndexType(mapping *SqlMapping) {
 
 	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "", Format: "INDEX"})
 	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "INDEX", Format: "INDEX"})
+	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "NORMAL", Format: "INDEX", IsExtend: true})
 	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "UNIQUE", Format: "UNIQUE",
 		IndexTypeFormat: func(index *IndexModel) (indexTypeFormat string, err error) {
 			indexTypeFormat = "UNIQUE INDEX"

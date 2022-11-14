@@ -1,8 +1,14 @@
 package main
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
+	"github.com/team-ide/go-dialect/worker"
+	"github.com/team-ide/go-driver/db_mysql"
+	"github.com/team-ide/go-driver/db_oracle"
+	"github.com/team-ide/go-driver/db_sqlite3"
 	"testing"
 )
 
@@ -13,6 +19,8 @@ type testDialect struct {
 	table   *dialect.TableModel
 	mapping *dialect.SqlMapping
 	dialect dialect.Dialect
+	db      *sql.DB
+	owner   *dialect.OwnerModel
 }
 
 func (this_ *testDialect) init() {
@@ -35,6 +43,16 @@ func appendTestDialectMysql() {
 	testDialectCache["mysql"] = one
 	testDialectList = append(testDialectList, one)
 	one.mapping = dialect.NewMappingMysql()
+
+	var err error
+	one.db, err = db_mysql.Open(db_mysql.GetDSN("root", "123456", "127.0.0.1", 3306, ""))
+	if err != nil {
+		panic(err)
+	}
+	one.owner = &dialect.OwnerModel{
+		OwnerName:             "TEST_DB",
+		OwnerCharacterSetName: "utf8mb4",
+	}
 	one.init()
 }
 
@@ -43,6 +61,15 @@ func appendTestDialectSqlite() {
 	testDialectCache["sqlite"] = one
 	testDialectList = append(testDialectList, one)
 	one.mapping = dialect.NewMappingSqlite()
+
+	var err error
+	one.db, err = db_sqlite3.Open(db_sqlite3.GetDSN("temp/sqlite.test.db"))
+	if err != nil {
+		panic(err)
+	}
+	one.owner = &dialect.OwnerModel{
+		OwnerName: "",
+	}
 	one.init()
 }
 
@@ -51,12 +78,22 @@ func appendTestDialectOracle() {
 	testDialectCache["oracle"] = one
 	testDialectList = append(testDialectList, one)
 	one.mapping = dialect.NewMappingOracle()
+
+	var err error
+	one.db, err = db_oracle.Open(db_oracle.GetDSN("root", "123456", "127.0.0.1", 1521, "xe"))
+	if err != nil {
+		panic(err)
+	}
+	one.owner = &dialect.OwnerModel{
+		OwnerName:     "TEST_DB",
+		OwnerPassword: "123456",
+	}
 	one.init()
 }
 
-func TestAllTable(t *testing.T) {
+func TestAllTableSql(t *testing.T) {
 	for _, one := range testDialectList {
-		sqlList, err := one.dialect.TableCreateSql(nil, "", one.table)
+		sqlList, err := one.dialect.TableCreateSql(nil, one.owner.OwnerName, one.table)
 		if err != nil {
 			panic(err)
 		}
@@ -69,13 +106,13 @@ func TestAllTable(t *testing.T) {
 			if to == one {
 				continue
 			}
-			toTable(one, to)
+			toTableSql(one, to)
 		}
 	}
 }
 
-func toTable(from *testDialect, to *testDialect) {
-	sqlList, err := to.dialect.TableCreateSql(nil, "", from.table)
+func toTableSql(from *testDialect, to *testDialect) {
+	sqlList, err := to.dialect.TableCreateSql(nil, to.owner.OwnerName, from.table)
 	if err != nil {
 		panic(err)
 	}
@@ -85,6 +122,65 @@ func toTable(from *testDialect, to *testDialect) {
 	}
 }
 
-func TestToTable(t *testing.T) {
-	toTable(testDialectCache["oracle"], testDialectCache["mysql"])
+func TestToTableSql(t *testing.T) {
+	toTableSql(testDialectCache["oracle"], testDialectCache["mysql"])
+}
+
+func TestAllSql(t *testing.T) {
+	param := &dialect.ParamModel{}
+	for _, from := range testDialectList {
+		fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] create table---")
+		if from.owner.OwnerName != "" {
+			_, err := worker.OwnerCover(from.db, from.dialect, param, from.owner)
+			if err != nil {
+				panic(err)
+			}
+		}
+		err := worker.TableCover(from.db, from.dialect, param, from.owner.OwnerName, from.table)
+		if err != nil {
+			panic(err)
+		}
+		table, err := worker.TableDetail(from.db, from.dialect, param, from.owner.OwnerName, from.table.TableName, false)
+		if err != nil {
+			panic(err)
+		}
+		bs, err := json.MarshalIndent(table, "", "  ")
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] create table success---")
+		fmt.Println(string(bs))
+
+		for _, to := range testDialectList {
+			//if from == to {
+			//	continue
+			//}
+			fromTableToTableSql(from, table, to)
+		}
+	}
+}
+
+func fromTableToTableSql(from *testDialect, fromTable *dialect.TableModel, to *testDialect) {
+	fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] to dialect [" + to.dialect.DialectType().Name + "] create table---")
+	param := &dialect.ParamModel{}
+	if to.owner.OwnerName != "" {
+		_, err := worker.OwnerCover(to.db, to.dialect, param, to.owner)
+		if err != nil {
+			panic(err)
+		}
+	}
+	err := worker.TableCover(to.db, to.dialect, param, to.owner.OwnerName, fromTable)
+	if err != nil {
+		panic(err)
+	}
+	table, err := worker.TableDetail(to.db, to.dialect, param, to.owner.OwnerName, fromTable.TableName, false)
+	if err != nil {
+		panic(err)
+	}
+	bs, err := json.MarshalIndent(table, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] to dialect [" + to.dialect.DialectType().Name + "] create table success---")
+	fmt.Println(string(bs))
 }

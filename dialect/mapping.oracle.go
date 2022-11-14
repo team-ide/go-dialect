@@ -1,5 +1,7 @@
 package dialect
 
+import "strings"
+
 func NewMappingOracle() (mapping *SqlMapping) {
 	mapping = &SqlMapping{
 		dialectType: TypeOracle,
@@ -21,11 +23,10 @@ ORDER BY USERNAME
 SELECT 
 	USERNAME ownerName
 FROM DBA_USERS 
-ORDER BY USERNAME
 WHERE USERNAME={sqlValuePack(ownerName)}
 `,
 		OwnerCreate: `
-CREATE USER {ownerName} IDENTIFIED BY {sqlValuePack(ownerPassword)};
+CREATE USER {ownerName} IDENTIFIED BY {doubleQuotationMarksPack(ownerPassword)};
 GRANT dba,resource,connect TO {ownerName};
 `,
 		OwnerDelete: `
@@ -126,15 +127,14 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} CHANGE COLUMN {columnNamePack} {co
 
 		// 主键 相关 SQL
 		PrimaryKeysSelect: `
-SELECT
-    key_column_usage.COLUMN_NAME columnName,
-    table_constraints.TABLE_NAME tableName,
-    table_constraints.TABLE_SCHEMA ownerName
-FROM information_schema.table_constraints
-JOIN information_schema.key_column_usage USING (CONSTRAINT_NAME,TABLE_SCHEMA,TABLE_NAME)
-WHERE table_constraints.TABLE_SCHEMA={sqlValuePack(ownerName)}
-  AND table_constraints.TABLE_NAME={sqlValuePack(tableName)}
-  AND table_constraints.CONSTRAINT_TYPE='PRIMARY KEY'
+SELECT 
+    cu.COLUMN_NAME columnName,
+    au.TABLE_NAME tableName,
+    au.OWNER ownerName
+FROM ALL_CONS_COLUMNS cu, ALL_CONSTRAINTS au 
+WHERE cu.CONSTRAINT_NAME = au.CONSTRAINT_NAME AND au.CONSTRAINT_TYPE = 'P'
+	AND au.OWNER={sqlValuePack(ownerName)}
+	AND au.TABLE_NAME={sqlValuePack(tableName)}
 `,
 		PrimaryKeyAdd: `
 ALTER TABLE [{ownerName}.]{tableName} ADD PRIMARY KEY ({columnNames})
@@ -145,25 +145,26 @@ ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
 
 		// 索引 相关 SQL
 		IndexesSelect: `
-SELECT
-    INDEX_NAME indexName,
-    COLUMN_NAME columnName,
-    INDEX_COMMENT indexComment,
-    NON_UNIQUE nonUnique,
-    TABLE_NAME tableName,
-    TABLE_SCHEMA ownerName
-FROM information_schema.statistics
-WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
-  AND TABLE_NAME={sqlValuePack(tableName)}
-  AND INDEX_NAME NOT IN(
-    SELECT table_constraints.CONSTRAINT_NAME
-    FROM information_schema.table_constraints
-    JOIN information_schema.key_column_usage USING (CONSTRAINT_NAME,TABLE_SCHEMA,TABLE_NAME)
-    WHERE table_constraints.TABLE_SCHEMA={sqlValuePack(ownerName)}
-      AND table_constraints.TABLE_NAME={sqlValuePack(tableName)}
-      AND table_constraints.CONSTRAINT_TYPE='PRIMARY KEY'
-)
+SELECT 
+    t.INDEX_NAME indexName,
+    t.COLUMN_NAME columnName,
+    t.TABLE_OWNER ownerName,
+    t.TABLE_NAME tableName,
+    i.INDEX_TYPE indexType,
+    i.UNIQUENESS 
+FROM ALL_IND_COLUMNS t,ALL_INDEXES i
+WHERE t.INDEX_NAME = i.INDEX_NAME
+	AND t.TABLE_OWNER={sqlValuePack(ownerName)}
+	AND t.TABLE_NAME={sqlValuePack(tableName)}
+	AND t.COLUMN_NAME NOT IN(
+		SELECT cu.COLUMN_NAME FROM ALL_CONS_COLUMNS cu, ALL_CONSTRAINTS au 
+		WHERE cu.CONSTRAINT_NAME = au.CONSTRAINT_NAME AND au.CONSTRAINT_TYPE = 'P' 
+		AND au.OWNER={sqlValuePack(ownerName)}
+		AND au.TABLE_NAME={sqlValuePack(tableName)}
+    )
 `,
+
+		IndexNameMaxLen: 30,
 		IndexAdd: `
 CREATE {indexType} [{indexNamePack}] ON [{ownerNamePack}.]{tableNamePack} ({columnNamesPack})
 `,
@@ -184,11 +185,22 @@ func AppendOracleColumnType(mapping *SqlMapping) {
 
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "DATE", Format: "DATE", IsDateTime: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARCHAR2", Format: "VARCHAR2($l)", IsString: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CLOB", Format: "CLOB", IsString: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CHAR", Format: "CHAR($l)", IsString: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BLOB", Format: "BLOB", IsString: true})
 
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TIMESTAMP", Format: "TIMESTAMP", IsDateTime: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TIMESTAMP", Format: "TIMESTAMP", IsDateTime: true,
+		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
+			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
+				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
+				columnDefaultPack = "CURRENT_TIMESTAMP"
+			}
+			//if strings.Contains(strings.ToLower(column.ColumnExtra), "on update current_timestamp") {
+			//	columnDefaultPack += " ON UPDATE CURRENT_TIMESTAMP"
+			//}
+			return
+		},
+	})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CLOB", Format: "CLOB", IsString: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BLOB", Format: "BLOB", IsString: true})
 
 	// mysql
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BIT", Format: "NUMBER($l)", IsNumber: true, IsExtend: true})
@@ -207,7 +219,18 @@ func AppendOracleColumnType(mapping *SqlMapping) {
 
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "YEAR", Format: "DATE", IsDateTime: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TIME", Format: "DATE", IsDateTime: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "DATETIME", Format: "DATE", IsDateTime: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "DATETIME", Format: "DATE", IsDateTime: true, IsExtend: true,
+		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
+			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
+				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
+				columnDefaultPack = "CURRENT_TIMESTAMP"
+			}
+			//if strings.Contains(strings.ToLower(column.ColumnExtra), "on update current_timestamp") {
+			//	columnDefaultPack += " ON UPDATE CURRENT_TIMESTAMP"
+			//}
+			return
+		},
+	})
 
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARCHAR", Format: "VARCHAR2($l)", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TINYTEXT", Format: "VARCHAR2(1000)", IsString: true, IsExtend: true})
@@ -228,9 +251,17 @@ func AppendOracleColumnType(mapping *SqlMapping) {
 
 func AppendOracleIndexType(mapping *SqlMapping) {
 
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "", Format: "INDEX"})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "INDEX", Format: "INDEX"})
+	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "", Format: "INDEX",
+		NotSupportDataTypes: []string{"CLOB", "BLOB"},
+	})
+	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "INDEX", Format: "INDEX",
+		NotSupportDataTypes: []string{"CLOB", "BLOB"},
+	})
+	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "NORMAL", Format: "INDEX",
+		NotSupportDataTypes: []string{"CLOB", "BLOB"},
+	})
 	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "UNIQUE", Format: "UNIQUE",
+		NotSupportDataTypes: []string{"CLOB", "BLOB"},
 		IndexTypeFormat: func(index *IndexModel) (indexTypeFormat string, err error) {
 			indexTypeFormat = "UNIQUE INDEX"
 			return
