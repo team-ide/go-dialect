@@ -37,10 +37,10 @@ func (this_ *testDialect) init() {
 
 func init() {
 	appendTestDialectMysql()
-	appendTestDialectSqlite()
-	appendTestDialectOracle()
-	appendTestDialectShenTong()
-	appendTestDialectDM()
+	//appendTestDialectSqlite()
+	//appendTestDialectOracle()
+	//appendTestDialectShenTong()
+	//appendTestDialectDM()
 	appendTestDialectKinBase()
 }
 
@@ -108,8 +108,9 @@ func appendTestDialectDM() {
 	if err != nil {
 		panic(err)
 	}
+	one.db.SetMaxIdleConns(1)
 	one.owner = &dialect.OwnerModel{
-		OwnerName:     "TEST_DB",
+		OwnerName:     "TEST_DB_USER",
 		OwnerPassword: "123456789",
 	}
 	one.init()
@@ -127,7 +128,7 @@ func appendTestDialectKinBase() {
 		panic(err)
 	}
 	one.owner = &dialect.OwnerModel{
-		OwnerName:     "TEST_DB",
+		OwnerName:     "TEST_DB_USER2",
 		OwnerPassword: "123456",
 	}
 	one.init()
@@ -204,6 +205,9 @@ func TestAllSql(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
+		if table == nil {
+			panic("dialect [" + from.dialect.DialectType().Name + "]  ownerName [" + from.owner.OwnerName + "] tableName [" + from.table.TableName + "] is null.")
+		}
 		bs, err := json.MarshalIndent(table, "", "  ")
 		if err != nil {
 			panic(err)
@@ -236,6 +240,9 @@ func fromTableToTableSql(from *testDialect, fromTable *dialect.TableModel, to *t
 	table, err := worker.TableDetail(to.db, to.dialect, param, to.owner.OwnerName, fromTable.TableName, false)
 	if err != nil {
 		panic(err)
+	}
+	if table == nil {
+		panic("dialect [" + from.dialect.DialectType().Name + "]  ownerName [" + from.owner.OwnerName + "] tableName [" + from.table.TableName + "] is null.")
 	}
 	bs, err := json.MarshalIndent(table, "", "  ")
 	if err != nil {
