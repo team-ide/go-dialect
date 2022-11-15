@@ -12,6 +12,7 @@ import (
 	"github.com/team-ide/go-driver/db_oracle"
 	"github.com/team-ide/go-driver/db_shentong"
 	"github.com/team-ide/go-driver/db_sqlite3"
+	"strings"
 	"testing"
 )
 
@@ -36,7 +37,7 @@ func (this_ *testDialect) init() {
 }
 
 func init() {
-	appendTestDialectMysql()
+	//appendTestDialectMysql()
 	//appendTestDialectSqlite()
 	//appendTestDialectOracle()
 	//appendTestDialectShenTong()
@@ -166,36 +167,71 @@ func TestKinBase(t *testing.T) {
 	//list, err := worker.DoQuery(db, `SELECT * FROM information_schema.schemata`)
 
 	//list, err := worker.DoQuery(db, `DROP SCHEMA TEST_DB_USER2`)
-	//tables, err := worker.TablesSelect(db, testDialectCache["kinbase"].dialect, nil, "information_schema")
-	//if err != nil {
-	//	panic(err)
-	//}
-	//for _, one := range tables {
-	//	bs, _ := json.Marshal(one)
-	//	fmt.Println(string(bs))
-	//}
-	sqlInfo := `
-SELECT
-    t2.COLUMN_NAME columnName,
-    t1.TABLE_NAME tableName,
-    t1.TABLE_SCHEMA ownerName,
-    t1.CONSTRAINT_NAME indexName,
-    t1.CONSTRAINT_TYPE indexType,
-    t1.*,
-    t2.*
-FROM information_schema.table_constraints t1
-LEFT JOIN information_schema.key_column_usage t2 
-ON (t2.CONSTRAINT_NAME=t1.CONSTRAINT_NAME AND t2.TABLE_SCHEMA=t1.TABLE_SCHEMA AND t2.TABLE_NAME=t1.TABLE_NAME)
-`
-	list, err := worker.DoQuery(db, sqlInfo)
+	owners, err := worker.OwnersSelect(db, testDialectCache["kinbase"].dialect, nil)
+	for _, owner := range owners {
+		tables, err := worker.TablesSelect(db, testDialectCache["kinbase"].dialect, nil, owner.OwnerName)
+		if err != nil {
+			println(err)
+			//panic(err)
+			continue
+		}
+		for _, one := range tables {
+			//bs, _ := json.Marshal(one)
+			//fmt.Println(string(bs))
+			if strings.EqualFold(one.TableName, "DBA_CONSTRAINTS") ||
+				strings.EqualFold(one.TableName, "dba_cons_columns") ||
+				strings.EqualFold(one.TableName, "dba_col_privs") ||
+				strings.EqualFold(one.TableName, "dba_col_comments") ||
+				strings.EqualFold(one.TableName, "ALL_VIEWS") {
+				continue
+			}
 
-	if err != nil {
-		panic(err)
+			sqlInfo := `
+		SELECT * from ` + owner.OwnerName + `.` + one.TableName + `
+		`
+			list, err := worker.DoQuery(db, sqlInfo)
+
+			if err != nil {
+				println(err)
+				//panic(err)
+				continue
+			}
+			fmt.Println("table:", owner.OwnerName, ".", one.TableName)
+			for _, one := range list {
+				bs, _ := json.Marshal(one)
+				str := string(bs)
+				if strings.Contains(str, "TEST_DB_USER2_TABLE_DEMO_col_3") ||
+					strings.Contains(str, "TEST_DB_USER2_TABLE_DEMO_col_4") {
+					fmt.Println(string(bs))
+				}
+			}
+		}
 	}
-	for _, one := range list {
-		bs, _ := json.Marshal(one)
-		fmt.Println(string(bs))
-	}
+
+	//	sqlInfo := `
+	//SELECT
+	//    t1.INDEX_NAME indexName,
+	//    t1.COLUMN_NAME columnName,
+	//    t1.TABLE_OWNER ownerName,
+	//    t1.TABLE_NAME tableName,
+	//    t2.INDEX_TYPE indexType,
+	//    t1.* ,
+	//    t2.*,
+	//    t3.*
+	//FROM ALL_IND_COLUMNS t1
+	//LEFT JOIN ALL_INDEXES t2 ON (t2.INDEX_NAME = t1.INDEX_NAME)
+	//LEFT JOIN ALL_CONSTRAINTS t3 ON (t3.CONSTRAINT_NAME = t1.INDEX_NAME)
+	//WHERE t1.TABLE_NAME='TABLE_DEMO'
+	//	`
+	//	list, err := worker.DoQuery(db, sqlInfo)
+	//
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	for _, one := range list {
+	//		bs, _ := json.Marshal(one)
+	//		fmt.Println(string(bs))
+	//	}
 }
 
 func appendTestDialectShenTong() {
@@ -272,13 +308,20 @@ func TestAllSql(t *testing.T) {
 	param := &dialect.ParamModel{}
 	for _, from := range testDialectList {
 		fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] create table---")
+
+		bs, err := json.Marshal(from.table)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(bs))
+
 		if from.owner.OwnerName != "" {
 			_, err := worker.OwnerCover(from.db, from.dialect, param, from.owner)
 			if err != nil {
 				panic(err)
 			}
 		}
-		err := worker.TableCover(from.db, from.dialect, param, from.owner.OwnerName, from.table)
+		err = worker.TableCover(from.db, from.dialect, param, from.owner.OwnerName, from.table)
 		if err != nil {
 			panic(err)
 		}
@@ -289,17 +332,17 @@ func TestAllSql(t *testing.T) {
 		if table == nil {
 			panic("dialect [" + from.dialect.DialectType().Name + "]  ownerName [" + from.owner.OwnerName + "] tableName [" + from.table.TableName + "] is null.")
 		}
-		bs, err := json.Marshal(table)
+		bs, err = json.Marshal(table)
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] create table success---")
+		fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] create table result---")
 		fmt.Println(string(bs))
 
 		for _, to := range testDialectList {
-			//if from == to {
-			//	continue
-			//}
+			if from == to {
+				continue
+			}
 			fromTableToTableSql(from, table, to)
 		}
 	}
