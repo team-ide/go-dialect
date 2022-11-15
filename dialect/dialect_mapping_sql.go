@@ -355,6 +355,34 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 			return
 		}
 	}
+	characterMaximumLength := GetStringValue(data["CHARACTER_MAXIMUM_LENGTH"])
+	if characterMaximumLength != "" && characterMaximumLength != "0" {
+		column.ColumnLength, err = StringToInt(characterMaximumLength)
+		if err != nil {
+			return
+		}
+	}
+	numericPrecision := GetStringValue(data["NUMERIC_PRECISION"])
+	if numericPrecision != "" && numericPrecision != "0" {
+		column.ColumnLength, err = StringToInt(numericPrecision)
+		if err != nil {
+			return
+		}
+	}
+	numericScale := GetStringValue(data["NUMERIC_SCALE"])
+	if numericScale != "" && numericScale != "0" {
+		column.ColumnDecimal, err = StringToInt(numericScale)
+		if err != nil {
+			return
+		}
+	}
+	datetimePrecision := GetStringValue(data["DATETIME_PRECISION"])
+	if datetimePrecision != "" && datetimePrecision != "0" {
+		column.ColumnLength, err = StringToInt(datetimePrecision)
+		if err != nil {
+			return
+		}
+	}
 	columnTypeInfo, err := this_.GetColumnTypeInfo(column.ColumnDataType)
 	if err != nil {
 		//fmt.Println(data)

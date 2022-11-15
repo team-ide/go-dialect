@@ -128,13 +128,14 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} CHANGE COLUMN {columnNamePack} {co
 		// 主键 相关 SQL
 		PrimaryKeysSelect: `
 SELECT 
-    cu.COLUMN_NAME columnName,
-    au.TABLE_NAME tableName,
-    au.OWNER ownerName
-FROM ALL_CONS_COLUMNS cu, ALL_CONSTRAINTS au 
-WHERE cu.CONSTRAINT_NAME = au.CONSTRAINT_NAME AND au.CONSTRAINT_TYPE = 'P'
-	AND au.OWNER={sqlValuePack(ownerName)}
-	AND au.TABLE_NAME={sqlValuePack(tableName)}
+    t1.COLUMN_NAME columnName,
+    t2.TABLE_NAME tableName,
+    t2.OWNER ownerName
+FROM ALL_CONS_COLUMNS t1
+LEFT JOIN ALL_CONSTRAINTS t2 ON (t2.CONSTRAINT_NAME = t1.CONSTRAINT_NAME)
+WHERE t2.OWNER={sqlValuePack(ownerName)}
+	AND t2.TABLE_NAME={sqlValuePack(tableName)}
+	AND t2.CONSTRAINT_TYPE = 'P'
 `,
 		PrimaryKeyAdd: `
 ALTER TABLE [{ownerName}.]{tableName} ADD PRIMARY KEY ({columnNames})
@@ -146,22 +147,18 @@ ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
 		// 索引 相关 SQL
 		IndexesSelect: `
 SELECT 
-    t.INDEX_NAME indexName,
-    t.COLUMN_NAME columnName,
-    t.TABLE_OWNER ownerName,
-    t.TABLE_NAME tableName,
+    t1.INDEX_NAME indexName,
+    t1.COLUMN_NAME columnName,
+    t1.TABLE_OWNER ownerName,
+    t1.TABLE_NAME tableName,
     i.INDEX_TYPE indexType,
     i.UNIQUENESS 
-FROM ALL_IND_COLUMNS t,ALL_INDEXES i
-WHERE t.INDEX_NAME = i.INDEX_NAME
-	AND t.TABLE_OWNER={sqlValuePack(ownerName)}
-	AND t.TABLE_NAME={sqlValuePack(tableName)}
-	AND t.COLUMN_NAME NOT IN(
-		SELECT cu.COLUMN_NAME FROM ALL_CONS_COLUMNS cu, ALL_CONSTRAINTS au 
-		WHERE cu.CONSTRAINT_NAME = au.CONSTRAINT_NAME AND au.CONSTRAINT_TYPE = 'P' 
-		AND au.OWNER={sqlValuePack(ownerName)}
-		AND au.TABLE_NAME={sqlValuePack(tableName)}
-    )
+FROM ALL_IND_COLUMNS t1
+LEFT JOIN ALL_INDEXES t2 ON (t2.INDEX_NAME = t1.INDEX_NAME)
+LEFT JOIN ALL_CONSTRAINTS t3 ON (t3.CONSTRAINT_NAME = t1.INDEX_NAME)
+WHERE t1.TABLE_OWNER={sqlValuePack(ownerName)}
+	AND t1.TABLE_NAME={sqlValuePack(tableName)}
+	AND (t3.CONSTRAINT_TYPE !='P' OR t3.CONSTRAINT_TYPE = '' OR t3.CONSTRAINT_TYPE IS NULL)
 `,
 
 		IndexNameMaxLen: 30,
@@ -250,6 +247,13 @@ func AppendOracleColumnType(mapping *SqlMapping) {
 
 	// ShenTong
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BPCHAR", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
+
+	// 金仓
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TIMESTAMP WITHOUT TIME ZONE", Format: "TIMESTAMP", IsDateTime: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CHARACTER", Format: "VARCHAR2($l)", IsString: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CHARACTER VARYING", Format: "VARCHAR2($l)", IsString: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BYTEA", Format: "BLOB", IsString: true, IsExtend: true})
+
 }
 
 func AppendOracleIndexType(mapping *SqlMapping) {

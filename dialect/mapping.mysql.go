@@ -133,14 +133,15 @@ ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {columnName} {columnName} {c
 		// 主键 相关 SQL
 		PrimaryKeysSelect: `
 SELECT
-    key_column_usage.COLUMN_NAME columnName,
-    table_constraints.TABLE_NAME tableName,
-    table_constraints.TABLE_SCHEMA ownerName
-FROM information_schema.table_constraints
-JOIN information_schema.key_column_usage USING (CONSTRAINT_NAME,TABLE_SCHEMA,TABLE_NAME)
-WHERE table_constraints.TABLE_SCHEMA={sqlValuePack(ownerName)}
-  AND table_constraints.TABLE_NAME={sqlValuePack(tableName)}
-  AND table_constraints.CONSTRAINT_TYPE='PRIMARY KEY'
+    t2.COLUMN_NAME columnName,
+    t1.TABLE_NAME tableName,
+    t1.TABLE_SCHEMA ownerName
+FROM information_schema.table_constraints t1
+LEFT JOIN information_schema.key_column_usage t2 
+ON (t2.CONSTRAINT_NAME=t1.CONSTRAINT_NAME AND t2.TABLE_SCHEMA=t1.TABLE_SCHEMA AND t2.TABLE_NAME=t1.TABLE_NAME)
+WHERE t1.TABLE_SCHEMA={sqlValuePack(ownerName)}
+  AND t1.TABLE_NAME={sqlValuePack(tableName)}
+  AND t1.CONSTRAINT_TYPE='PRIMARY KEY'
 `,
 		PrimaryKeyAdd: `
 ALTER TABLE [{ownerName}.]{tableName} ADD PRIMARY KEY ({columnNames})
@@ -152,23 +153,19 @@ ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
 		// 索引 相关 SQL
 		IndexesSelect: `
 SELECT
-    INDEX_NAME indexName,
-    COLUMN_NAME columnName,
-    INDEX_COMMENT indexComment,
-    NON_UNIQUE nonUnique,
-    TABLE_NAME tableName,
-    TABLE_SCHEMA ownerName
-FROM information_schema.statistics
-WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
-  AND TABLE_NAME={sqlValuePack(tableName)}
-  AND INDEX_NAME NOT IN(
-    SELECT table_constraints.CONSTRAINT_NAME
-    FROM information_schema.table_constraints
-    JOIN information_schema.key_column_usage USING (CONSTRAINT_NAME,TABLE_SCHEMA,TABLE_NAME)
-    WHERE table_constraints.TABLE_SCHEMA={sqlValuePack(ownerName)}
-      AND table_constraints.TABLE_NAME={sqlValuePack(tableName)}
-      AND table_constraints.CONSTRAINT_TYPE='PRIMARY KEY'
-)
+    t1.INDEX_NAME indexName,
+    t1.COLUMN_NAME columnName,
+    t1.INDEX_COMMENT indexComment,
+    t1.NON_UNIQUE nonUnique,
+    t1.TABLE_NAME tableName,
+    t1.TABLE_SCHEMA ownerName,
+    t2.CONSTRAINT_TYPE
+FROM information_schema.statistics t1
+LEFT JOIN information_schema.table_constraints t2 
+ON (t2.CONSTRAINT_NAME=t1.INDEX_NAME AND t2.TABLE_SCHEMA=t1.TABLE_SCHEMA AND t2.TABLE_NAME=t1.TABLE_NAME)
+WHERE t1.TABLE_SCHEMA={sqlValuePack(ownerName)}
+  AND t1.TABLE_NAME={sqlValuePack(tableName)}
+  AND (t2.CONSTRAINT_TYPE !='PRIMARY KEY' OR t2.CONSTRAINT_TYPE = '' OR t2.CONSTRAINT_TYPE IS NULL)
 `,
 		IndexAdd: `
 ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD {indexType} [{indexNamePack}] ({columnNamesPack}) [COMMENT {sqlValuePack(indexComment)}]
@@ -324,6 +321,11 @@ func AppendMysqlColumnType(mapping *SqlMapping) {
 
 	// ShenTong
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BPCHAR", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
+	// 金仓
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TIMESTAMP WITHOUT TIME ZONE", Format: "TIMESTAMP", IsDateTime: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CHARACTER", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CHARACTER VARYING", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BYTEA", Format: "BLOB($l)", IsString: true, IsExtend: true})
 
 }
 
