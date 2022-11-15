@@ -160,6 +160,8 @@ func TestKinBase(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	db.SetMaxIdleConns(1)
+	db.SetMaxOpenConns(1)
 	//list, err := worker.DoQuery(db, `select * from ALL_TableS`)
 	//list, err := worker.DoQuery(db, `select * from ALL_OBJECTS`)
 	//list, err := worker.DoQuery(db, `select * from SYS_CLASS`)
@@ -182,7 +184,10 @@ func TestKinBase(t *testing.T) {
 				strings.EqualFold(one.TableName, "dba_cons_columns") ||
 				strings.EqualFold(one.TableName, "dba_col_privs") ||
 				strings.EqualFold(one.TableName, "dba_col_comments") ||
-				strings.EqualFold(one.TableName, "ALL_VIEWS") {
+				strings.EqualFold(one.TableName, "ALL_VIEWS") ||
+				strings.EqualFold(one.TableName, "all_users") ||
+				strings.EqualFold(one.TableName, "all_triggers") ||
+				strings.EqualFold(one.TableName, "all_trigger_cols") {
 				continue
 			}
 
