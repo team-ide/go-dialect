@@ -1,4 +1,4 @@
-package main
+package test
 
 //func TestMysqlSyncMysql(t *testing.T) {
 //	initMysql()
