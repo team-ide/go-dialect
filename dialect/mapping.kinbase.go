@@ -20,10 +20,14 @@ FROM information_schema.schemata
 WHERE SCHEMA_NAME={sqlValuePack(ownerName)}
 `
 	mapping.OwnerCreate = `
-CREATE SCHEMA {ownerName} 
+CREATE USER {ownerName} WITH PASSWORD {sqlValuePack(ownerPassword)};
+CREATE SCHEMA {ownerName} AUTHORIZATION {ownerName};
+GRANT ALL ON SCHEMA {ownerName} to {ownerName};
+
 `
 	mapping.OwnerDelete = `
-DROP SCHEMA {ownerName} CASCADE
+DROP SCHEMA {ownerName} CASCADE;
+DROP USER IF EXISTS {ownerName};
 `
 	mapping.TablesSelect = `
 SELECT
@@ -95,17 +99,29 @@ WHERE t1.TABLE_SCHEMA={sqlValuePack(ownerName)}
   AND t1.CONSTRAINT_TYPE='PRIMARY KEY'
 `
 	mapping.IndexesSelect = `
-SELECT
-    t1.CONSTRAINT_NAME indexName,
-    t2.COLUMN_NAME columnName,
+SELECT 
+    t1.INDEX_NAME indexName,
+    t1.COLUMN_NAME columnName,
+    t1.TABLE_OWNER ownerName,
     t1.TABLE_NAME tableName,
-    t1.TABLE_SCHEMA ownerName
+    t2.UNIQUENESS 
+FROM ALL_IND_COLUMNS t1
+LEFT JOIN ALL_INDEXES t2 ON (t2.INDEX_NAME = t1.INDEX_NAME)
+LEFT JOIN ALL_CONSTRAINTS t3 ON (t3.CONSTRAINT_NAME = t1.INDEX_NAME)
+WHERE t1.INDEX_NAME IN(
+    SELECT INDEXNAME 
+    FROM SYS_CATALOG.sys_indexes 
+    WHERE SCHEMANAME={sqlValuePack(ownerName)}
+        AND TABLENAME={sqlValuePack(tableName)}
+) 
+	AND t1.INDEX_NAME NOT IN(
+    SELECT
+    t1.CONSTRAINT_NAME
 FROM information_schema.table_constraints t1
-LEFT JOIN information_schema.key_column_usage t2 
-ON (t2.CONSTRAINT_NAME=t1.CONSTRAINT_NAME AND t2.TABLE_SCHEMA=t1.TABLE_SCHEMA AND t2.TABLE_NAME=t1.TABLE_NAME)
 WHERE t1.TABLE_SCHEMA={sqlValuePack(ownerName)}
   AND t1.TABLE_NAME={sqlValuePack(tableName)}
-  AND (t1.CONSTRAINT_TYPE !='PRIMARY KEY' OR t1.CONSTRAINT_TYPE = '' OR t1.CONSTRAINT_TYPE IS NULL)
+  AND t1.CONSTRAINT_TYPE='PRIMARY KEY'
+)
 `
 	return
 }
