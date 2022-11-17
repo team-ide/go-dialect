@@ -589,6 +589,9 @@ func (this_ *mappingDialect) IndexModel(data map[string]interface{}) (index *Ind
 	if GetStringValue(data["isUnique"]) == "1" {
 		index.IndexType = "unique"
 	}
+	if GetStringValue(data["UNIQUENESS"]) == "UNIQUE" {
+		index.IndexType = "unique"
+	}
 	return
 }
 
