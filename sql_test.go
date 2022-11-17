@@ -12,7 +12,6 @@ import (
 	"github.com/team-ide/go-driver/db_oracle"
 	"github.com/team-ide/go-driver/db_shentong"
 	"github.com/team-ide/go-driver/db_sqlite3"
-	"strings"
 	"testing"
 )
 
@@ -25,6 +24,7 @@ type testDialect struct {
 	dialect dialect.Dialect
 	db      *sql.DB
 	owner   *dialect.OwnerModel
+	ownerDb func() (ownerDb *sql.DB, err error)
 }
 
 func (this_ *testDialect) init() {
@@ -59,6 +59,10 @@ func appendTestDialectMysql() {
 	one.owner = &dialect.OwnerModel{
 		OwnerName:             "TEST_DB",
 		OwnerCharacterSetName: "utf8mb4",
+	}
+	one.ownerDb = func() (ownerDb *sql.DB, err error) {
+		ownerDb, err = db_mysql.Open(db_mysql.GetDSN("root", "123456", "127.0.0.1", 3306, ""))
+		return
 	}
 	one.init()
 }
@@ -160,8 +164,6 @@ func TestKinBase(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	db.SetMaxIdleConns(1)
-	db.SetMaxOpenConns(1)
 	//list, err := worker.DoQuery(db, `select * from ALL_TableS`)
 	//list, err := worker.DoQuery(db, `select * from ALL_OBJECTS`)
 	//list, err := worker.DoQuery(db, `select * from SYS_CLASS`)
@@ -169,74 +171,93 @@ func TestKinBase(t *testing.T) {
 	//list, err := worker.DoQuery(db, `SELECT * FROM information_schema.schemata`)
 
 	//list, err := worker.DoQuery(db, `DROP SCHEMA TEST_DB_USER2`)
-	owners, err := worker.OwnersSelect(db, testDialectCache["kinbase"].dialect, nil)
-	for _, owner := range owners {
-		tables, err := worker.TablesSelect(db, testDialectCache["kinbase"].dialect, nil, owner.OwnerName)
-		if err != nil {
-			println(err)
-			//panic(err)
-			continue
-		}
-		for _, one := range tables {
-			//bs, _ := json.Marshal(one)
-			//fmt.Println(string(bs))
-			if strings.EqualFold(one.TableName, "DBA_CONSTRAINTS") ||
-				strings.EqualFold(one.TableName, "dba_cons_columns") ||
-				strings.EqualFold(one.TableName, "dba_col_privs") ||
-				strings.EqualFold(one.TableName, "dba_col_comments") ||
-				strings.EqualFold(one.TableName, "ALL_VIEWS") ||
-				strings.EqualFold(one.TableName, "all_users") ||
-				strings.EqualFold(one.TableName, "all_triggers") ||
-				strings.EqualFold(one.TableName, "all_trigger_cols") {
-				continue
-			}
+	//owners, err := worker.OwnersSelect(db, testDialectCache["kinbase"].dialect, nil)
+	//for _, owner := range owners {
+	//	tables, err := worker.TablesSelect(db, testDialectCache["kinbase"].dialect, nil, owner.OwnerName)
+	//	if err != nil {
+	//		println(err)
+	//		//panic(err)
+	//		continue
+	//	}
+	//	for _, one := range tables {
+	//		//bs, _ := json.Marshal(one)
+	//		//fmt.Println(string(bs))
+	//		if strings.EqualFold(one.TableName, "dba_free_space") ||
+	//			strings.EqualFold(one.TableName, "SYS_FREESPACES") {
+	//			//	strings.EqualFold(one.TableName, "dba_cons_columns") ||
+	//			//	strings.EqualFold(one.TableName, "dba_col_privs") ||
+	//			//	strings.EqualFold(one.TableName, "dba_col_comments") ||
+	//			//	strings.EqualFold(one.TableName, "ALL_VIEWS") ||
+	//			//	strings.EqualFold(one.TableName, "all_users") ||
+	//			//	strings.EqualFold(one.TableName, "all_triggers") ||
+	//			//	strings.EqualFold(one.TableName, "all_trigger_cols") {
+	//			continue
+	//		}
+	//
+	//		sqlInfo := `
+	//	SELECT * from ` + owner.OwnerName + `.` + one.TableName + `
+	//	`
+	//		fmt.Println("table:", owner.OwnerName, ".", one.TableName)
+	//		list, err := worker.DoQuery(db, sqlInfo)
+	//
+	//		if err != nil {
+	//			println(err)
+	//			//panic(err)
+	//			continue
+	//		}
+	//		for _, one := range list {
+	//			bs, _ := json.Marshal(one)
+	//			str := string(bs)
+	//			if strings.Contains(str, "TEST_DB_USER2_TABLE_DEMO_col_3") ||
+	//				strings.Contains(str, "TEST_DB_USER2_TABLE_DEMO_col_4") {
+	//				fmt.Println(string(bs))
+	//			}
+	//		}
+	//	}
+	//}
 
-			sqlInfo := `
-		SELECT * from ` + owner.OwnerName + `.` + one.TableName + `
+	sqlInfo := `
+	SELECT
+	   *
+	FROM ALL_INDEXES
+	WHERE TABLE_NAME='TABLE_DEMO'
 		`
-			list, err := worker.DoQuery(db, sqlInfo)
+	list, err := worker.DoQuery(db, sqlInfo)
 
-			if err != nil {
-				println(err)
-				//panic(err)
-				continue
-			}
-			fmt.Println("table:", owner.OwnerName, ".", one.TableName)
-			for _, one := range list {
-				bs, _ := json.Marshal(one)
-				str := string(bs)
-				if strings.Contains(str, "TEST_DB_USER2_TABLE_DEMO_col_3") ||
-					strings.Contains(str, "TEST_DB_USER2_TABLE_DEMO_col_4") {
-					fmt.Println(string(bs))
-				}
-			}
-		}
+	if err != nil {
+		panic(err)
+	}
+	for _, one := range list {
+		bs, _ := json.Marshal(one)
+		fmt.Println(string(bs))
+	}
+}
+
+func TestKinBaseSchema(t *testing.T) {
+	schema := "TEST_DB_USER2"
+
+	dsn := db_kingbase_v8r3.GetDSN("TEST_DB_USER2", "123456", "127.0.0.1", 54321, "TEST")
+	dsn += "&search_path=" + schema
+	db, err := db_kingbase_v8r3.Open(dsn)
+	if err != nil {
+		panic(err)
 	}
 
-	//	sqlInfo := `
-	//SELECT
-	//    t1.INDEX_NAME indexName,
-	//    t1.COLUMN_NAME columnName,
-	//    t1.TABLE_OWNER ownerName,
-	//    t1.TABLE_NAME tableName,
-	//    t2.INDEX_TYPE indexType,
-	//    t1.* ,
-	//    t2.*,
-	//    t3.*
-	//FROM ALL_IND_COLUMNS t1
-	//LEFT JOIN ALL_INDEXES t2 ON (t2.INDEX_NAME = t1.INDEX_NAME)
-	//LEFT JOIN ALL_CONSTRAINTS t3 ON (t3.CONSTRAINT_NAME = t1.INDEX_NAME)
-	//WHERE t1.TABLE_NAME='TABLE_DEMO'
-	//	`
-	//	list, err := worker.DoQuery(db, sqlInfo)
-	//
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	for _, one := range list {
-	//		bs, _ := json.Marshal(one)
-	//		fmt.Println(string(bs))
-	//	}
+	sqlInfo := `
+	SELECT
+	   *
+	FROM TABLE_DEMO
+		`
+	list, err := worker.DoQuery(db, sqlInfo)
+
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("list:", len(list))
+	for _, one := range list {
+		bs, _ := json.Marshal(one)
+		fmt.Println(string(bs))
+	}
 }
 
 func appendTestDialectShenTong() {
@@ -345,9 +366,9 @@ func TestAllSql(t *testing.T) {
 		fmt.Println(string(bs))
 
 		for _, to := range testDialectList {
-			if from == to {
-				continue
-			}
+			//if from == to {
+			//	continue
+			//}
 			fromTableToTableSql(from, table, to)
 		}
 	}
