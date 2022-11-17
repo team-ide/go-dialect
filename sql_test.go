@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -22,9 +23,9 @@ type testDialect struct {
 	table   *dialect.TableModel
 	mapping *dialect.SqlMapping
 	dialect dialect.Dialect
-	db      *sql.DB
 	owner   *dialect.OwnerModel
-	ownerDb func() (ownerDb *sql.DB, err error)
+	db      func() (db *sql.DB, err error)
+	ownerDb func(owner *dialect.OwnerModel) (ownerDb *sql.DB, err error)
 }
 
 func (this_ *testDialect) init() {
@@ -37,12 +38,12 @@ func (this_ *testDialect) init() {
 }
 
 func init() {
-	//appendTestDialectMysql()
-	//appendTestDialectSqlite()
-	//appendTestDialectOracle()
-	//appendTestDialectShenTong()
-	//appendTestDialectDM()
-	appendTestDialectKinBase()
+	appendTestDialectMysql()
+	appendTestDialectSqlite()
+	appendTestDialectOracle()
+	appendTestDialectShenTong()
+	appendTestDialectDM()
+	//appendTestDialectKinBase()
 }
 
 func appendTestDialectMysql() {
@@ -51,17 +52,16 @@ func appendTestDialectMysql() {
 	testDialectList = append(testDialectList, one)
 	one.mapping = dialect.NewMappingMysql()
 
-	var err error
-	one.db, err = db_mysql.Open(db_mysql.GetDSN("root", "123456", "127.0.0.1", 3306, ""))
-	if err != nil {
-		panic(err)
-	}
 	one.owner = &dialect.OwnerModel{
 		OwnerName:             "TEST_DB",
 		OwnerCharacterSetName: "utf8mb4",
 	}
-	one.ownerDb = func() (ownerDb *sql.DB, err error) {
-		ownerDb, err = db_mysql.Open(db_mysql.GetDSN("root", "123456", "127.0.0.1", 3306, ""))
+	one.db = func() (db *sql.DB, err error) {
+		db, err = db_mysql.Open(db_mysql.GetDSN("root", "123456", "127.0.0.1", 3306, ""))
+		return
+	}
+	one.ownerDb = func(owner *dialect.OwnerModel) (ownerDb *sql.DB, err error) {
+		ownerDb, err = db_mysql.Open(db_mysql.GetDSN("root", "123456", "127.0.0.1", 3306, owner.OwnerName))
 		return
 	}
 	one.init()
@@ -73,13 +73,16 @@ func appendTestDialectSqlite() {
 	testDialectList = append(testDialectList, one)
 	one.mapping = dialect.NewMappingSqlite()
 
-	var err error
-	one.db, err = db_sqlite3.Open(db_sqlite3.GetDSN("temp/sqlite.test.db"))
-	if err != nil {
-		panic(err)
-	}
 	one.owner = &dialect.OwnerModel{
 		OwnerName: "",
+	}
+	one.db = func() (db *sql.DB, err error) {
+		db, err = db_sqlite3.Open(db_sqlite3.GetDSN("temp/sqlite.test.db"))
+		return
+	}
+	one.ownerDb = func(owner *dialect.OwnerModel) (ownerDb *sql.DB, err error) {
+		ownerDb, err = db_sqlite3.Open(db_sqlite3.GetDSN("temp/sqlite.test.db"))
+		return
 	}
 	one.init()
 }
@@ -90,14 +93,17 @@ func appendTestDialectOracle() {
 	testDialectList = append(testDialectList, one)
 	one.mapping = dialect.NewMappingOracle()
 
-	var err error
-	one.db, err = db_oracle.Open(db_oracle.GetDSN("root", "123456", "127.0.0.1", 1521, "xe"))
-	if err != nil {
-		panic(err)
-	}
 	one.owner = &dialect.OwnerModel{
 		OwnerName:     "TEST_DB",
 		OwnerPassword: "123456",
+	}
+	one.db = func() (db *sql.DB, err error) {
+		db, err = db_oracle.Open(db_oracle.GetDSN("root", "123456", "127.0.0.1", 1521, "xe"))
+		return
+	}
+	one.ownerDb = func(owner *dialect.OwnerModel) (ownerDb *sql.DB, err error) {
+		ownerDb, err = db_oracle.Open(db_oracle.GetDSN(owner.OwnerName, owner.OwnerPassword, "127.0.0.1", 1521, "xe"))
+		return
 	}
 	one.init()
 }
@@ -108,15 +114,17 @@ func appendTestDialectDM() {
 	testDialectList = append(testDialectList, one)
 	one.mapping = dialect.NewMappingDM()
 
-	var err error
-	one.db, err = db_dm.Open(db_dm.GetDSN("SYSDBA", "SYSDBA", "127.0.0.1", 5236))
-	if err != nil {
-		panic(err)
-	}
-	one.db.SetMaxIdleConns(1)
 	one.owner = &dialect.OwnerModel{
 		OwnerName:     "TEST_DB_USER",
 		OwnerPassword: "123456789",
+	}
+	one.db = func() (db *sql.DB, err error) {
+		db, err = db_dm.Open(db_dm.GetDSN("SYSDBA", "SYSDBA", "127.0.0.1", 5236))
+		return
+	}
+	one.ownerDb = func(owner *dialect.OwnerModel) (ownerDb *sql.DB, err error) {
+		ownerDb, err = db_dm.Open(db_dm.GetDSN(owner.OwnerName, owner.OwnerPassword, "127.0.0.1", 5236))
+		return
 	}
 	one.init()
 }
@@ -127,14 +135,38 @@ func appendTestDialectKinBase() {
 	testDialectList = append(testDialectList, one)
 	one.mapping = dialect.NewMappingKinBase()
 
-	var err error
-	one.db, err = db_kingbase_v8r3.Open(db_kingbase_v8r3.GetDSN("SYSTEM", "123456", "127.0.0.1", 54321, "TEST"))
-	if err != nil {
-		panic(err)
-	}
 	one.owner = &dialect.OwnerModel{
 		OwnerName:     "TEST_DB_USER2",
 		OwnerPassword: "123456",
+	}
+	one.db = func() (db *sql.DB, err error) {
+		db, err = db_kingbase_v8r3.Open(db_kingbase_v8r3.GetDSN("SYSTEM", "123456", "127.0.0.1", 54321, "TEST"))
+		return
+	}
+	one.ownerDb = func(owner *dialect.OwnerModel) (ownerDb *sql.DB, err error) {
+		ownerDb, err = db_kingbase_v8r3.Open(db_kingbase_v8r3.GetDSN(owner.OwnerName, owner.OwnerPassword, "127.0.0.1", 54321, "TEST"))
+		return
+	}
+	one.init()
+}
+
+func appendTestDialectShenTong() {
+	one := &testDialect{}
+	testDialectCache["shentong"] = one
+	testDialectList = append(testDialectList, one)
+	one.mapping = dialect.NewMappingShenTong()
+
+	one.owner = &dialect.OwnerModel{
+		OwnerName:     "TEST_DB",
+		OwnerPassword: "123456",
+	}
+	one.db = func() (db *sql.DB, err error) {
+		db, err = db_shentong.Open(db_shentong.GetDSN("sysdba", "szoscar55", "127.0.0.1", 2003, "OSRDB"))
+		return
+	}
+	one.ownerDb = func(owner *dialect.OwnerModel) (ownerDb *sql.DB, err error) {
+		ownerDb, err = db_shentong.Open(db_shentong.GetDSN(owner.OwnerName, owner.OwnerPassword, "127.0.0.1", 2003, "OSRDB"))
+		return
 	}
 	one.init()
 }
@@ -259,25 +291,6 @@ func TestKinBaseSchema(t *testing.T) {
 		fmt.Println(string(bs))
 	}
 }
-
-func appendTestDialectShenTong() {
-	one := &testDialect{}
-	testDialectCache["shentong"] = one
-	testDialectList = append(testDialectList, one)
-	one.mapping = dialect.NewMappingShenTong()
-
-	var err error
-	one.db, err = db_shentong.Open(db_shentong.GetDSN("sysdba", "szoscar55", "127.0.0.1", 2003, "OSRDB"))
-	if err != nil {
-		panic(err)
-	}
-	one.owner = &dialect.OwnerModel{
-		OwnerName:     "TEST_DB",
-		OwnerPassword: "123456",
-	}
-	one.init()
-}
-
 func TestOracle(t *testing.T) {
 
 	db, err := db_oracle.Open(db_oracle.GetDSN("root", "123456", "127.0.0.1", 1521, "xe"))
@@ -341,20 +354,42 @@ func TestAllSql(t *testing.T) {
 		}
 		fmt.Println(string(bs))
 
+		db, err := from.db()
+		if err != nil {
+			panic(err)
+		}
+		dbContext := context.Background()
+		err = db.PingContext(dbContext)
+		if err != nil {
+			panic(err)
+		}
 		if from.owner.OwnerName != "" {
-			_, err := worker.OwnerCover(from.db, from.dialect, param, from.owner)
+			fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] owner [" + from.owner.OwnerName + "] cover---")
+			_, err := worker.OwnerCover(db, dbContext, from.dialect, param, from.owner)
 			if err != nil {
 				panic(err)
 			}
+			fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] owner [" + from.owner.OwnerName + "] success---")
 		}
-		err = worker.TableCover(from.db, from.dialect, param, from.owner.OwnerName, from.table)
+		_ = db.Close()
+		dialectDb, err := from.ownerDb(from.owner)
 		if err != nil {
 			panic(err)
 		}
-		table, err := worker.TableDetail(from.db, from.dialect, param, from.owner.OwnerName, from.table.TableName, false)
+		dialectDbContext := context.Background()
+		err = dialectDb.PingContext(dialectDbContext)
 		if err != nil {
 			panic(err)
 		}
+		err = worker.TableCover(dialectDb, dialectDbContext, from.dialect, param, from.owner.OwnerName, from.table)
+		if err != nil {
+			panic(err)
+		}
+		table, err := worker.TableDetail(dialectDb, dialectDbContext, from.dialect, param, from.owner.OwnerName, from.table.TableName, false)
+		if err != nil {
+			panic(err)
+		}
+		_ = dialectDb.Close()
 		if table == nil {
 			panic("dialect [" + from.dialect.DialectType().Name + "]  ownerName [" + from.owner.OwnerName + "] tableName [" + from.table.TableName + "] is null.")
 		}
@@ -384,21 +419,42 @@ func fromTableToTableSql(from *testDialect, fromTable *dialect.TableModel, to *t
 	fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] to dialect [" + to.dialect.DialectType().Name + "] create from table---")
 	fmt.Println(string(bs))
 
+	toDb, err := to.db()
+	if err != nil {
+		panic(err)
+	}
+	toDbContext := context.Background()
+	err = toDb.PingContext(toDbContext)
+	if err != nil {
+		panic(err)
+	}
+
 	param := &dialect.ParamModel{}
 	if to.owner.OwnerName != "" {
-		_, err := worker.OwnerCover(to.db, to.dialect, param, to.owner)
+		_, err := worker.OwnerCover(toDb, toDbContext, to.dialect, param, to.owner)
 		if err != nil {
 			panic(err)
 		}
 	}
-	err = worker.TableCover(to.db, to.dialect, param, to.owner.OwnerName, fromTable)
+	_ = toDb.Close()
+	dialectDb, err := to.ownerDb(to.owner)
 	if err != nil {
 		panic(err)
 	}
-	table, err := worker.TableDetail(to.db, to.dialect, param, to.owner.OwnerName, fromTable.TableName, false)
+	dialectDbContext := context.Background()
+	err = dialectDb.PingContext(dialectDbContext)
 	if err != nil {
 		panic(err)
 	}
+	err = worker.TableCover(dialectDb, dialectDbContext, to.dialect, param, to.owner.OwnerName, fromTable)
+	if err != nil {
+		panic(err)
+	}
+	table, err := worker.TableDetail(dialectDb, dialectDbContext, to.dialect, param, to.owner.OwnerName, fromTable.TableName, false)
+	if err != nil {
+		panic(err)
+	}
+	_ = dialectDb.Close()
 	if table == nil {
 		panic("dialect [" + from.dialect.DialectType().Name + "]  ownerName [" + from.owner.OwnerName + "] tableName [" + from.table.TableName + "] is null.")
 	}

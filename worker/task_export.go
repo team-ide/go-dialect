@@ -129,7 +129,7 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (err error) {
 
 	this_.addProgress(progress)
 
-	ownerOne, err := OwnerSelect(this_.db, this_.dia, this_.Param, owner.SourceName)
+	ownerOne, err := OwnerSelect(this_.db, this_.dbContext, this_.dia, this_.Param, owner.SourceName)
 	if err != nil {
 		return
 	}
@@ -142,7 +142,7 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (err error) {
 
 	if len(tables) == 0 {
 		var list []*dialect.TableModel
-		list, err = TablesSelect(this_.db, this_.dia, this_.Param, owner.SourceName)
+		list, err = TablesSelect(this_.db, this_.dbContext, this_.dia, this_.Param, owner.SourceName)
 		if err != nil {
 			return
 		}
@@ -224,7 +224,7 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 
 	this_.addProgress(progress)
 
-	tableDetail, err := TableDetail(this_.db, this_.dia, this_.Param, sourceOwnerName, sourceTableName, false)
+	tableDetail, err := TableDetail(this_.db, this_.dbContext, this_.dia, this_.Param, sourceOwnerName, sourceTableName, false)
 	if err != nil {
 		return
 	}

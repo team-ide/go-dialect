@@ -1,12 +1,13 @@
 package worker
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"github.com/team-ide/go-dialect/dialect"
 )
 
-func OwnersSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel) (list []*dialect.OwnerModel, err error) {
+func OwnersSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel) (list []*dialect.OwnerModel, err error) {
 	sqlInfo, err := dia.OwnersSelectSql(param)
 	if err != nil {
 		return
@@ -14,7 +15,7 @@ func OwnersSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel) (l
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQuery(db, sqlInfo)
+	dataList, err := DoQueryContext(db, cxt, sqlInfo)
 	if err != nil {
 		err = errors.New("OwnersSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return
@@ -31,7 +32,7 @@ func OwnersSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel) (l
 	return
 }
 
-func OwnerSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string) (one *dialect.OwnerModel, err error) {
+func OwnerSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel, ownerName string) (one *dialect.OwnerModel, err error) {
 	sqlInfo, err := dia.OwnerSelectSql(param, ownerName)
 	if err != nil {
 		return
@@ -39,7 +40,7 @@ func OwnerSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQuery(db, sqlInfo)
+	dataList, err := DoQueryContext(db, cxt, sqlInfo)
 	if err != nil {
 		err = errors.New("OwnerSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return
@@ -57,7 +58,7 @@ func OwnerSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	return
 }
 
-func OwnerCreate(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, owner *dialect.OwnerModel) (created bool, err error) {
+func OwnerCreate(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel, owner *dialect.OwnerModel) (created bool, err error) {
 	sqlList, err := dia.OwnerCreateSql(param, owner)
 	if err != nil {
 		return
@@ -65,7 +66,7 @@ func OwnerCreate(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	if len(sqlList) == 0 {
 		return
 	}
-	errorSql, err := DoExec(db, sqlList)
+	errorSql, err := DoExecContext(db, cxt, sqlList)
 	if err != nil {
 		err = errors.New("OwnerCreate error sql:" + errorSql + ",error:" + err.Error())
 		return
@@ -74,7 +75,7 @@ func OwnerCreate(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	return
 }
 
-func OwnerDelete(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string) (deleted bool, err error) {
+func OwnerDelete(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel, ownerName string) (deleted bool, err error) {
 	sqlList, err := dia.OwnerDeleteSql(param, ownerName)
 	if err != nil {
 		return
@@ -82,7 +83,7 @@ func OwnerDelete(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	if len(sqlList) == 0 {
 		return
 	}
-	errorSql, err := DoExec(db, sqlList)
+	errorSql, err := DoExecContext(db, cxt, sqlList)
 	if err != nil {
 		err = errors.New("OwnerDelete error sql:" + errorSql + ",error:" + err.Error())
 		return
@@ -92,21 +93,21 @@ func OwnerDelete(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 }
 
 // OwnerCover 库或表所属者 覆盖，如果 库或表所属者 已经存在，则删除后 再创建
-func OwnerCover(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, owner *dialect.OwnerModel) (success bool, err error) {
+func OwnerCover(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel, owner *dialect.OwnerModel) (success bool, err error) {
 	if owner.OwnerName == "" {
 		return
 	}
-	find, err := OwnerSelect(db, dia, param, owner.OwnerName)
+	find, err := OwnerSelect(db, cxt, dia, param, owner.OwnerName)
 	if err != nil {
 		return
 	}
 	if find != nil {
-		_, err = OwnerDelete(db, dia, param, owner.OwnerName)
+		_, err = OwnerDelete(db, cxt, dia, param, owner.OwnerName)
 		if err != nil {
 			return
 		}
 	}
-	success, err = OwnerCreate(db, dia, param, owner)
+	success, err = OwnerCreate(db, cxt, dia, param, owner)
 	if err != nil {
 		return
 	}
