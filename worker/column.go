@@ -1,13 +1,12 @@
 package worker
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"github.com/team-ide/go-dialect/dialect"
 )
 
-func ColumnsSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string, ignoreError bool) (list []*dialect.ColumnModel, err error) {
+func ColumnsSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string, ignoreError bool) (list []*dialect.ColumnModel, err error) {
 	sqlInfo, err := dia.ColumnsSelectSql(param, ownerName, tableName)
 	if err != nil {
 		return
@@ -15,7 +14,7 @@ func ColumnsSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQueryContext(db, cxt, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo)
 	if err != nil {
 		err = errors.New("ColumnsSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return

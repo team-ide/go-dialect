@@ -1,13 +1,12 @@
 package worker
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"github.com/team-ide/go-dialect/dialect"
 )
 
-func TablesSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel, ownerName string) (list []*dialect.TableModel, err error) {
+func TablesSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string) (list []*dialect.TableModel, err error) {
 	sqlInfo, err := dia.TablesSelectSql(param, ownerName)
 	if err != nil {
 		return
@@ -15,7 +14,7 @@ func TablesSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *d
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQueryContext(db, cxt, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo)
 	if err != nil {
 		err = errors.New("TablesSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return
@@ -33,7 +32,7 @@ func TablesSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *d
 	return
 }
 
-func TableSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string, ignoreError bool) (one *dialect.TableModel, err error) {
+func TableSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string, ignoreError bool) (one *dialect.TableModel, err error) {
 	sqlInfo, err := dia.TableSelectSql(param, ownerName, tableName)
 	if err != nil {
 		return
@@ -41,7 +40,7 @@ func TableSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *di
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQueryContext(db, cxt, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo)
 	if err != nil {
 		err = errors.New("TableSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return
@@ -63,7 +62,7 @@ func TableSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *di
 	return
 }
 
-func TableDetail(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string, ignoreError bool) (table *dialect.TableModel, err error) {
+func TableDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string, ignoreError bool) (table *dialect.TableModel, err error) {
 	sqlInfo, err := dia.TableSelectSql(param, ownerName, tableName)
 	if err != nil {
 		return
@@ -71,7 +70,7 @@ func TableDetail(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *di
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQueryContext(db, cxt, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo)
 	if err != nil {
 		err = errors.New("TableDetail error sql:" + sqlInfo + ",error:" + err.Error())
 		return
@@ -83,7 +82,7 @@ func TableDetail(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *di
 				Error: e.Error(),
 			}
 		} else {
-			model.ColumnList, e = ColumnsSelect(db, cxt, dia, param, ownerName, model.TableName, ignoreError)
+			model.ColumnList, e = ColumnsSelect(db, dia, param, ownerName, model.TableName, ignoreError)
 			if e != nil {
 				if !ignoreError {
 					err = e
@@ -91,7 +90,7 @@ func TableDetail(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *di
 				}
 				model.Error = e.Error()
 			} else {
-				ps, e := PrimaryKeysSelect(db, cxt, dia, param, ownerName, model.TableName, ignoreError)
+				ps, e := PrimaryKeysSelect(db, dia, param, ownerName, model.TableName, ignoreError)
 				if e != nil {
 					if !ignoreError {
 						err = e
@@ -100,7 +99,7 @@ func TableDetail(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *di
 					model.Error = e.Error()
 				} else {
 					model.AddPrimaryKey(ps...)
-					is, e := IndexesSelect(db, cxt, dia, param, ownerName, model.TableName, ignoreError)
+					is, e := IndexesSelect(db, dia, param, ownerName, model.TableName, ignoreError)
 					if e != nil {
 						if !ignoreError {
 							err = e
@@ -119,7 +118,7 @@ func TableDetail(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *di
 	return
 }
 
-func TableCreate(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableDetail *dialect.TableModel) (err error) {
+func TableCreate(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableDetail *dialect.TableModel) (err error) {
 	sqlList, err := dia.TableCreateSql(param, ownerName, tableDetail)
 	if err != nil {
 		return
@@ -135,12 +134,12 @@ func TableCreate(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *di
 	return
 }
 
-func TableUpdate(db *sql.DB, cxt context.Context, oldDia dialect.Dialect, oldTableDetail *dialect.TableModel, newDia dialect.Dialect, newTableDetail *dialect.TableModel) (err error) {
+func TableUpdate(db *sql.DB, oldDia dialect.Dialect, oldTableDetail *dialect.TableModel, newDia dialect.Dialect, newTableDetail *dialect.TableModel) (err error) {
 
 	return
 }
 
-func TableDelete(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string) (err error) {
+func TableDelete(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string) (err error) {
 	sqlList, err := dia.TableDeleteSql(param, ownerName, tableName)
 	if err != nil {
 		return
@@ -148,7 +147,7 @@ func TableDelete(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *di
 	if len(sqlList) == 0 {
 		return
 	}
-	errorSql, err := DoExecContext(db, cxt, sqlList)
+	errorSql, err := DoExec(db, sqlList)
 	if err != nil {
 		err = errors.New("TableDelete error sql:" + errorSql + ",error:" + err.Error())
 		return
@@ -157,18 +156,18 @@ func TableDelete(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *di
 }
 
 // TableCover 表 覆盖，如果 表 已经存在，则删除后 再创建
-func TableCover(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, table *dialect.TableModel) (err error) {
-	find, err := TableSelect(db, cxt, dia, param, ownerName, table.TableName, true)
+func TableCover(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, table *dialect.TableModel) (err error) {
+	find, err := TableSelect(db, dia, param, ownerName, table.TableName, true)
 	if err != nil {
 		return
 	}
 	if find != nil {
-		err = TableDelete(db, cxt, dia, param, ownerName, table.TableName)
+		err = TableDelete(db, dia, param, ownerName, table.TableName)
 		if err != nil {
 			return
 		}
 	}
-	err = TableCreate(db, cxt, dia, param, ownerName, table)
+	err = TableCreate(db, dia, param, ownerName, table)
 	if err != nil {
 		return
 	}

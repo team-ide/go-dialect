@@ -4,6 +4,7 @@ func NewMappingKinBase() (mapping *SqlMapping) {
 
 	// http://www.yaotu.net/biancheng/21946.html
 	// https://www.modb.pro/db/442114
+	// https://help.kingbase.com.cn/v8/index.html
 	mapping = NewMappingOracle()
 	mapping.dialectType = TypeKinBase
 
@@ -21,12 +22,13 @@ WHERE SCHEMA_NAME={sqlValuePack(ownerName)}
 `
 	mapping.OwnerCreate = `
 CREATE USER {ownerName} WITH PASSWORD {sqlValuePack(ownerPassword)};
-CREATE SCHEMA {ownerName} AUTHORIZATION {ownerName};
-GRANT ALL ON SCHEMA {ownerName} to {ownerName};
-
+CREATE SCHEMA {ownerName};
+GRANT USAGE ON SCHEMA {ownerName} TO {ownerName};
+GRANT ALL ON SCHEMA {ownerName} TO {ownerName};
+GRANT ALL ON ALL TABLES IN SCHEMA {ownerName} TO {ownerName};
 `
 	mapping.OwnerDelete = `
-DROP SCHEMA {ownerName} CASCADE;
+DROP SCHEMA IF EXISTS {ownerName} CASCADE;
 DROP USER IF EXISTS {ownerName};
 `
 	mapping.TablesSelect = `

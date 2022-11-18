@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -123,7 +122,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 	//
 	if this_.ImportOwnerCreateIfNotExist {
 		var ownerOne *dialect.OwnerModel
-		ownerOne, err = OwnerSelect(this_.db, this_.dbContext, this_.dia, this_.Param, ownerName)
+		ownerOne, err = OwnerSelect(this_.db, this_.dia, this_.Param, ownerName)
 		if err != nil {
 			return
 		}
@@ -131,7 +130,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 			this_.addProgress(&TaskProgress{
 				Title: "导入[" + owner.Name + "] 不存在，创建",
 			})
-			_, err = OwnerCreate(this_.db, this_.dbContext, this_.dia, this_.Param, &dialect.OwnerModel{
+			_, err = OwnerCreate(this_.db, this_.dia, this_.Param, &dialect.OwnerModel{
 				OwnerName:             ownerName,
 				OwnerPassword:         this_.ImportOwnerCreatePassword,
 				OwnerCharacterSetName: "utf8mb4",
@@ -147,11 +146,6 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 	}
 
 	workDb, err := this_.newDb(ownerName)
-	if err != nil {
-		return
-	}
-	workDbContext := context.Background()
-	err = workDb.PingContext(workDbContext)
 	if err != nil {
 		return
 	}
@@ -222,7 +216,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 					continue
 				}
 			}
-			err = this_.importTable(workDb, workDbContext, owner.Name, path, tableName, tableName)
+			err = this_.importTable(workDb, owner.Name, path, tableName, tableName)
 			if err != nil {
 				return
 			}
@@ -234,7 +228,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 	return
 }
 
-func (this_ *taskImport) importTable(workDb *sql.DB, workDbContext context.Context, ownerName string, path string, sourceTableName string, targetTableName string) (err error) {
+func (this_ *taskImport) importTable(workDb *sql.DB, ownerName string, path string, sourceTableName string, targetTableName string) (err error) {
 	if targetTableName == "" {
 		targetTableName = sourceTableName
 	}
@@ -256,7 +250,7 @@ func (this_ *taskImport) importTable(workDb *sql.DB, workDbContext context.Conte
 
 	this_.addProgress(progress)
 
-	tableDetail, err := TableDetail(workDb, workDbContext, this_.dia, this_.Param, ownerName, targetTableName, false)
+	tableDetail, err := TableDetail(workDb, this_.dia, this_.Param, ownerName, targetTableName, false)
 	if err != nil {
 		return
 	}

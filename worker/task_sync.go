@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -55,20 +54,11 @@ type TaskSyncTable struct {
 type taskSync struct {
 	*Task
 	*TaskSyncParam
-	targetDialect   dialect.Dialect
-	targetDb        *sql.DB
-	newDb           func(ownerName string) (db *sql.DB, err error)
-	targetDbContext context.Context
+	targetDialect dialect.Dialect
+	targetDb      *sql.DB
+	newDb         func(ownerName string) (db *sql.DB, err error)
 }
 
-func (this_ *taskSync) initTargetDbContext() (err error) {
-	if this_.targetDb == nil {
-		return
-	}
-	this_.targetDbContext = context.Background()
-	err = this_.targetDb.PingContext(this_.targetDbContext)
-	return
-}
 func (this_ *taskSync) do() (err error) {
 
 	defer func() {
@@ -76,10 +66,6 @@ func (this_ *taskSync) do() (err error) {
 			err = errors.New(fmt.Sprint(e))
 		}
 	}()
-	err = this_.initTargetDbContext()
-	if err != nil {
-		return
-	}
 
 	if len(this_.Owners) == 0 {
 		return
@@ -113,7 +99,7 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 
 	this_.addProgress(progress)
 
-	ownerOne, err := OwnerSelect(this_.db, this_.dbContext, this_.dia, this_.Param, owner.SourceName)
+	ownerOne, err := OwnerSelect(this_.db, this_.dia, this_.Param, owner.SourceName)
 	if err != nil {
 		//fmt.Println("task sync syncOwner OwnerSelect owner:", owner.SourceName, " error:", err.Error())
 		return
@@ -127,7 +113,7 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 
 	if len(tables) == 0 {
 		var list []*dialect.TableModel
-		list, err = TablesSelect(this_.db, this_.dbContext, this_.dia, this_.Param, owner.SourceName)
+		list, err = TablesSelect(this_.db, this_.dia, this_.Param, owner.SourceName)
 		if err != nil {
 			//fmt.Println("task sync syncOwner TablesSelect owner:", owner.SourceName, " error:", err.Error())
 			return
@@ -144,7 +130,7 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 		targetOwnerName = owner.SourceName
 	}
 
-	targetOwnerOne, err := OwnerSelect(this_.targetDb, this_.targetDbContext, this_.targetDialect, this_.Param, targetOwnerName)
+	targetOwnerOne, err := OwnerSelect(this_.targetDb, this_.targetDialect, this_.Param, targetOwnerName)
 	if err != nil {
 		return
 	}
@@ -156,7 +142,7 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 		this_.addProgress(&TaskProgress{
 			Title: "同步[" + targetOwnerName + "] 不存在，创建",
 		})
-		_, err = OwnerCreate(this_.targetDb, this_.targetDbContext, this_.targetDialect, this_.Param, &dialect.OwnerModel{
+		_, err = OwnerCreate(this_.targetDb, this_.targetDialect, this_.Param, &dialect.OwnerModel{
 			OwnerName:             targetOwnerName,
 			OwnerPassword:         this_.OwnerCreatePassword,
 			OwnerCharacterSetName: "utf8mb4",
@@ -219,7 +205,7 @@ func (this_ *taskSync) syncTable(workDb *sql.DB, sourceOwnerName string, sourceT
 
 	this_.addProgress(progress)
 
-	newTableDetail, err := TableDetail(this_.db, this_.dbContext, this_.dia, this_.Param, sourceOwnerName, sourceTableName, false)
+	newTableDetail, err := TableDetail(this_.db, this_.dia, this_.Param, sourceOwnerName, sourceTableName, false)
 	if err != nil {
 		return
 	}
@@ -227,7 +213,7 @@ func (this_ *taskSync) syncTable(workDb *sql.DB, sourceOwnerName string, sourceT
 		err = errors.New("source db table [" + sourceOwnerName + "." + sourceTableName + "] is not exist")
 		return
 	}
-	oldTableDetail, err := TableDetail(this_.targetDb, this_.targetDbContext, this_.targetDialect, this_.Param, targetOwnerName, targetTableName, false)
+	oldTableDetail, err := TableDetail(this_.targetDb, this_.targetDialect, this_.Param, targetOwnerName, targetTableName, false)
 	if err != nil {
 		return
 	}
@@ -276,20 +262,15 @@ func (this_ *taskSync) syncTableSyncStructure(workDb *sql.DB, newTableDetail *di
 			index.IndexName = this_.FormatIndexName(oldTableDetail.OwnerName, oldTableDetail.TableName, index)
 		}
 	}
-	workDbContext := context.Background()
-	err = workDb.PingContext(workDbContext)
-	if err != nil {
-		return
-	}
 	if len(oldTableDetail.ColumnList) == 0 {
 		newTableDetail.TableName = oldTableDetail.TableName
-		err = TableCreate(workDb, workDbContext, this_.targetDialect, this_.Param, oldTableDetail.OwnerName, newTableDetail)
+		err = TableCreate(workDb, this_.targetDialect, this_.Param, oldTableDetail.OwnerName, newTableDetail)
 		if err != nil {
 			return
 		}
 		return
 	} else {
-		err = TableUpdate(workDb, workDbContext, this_.targetDialect, oldTableDetail, this_.dia, newTableDetail)
+		err = TableUpdate(workDb, this_.targetDialect, oldTableDetail, this_.dia, newTableDetail)
 		if err != nil {
 			return
 		}

@@ -5,8 +5,8 @@ go 1.18
 require (
 	github.com/google/uuid v1.3.0
 	github.com/tealeg/xlsx v1.0.5
-	github.com/team-ide/go-driver v1.0.9
-	google.golang.org/protobuf v1.27.1
+	github.com/team-ide/go-driver v1.1.0
+	google.golang.org/protobuf v1.28.1
 )
 
 require (
@@ -14,7 +14,7 @@ require (
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
-	github.com/godror/godror v0.34.0 // indirect
+	github.com/godror/godror v0.35.0 // indirect
 	github.com/godror/knownpb v0.1.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/lib/pq v1.10.7 // indirect

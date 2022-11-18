@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -35,7 +34,6 @@ type Task struct {
 	db         *sql.DB
 	do         func() (err error)
 	Param      *dialect.ParamModel
-	dbContext  context.Context
 }
 
 type TaskProgress struct {
@@ -77,14 +75,6 @@ func StopTask(taskId string) {
 	return
 }
 
-func (this_ *Task) initDbContext() (err error) {
-	if this_.db == nil {
-		return
-	}
-	this_.dbContext = context.Background()
-	err = this_.db.PingContext(this_.dbContext)
-	return
-}
 func (this_ *Task) Start() (err error) {
 	this_.IsStop = false
 	addTask(this_)
@@ -105,10 +95,6 @@ func (this_ *Task) Start() (err error) {
 	this_.StartTime = NowTime()
 	if this_.do == nil {
 		err = errors.New("has nothing to do")
-		return
-	}
-	err = this_.initDbContext()
-	if err != nil {
 		return
 	}
 	err = this_.do()

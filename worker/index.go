@@ -1,13 +1,12 @@
 package worker
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"github.com/team-ide/go-dialect/dialect"
 )
 
-func PrimaryKeysSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string, ignoreError bool) (list []*dialect.PrimaryKeyModel, err error) {
+func PrimaryKeysSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string, ignoreError bool) (list []*dialect.PrimaryKeyModel, err error) {
 	sqlInfo, err := dia.PrimaryKeysSelectSql(param, ownerName, tableName)
 	if err != nil {
 		return
@@ -15,7 +14,7 @@ func PrimaryKeysSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, par
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQueryContext(db, cxt, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo)
 	if err != nil {
 		err = errors.New("PrimaryKeysSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return
@@ -36,7 +35,7 @@ func PrimaryKeysSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, par
 	return
 }
 
-func IndexesSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string, ignoreError bool) (list []*dialect.IndexModel, err error) {
+func IndexesSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string, ignoreError bool) (list []*dialect.IndexModel, err error) {
 	sqlInfo, err := dia.IndexesSelectSql(param, ownerName, tableName)
 	if err != nil {
 		return
@@ -44,7 +43,7 @@ func IndexesSelect(db *sql.DB, cxt context.Context, dia dialect.Dialect, param *
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQueryContext(db, cxt, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo)
 	if err != nil {
 		err = errors.New("IndexesSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return
