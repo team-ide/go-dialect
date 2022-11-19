@@ -262,6 +262,10 @@ func SetStructColumnValues(columnValueMap map[string]interface{}, strValue refle
 				}
 				break
 			case "time.Time":
+				if columnValue == nil || columnValue == 0 {
+					columnValue = time.Time{}
+					break
+				}
 				valueOf := reflect.ValueOf(columnValue)
 				if valueOf.IsNil() || valueOf.IsZero() {
 					columnValue = time.Time{}
