@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-driver/db_mysql"
+	"reflect"
 	"testing"
+	"time"
 )
 
 func TestDoQuery(t *testing.T) {
@@ -29,7 +31,7 @@ func TestDoQueryOne(t *testing.T) {
 		panic(err)
 	}
 	one := &QueryStruct{}
-	_, err = DoQueryStruct(db, `select user as a,1 b from mysql.user where user='mysql.sys'`, []interface{}{}, one)
+	_, err = DoQueryStruct(db, `select user as a,1 b,0 c,now() deleteTime from mysql.user where user='mysql.sys'`, []interface{}{}, one)
 	if err != nil {
 		panic(err)
 	}
@@ -88,9 +90,16 @@ func TestBean(t *testing.T) {
 	//fmt.Println(newBean)
 	//list = append(list, newBean.(*QueryBean))
 	//fmt.Println(list)
+
+	data := &QueryStruct{}
+	reflect.ValueOf(data).Elem().FieldByName("DeleteTime").Set(reflect.ValueOf(time.Time{}))
+	bs, _ := json.Marshal(data)
+	fmt.Println(string(bs))
 }
 
 type QueryStruct struct {
-	A string `json:"a"`
-	B int8   `json:"b"`
+	A          string    `json:"a"`
+	B          int8      `json:"b"`
+	C          int8      `json:"c"`
+	DeleteTime time.Time `json:"deleteTime,omitempty"`
 }
