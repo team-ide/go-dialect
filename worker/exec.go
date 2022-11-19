@@ -200,12 +200,12 @@ func SetStructColumnValues(columnValueMap map[string]interface{}, strValue refle
 		str := field.Tag.Get("column")
 		if str != "" && str != "-" {
 			ss := strings.Split(str, ",")
-			structColumnMap[ss[i]] = field
+			structColumnMap[ss[0]] = field
 		} else {
 			str = field.Tag.Get("json")
 			if str != "" && str != "-" {
 				ss := strings.Split(str, ",")
-				structColumnMap[ss[i]] = field
+				structColumnMap[ss[0]] = field
 			}
 		}
 	}
