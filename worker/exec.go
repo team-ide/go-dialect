@@ -221,39 +221,42 @@ func SetStructColumnValues(columnValueMap map[string]interface{}, strValue refle
 		}
 		valueTypeOf := reflect.TypeOf(columnValue)
 		fieldType := field.Type.String()
-		if valueTypeOf.String() != fieldType {
-			switch fieldType {
-			case "string":
-				columnValue = dialect.GetStringValue(columnValue)
-				break
-			case "int8", "int16", "int32", "int64", "int":
-				str := dialect.GetStringValue(columnValue)
-				num, _ := dialect.StringToInt64(str)
-				if fieldType == "int8" {
-					columnValue = int8(num)
-				} else if fieldType == "int16" {
-					columnValue = int16(num)
-				} else if fieldType == "int32" {
-					columnValue = int32(num)
-				} else if fieldType == "int64" {
-					columnValue = num
-				} else if fieldType == "int" {
-					columnValue = int(num)
+		if valueTypeOf != nil {
+			if valueTypeOf.String() != fieldType {
+				switch fieldType {
+				case "string":
+					columnValue = dialect.GetStringValue(columnValue)
+					break
+				case "int8", "int16", "int32", "int64", "int":
+					str := dialect.GetStringValue(columnValue)
+					num, _ := dialect.StringToInt64(str)
+					if fieldType == "int8" {
+						columnValue = int8(num)
+					} else if fieldType == "int16" {
+						columnValue = int16(num)
+					} else if fieldType == "int32" {
+						columnValue = int32(num)
+					} else if fieldType == "int64" {
+						columnValue = num
+					} else if fieldType == "int" {
+						columnValue = int(num)
+					}
+					break
+				case "float32", "float64":
+					str := dialect.GetStringValue(columnValue)
+					num, _ := strconv.ParseFloat(str, 64)
+					if fieldType == "float32" {
+						columnValue = float32(num)
+					} else if fieldType == "float64" {
+						columnValue = num
+					}
+					break
 				}
-				break
-			case "float32", "float64":
-				str := dialect.GetStringValue(columnValue)
-				num, _ := strconv.ParseFloat(str, 64)
-				if fieldType == "float32" {
-					columnValue = float32(num)
-				} else if fieldType == "float64" {
-					columnValue = num
-				}
-				break
+				fmt.Println("valueTypeOf:", valueTypeOf.String())
+				fmt.Println("field.Type:", field.Type.String())
 			}
-			fmt.Println("valueTypeOf:", valueTypeOf.String())
-			fmt.Println("field.Type:", field.Type.String())
 		}
+
 		valueOf := reflect.ValueOf(columnValue)
 		strValue.FieldByName(field.Name).Set(valueOf)
 	}
