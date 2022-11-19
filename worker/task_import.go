@@ -172,7 +172,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (err error) {
 		}()
 		err = ownerDataSource.Read(nil, func(data *DataSourceData) (err error) {
 			if data.HasSql {
-				_, err = DoExec(workDb, []string{data.Sql})
+				_, err = DoExecs(workDb, []string{data.Sql})
 				if err != nil {
 					err = errors.New("sql:" + data.Sql + " exec error," + err.Error())
 					return
@@ -365,7 +365,7 @@ func (this_ *taskImport) importDataList(workDb *sql.DB, dataList []map[string]in
 		return
 	}
 	var errSql string
-	errSql, err = DoExec(workDb, sqlList)
+	errSql, err = DoExecs(workDb, sqlList)
 	if err != nil {
 		if errSql != "" {
 			err = errors.New("sql:" + errSql + " exec error," + err.Error())

@@ -359,7 +359,7 @@ func (this_ *taskSync) insertDataList(workDb *sql.DB, dataList []map[string]inte
 		return
 	}
 	var errSql string
-	errSql, err = DoExec(workDb, sqlList)
+	errSql, err = DoExecs(workDb, sqlList)
 	if err != nil {
 		if errSql != "" {
 			err = errors.New("sql:" + errSql + " exec error," + err.Error())

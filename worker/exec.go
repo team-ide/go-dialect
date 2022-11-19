@@ -6,8 +6,26 @@ import (
 	"fmt"
 )
 
-func DoExec(db *sql.DB, sqlList []string) (errSql string, err error) {
-	if len(sqlList) == 0 {
+func DoExec(db *sql.DB, sqlInfo string, args ...interface{}) (errSql string, err error) {
+	if len(sqlInfo) == 0 {
+		return
+	}
+	errSql, err = DoExecs(db, []string{sqlInfo}, []interface{}{args})
+
+	return
+}
+
+func DoExecs(db *sql.DB, sqlList []string, argsList ...[]interface{}) (errSql string, err error) {
+	sqlListSize := len(sqlList)
+	if sqlListSize == 0 {
+		return
+	}
+	if len(argsList) == 0 {
+		argsList = make([][]interface{}, sqlListSize)
+	}
+	argsListSize := len(argsList)
+	if sqlListSize != argsListSize {
+		err = errors.New(fmt.Sprintf("sqlList size is [%d] but argsList size is [%d]", sqlListSize, argsListSize))
 		return
 	}
 
