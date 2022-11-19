@@ -126,7 +126,7 @@ func appendTestDialectOracle() {
 				fmt.Println(string(bs))
 				sid := dialect.GetStringValue(one["SID"])
 				serial := dialect.GetStringValue(one["SERIAL#"])
-				_, err = worker.DoExecs(db, []string{`ALTER SYSTEM KILL SESSION '` + sid + `,` + serial + `'`})
+				_, _, err = worker.DoExecs(db, []string{`ALTER SYSTEM KILL SESSION '` + sid + `,` + serial + `'`})
 				if err != nil {
 					println(err)
 					continue

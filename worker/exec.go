@@ -6,16 +6,21 @@ import (
 	"fmt"
 )
 
-func DoExec(db *sql.DB, sqlInfo string, args ...interface{}) (errSql string, err error) {
+func DoExec(db *sql.DB, sqlInfo string, args ...interface{}) (result sql.Result, errSql string, err error) {
 	if len(sqlInfo) == 0 {
 		return
 	}
-	errSql, err = DoExecs(db, []string{sqlInfo}, []interface{}{args})
-
+	resultList, errSql, err := DoExecs(db, []string{sqlInfo}, []interface{}{args})
+	if err != nil {
+		return
+	}
+	if len(resultList) > 0 {
+		result = resultList[0]
+	}
 	return
 }
 
-func DoExecs(db *sql.DB, sqlList []string, argsList ...[]interface{}) (errSql string, err error) {
+func DoExecs(db *sql.DB, sqlList []string, argsList ...[]interface{}) (resultList []sql.Result, errSql string, err error) {
 	sqlListSize := len(sqlList)
 	if sqlListSize == 0 {
 		return
@@ -51,15 +56,17 @@ func DoExecs(db *sql.DB, sqlList []string, argsList ...[]interface{}) (errSql st
 			err = tx.Commit()
 		}
 	}()
+	var result sql.Result
 	for _, one := range sqlList {
 		if one == "" {
 			continue
 		}
 		lastSql = one
-		_, err = tx.Exec(one)
+		result, err = tx.Exec(one)
 		if err != nil {
 			return
 		}
+		resultList = append(resultList, result)
 	}
 
 	return
