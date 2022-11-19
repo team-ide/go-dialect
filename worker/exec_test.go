@@ -29,7 +29,7 @@ func TestDoQueryOne(t *testing.T) {
 		panic(err)
 	}
 	one := &QueryStruct{}
-	_, err = DoQueryStruct(db, `select user as a from mysql.user where user='mysql.sys'`, []interface{}{}, one)
+	_, err = DoQueryStruct(db, `select user as a,1 b from mysql.user where user='mysql.sys'`, []interface{}{}, one)
 	if err != nil {
 		panic(err)
 	}
@@ -92,4 +92,5 @@ func TestBean(t *testing.T) {
 
 type QueryStruct struct {
 	A string `json:"a"`
+	B int8   `json:"b"`
 }
