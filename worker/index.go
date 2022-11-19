@@ -14,7 +14,7 @@ func PrimaryKeysSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamMode
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQuery(db, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo, nil)
 	if err != nil {
 		err = errors.New("PrimaryKeysSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return
@@ -43,7 +43,7 @@ func IndexesSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, o
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQuery(db, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo, nil)
 	if err != nil {
 		err = errors.New("IndexesSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return

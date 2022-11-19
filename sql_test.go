@@ -111,7 +111,7 @@ func appendTestDialectOracle() {
 
 		var err error
 		var list []map[string]interface{}
-		list, err = worker.DoQuery(db, `SELECT * FROM V$SESSION WHERE USERNAME = '`+owner.OwnerName+`'`)
+		list, err = worker.DoQuery(db, `SELECT * FROM V$SESSION WHERE USERNAME = '`+owner.OwnerName+`'`, nil)
 		if err != nil {
 			println(err)
 			return
@@ -126,7 +126,7 @@ func appendTestDialectOracle() {
 				fmt.Println(string(bs))
 				sid := dialect.GetStringValue(one["SID"])
 				serial := dialect.GetStringValue(one["SERIAL#"])
-				_, _, err = worker.DoExecs(db, []string{`ALTER SYSTEM KILL SESSION '` + sid + `,` + serial + `'`})
+				_, _, _, err = worker.DoExecs(db, []string{`ALTER SYSTEM KILL SESSION '` + sid + `,` + serial + `'`}, nil)
 				if err != nil {
 					println(err)
 					continue
@@ -211,7 +211,7 @@ func TestMysql(t *testing.T) {
 	//list, err := worker.DoQuery(db, `select * from ALL_TableS`)
 	//list, err := worker.DoQuery(db, `select * from ALL_OBJECTS`)
 	//list, err := worker.DoQuery(db, `select * from SYS_CLASS`)
-	list, err := worker.DoQuery(db, `set global show_compatibility_56=on`)
+	list, err := worker.DoQuery(db, `set global show_compatibility_56=on`, nil)
 
 	if err != nil {
 		panic(err)
@@ -285,7 +285,7 @@ func TestKinBase(t *testing.T) {
 	FROM ALL_INDEXES
 	WHERE TABLE_NAME='TABLE_DEMO'
 		`
-	list, err := worker.DoQuery(db, sqlInfo)
+	list, err := worker.DoQuery(db, sqlInfo, nil)
 
 	if err != nil {
 		panic(err)
@@ -319,7 +319,7 @@ show superuser_reserved_connections;
 	//	fmt.Println("errsSql:", errsSql)
 	//	panic(err)
 	//}
-	list, err := worker.DoQuery(db, sqlInfo)
+	list, err := worker.DoQuery(db, sqlInfo, nil)
 
 	if err != nil {
 		panic(err)
@@ -337,7 +337,7 @@ func TestOracle(t *testing.T) {
 		panic(err)
 	}
 	//list, err := worker.DoQuery(db, `select * FROM ALL_CONS_COLUMNS`)
-	list, err := worker.DoQuery(db, `SELECT * FROM V$SESSION`)
+	list, err := worker.DoQuery(db, `SELECT * FROM V$SESSION`, nil)
 	if err != nil {
 		panic(err)
 	}

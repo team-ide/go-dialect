@@ -14,7 +14,7 @@ func TablesSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ow
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQuery(db, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo, nil)
 	if err != nil {
 		err = errors.New("TablesSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return
@@ -40,7 +40,7 @@ func TableSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQuery(db, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo, nil)
 	if err != nil {
 		err = errors.New("TableSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return
@@ -70,7 +70,7 @@ func TableDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQuery(db, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo, nil)
 	if err != nil {
 		err = errors.New("TableDetail error sql:" + sqlInfo + ",error:" + err.Error())
 		return
@@ -126,7 +126,7 @@ func TableCreate(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	if len(sqlList) == 0 {
 		return
 	}
-	_, errorSql, _, err := DoExecs(db, sqlList)
+	_, errorSql, _, err := DoExecs(db, sqlList, nil)
 	if err != nil {
 		err = errors.New("TableCreate error sql:" + errorSql + ",error:" + err.Error())
 		return
@@ -147,7 +147,7 @@ func TableDelete(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	if len(sqlList) == 0 {
 		return
 	}
-	_, errorSql, _, err := DoExecs(db, sqlList)
+	_, errorSql, _, err := DoExecs(db, sqlList, nil)
 	if err != nil {
 		err = errors.New("TableDelete error sql:" + errorSql + ",error:" + err.Error())
 		return

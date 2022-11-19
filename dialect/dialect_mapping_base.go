@@ -1,6 +1,9 @@
 package dialect
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 func (this_ *mappingDialect) OwnerNamePack(param *ParamModel, ownerName string) string {
 	char := this_.OwnerNamePackChar
@@ -287,13 +290,16 @@ func (this_ *mappingDialect) InsertDataListSql(param *ParamModel, ownerName stri
 	}
 	return
 }
-func (this_ *mappingDialect) PackPageSql(sqlInfo *string, pageSize int, pageNo int) {
+func (this_ *mappingDialect) PackPageSql(selectSql string, pageSize int, pageNo int) (pageSql string) {
 	if this_.SqlMapping.PackPageSql != nil {
-		this_.SqlMapping.PackPageSql(sqlInfo, pageSize, pageNo)
+		return this_.SqlMapping.PackPageSql(selectSql, pageSize, pageNo)
 	}
+	pageSql += selectSql + fmt.Sprintf(" LIMIT %d,%d", pageSize*(pageNo-1), pageSize)
+	return
 }
-func (this_ *mappingDialect) ReplaceSqlVariable(sqlInfo *string, args *[]interface{}) {
+func (this_ *mappingDialect) ReplaceSqlVariable(sqlInfo string, args []interface{}) (variableSql string) {
 	if this_.SqlMapping.ReplaceSqlVariable != nil {
-		this_.SqlMapping.ReplaceSqlVariable(sqlInfo, args)
+		return this_.SqlMapping.ReplaceSqlVariable(sqlInfo, args)
 	}
+	return
 }

@@ -14,7 +14,7 @@ func OwnersSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel) (l
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQuery(db, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo, nil)
 	if err != nil {
 		err = errors.New("OwnersSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return
@@ -39,7 +39,7 @@ func OwnerSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQuery(db, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo, nil)
 	if err != nil {
 		err = errors.New("OwnerSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return
@@ -65,7 +65,7 @@ func OwnerCreate(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	if len(sqlList) == 0 {
 		return
 	}
-	_, errorSql, _, err := DoExecs(db, sqlList)
+	_, errorSql, _, err := DoExecs(db, sqlList, nil)
 	if err != nil {
 		err = errors.New("OwnerCreate error sql:" + errorSql + ",error:" + err.Error())
 		return
@@ -82,7 +82,7 @@ func OwnerDelete(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	if len(sqlList) == 0 {
 		return
 	}
-	_, errorSql, _, err := DoExecs(db, sqlList)
+	_, errorSql, _, err := DoExecs(db, sqlList, nil)
 	if err != nil {
 		err = errors.New("OwnerDelete error sql:" + errorSql + ",error:" + err.Error())
 		return

@@ -1,6 +1,8 @@
 package dialect
 
-import "strings"
+import (
+	"strings"
+)
 
 func NewMappingMysql() (mapping *SqlMapping) {
 	mapping = &SqlMapping{

@@ -1,6 +1,9 @@
 package dialect
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 func NewMappingOracle() (mapping *SqlMapping) {
 	mapping = &SqlMapping{
@@ -172,6 +175,19 @@ DROP INDEX {indexNamePack}
 	AppendOracleColumnType(mapping)
 	AppendOracleIndexType(mapping)
 
+	mapping.PackPageSql = func(selectSql string, pageSize int, pageNo int) (pageSql string) {
+		pageSql = selectSql
+		locOrderBy := findOrderByIndex(selectSql)
+		if len(locOrderBy) < 1 { //如果没有 order by,增加默认的排序
+			pageSql += " ORDER BY NULL "
+		}
+		pageSql += " OFFSET "
+		pageSql += strconv.Itoa(pageSize * (pageNo - 1))
+		pageSql += " ROWS FETCH NEXT "
+		pageSql += strconv.Itoa(pageSize)
+		pageSql += " ROWS ONLY "
+		return
+	}
 	return
 }
 

@@ -63,11 +63,15 @@ type Dialect interface {
 	IndexAddSql(param *ParamModel, ownerName string, tableName string, index *IndexModel) (sqlList []string, err error)
 	IndexDeleteSql(param *ParamModel, ownerName string, tableName string, indexName string) (sqlList []string, err error)
 
-	PackPageSql(sqlInfo *string, pageSize int, pageNo int)
-	ReplaceSqlVariable(sqlInfo *string, args *[]interface{})
+	PackPageSql(selectSql string, pageSize int, pageNo int) (pageSql string)
+	ReplaceSqlVariable(sqlInfo string, args []interface{}) (variableSql string)
 	InsertSql(param *ParamModel, insert *InsertModel) (sqlList []string, err error)
 
 	InsertDataListSql(param *ParamModel, ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, batchSqlList []string, err error)
+
+	DataListInsertSql(param *ParamModel, ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, valuesList [][]interface{}, err error)
+	DataListUpdateSql(param *ParamModel, ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}, dataWhereList []map[string]interface{}) (sqlList []string, valuesList [][]interface{}, err error)
+	DataListDeleteSql(param *ParamModel, ownerName string, tableName string, columnList []*ColumnModel, dataWhereList []map[string]interface{}) (sqlList []string, valuesList [][]interface{}, err error)
 }
 
 var (

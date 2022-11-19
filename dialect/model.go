@@ -10,6 +10,8 @@ type ParamModel struct {
 	SqlValuePackChar   *string `json:"sqlValuePackChar"`
 	SqlValueEscapeChar *string `json:"sqlValueEscapeChar"`
 
+	AppendSqlValue *bool `json:"appendSqlValue"`
+
 	CustomData map[string]interface{} `json:"customData"`
 }
 

@@ -310,7 +310,7 @@ func (this_ *taskSync) syncTableSyncData(workDb *sql.DB, newTableDetail *dialect
 	}
 	selectSqlInfo += this_.dia.TableNamePack(this_.Param, newTableDetail.TableName)
 
-	list, err := DoQuery(this_.db, selectSqlInfo)
+	list, err := DoQuery(this_.db, selectSqlInfo, nil)
 	if err != nil {
 		return
 	}
@@ -359,7 +359,7 @@ func (this_ *taskSync) insertDataList(workDb *sql.DB, dataList []map[string]inte
 		return
 	}
 	var errSql string
-	_, errSql, _, err = DoExecs(workDb, sqlList)
+	_, errSql, _, err = DoExecs(workDb, sqlList, nil)
 	if err != nil {
 		if errSql != "" {
 			err = errors.New("sql:" + errSql + " exec error," + err.Error())

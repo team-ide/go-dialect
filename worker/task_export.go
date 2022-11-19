@@ -366,7 +366,7 @@ func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSo
 	}
 	selectSqlInfo += this_.dia.TableNamePack(this_.Param, tableDetail.TableName)
 
-	list, err := DoQuery(this_.db, selectSqlInfo)
+	list, err := DoQuery(this_.db, selectSqlInfo, nil)
 	if err != nil {
 		return
 	}

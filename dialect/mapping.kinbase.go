@@ -1,5 +1,7 @@
 package dialect
 
+import "fmt"
+
 func NewMappingKinBase() (mapping *SqlMapping) {
 
 	// http://www.yaotu.net/biancheng/21946.html
@@ -125,5 +127,10 @@ WHERE t1.TABLE_SCHEMA={sqlValuePack(ownerName)}
   AND t1.CONSTRAINT_TYPE='PRIMARY KEY'
 )
 `
+
+	mapping.PackPageSql = func(selectSql string, pageSize int, pageNo int) (pageSql string) {
+		pageSql = selectSql + fmt.Sprintf(" LIMIT %d OFFSET %d", pageSize, pageSize*(pageNo-1))
+		return
+	}
 	return
 }

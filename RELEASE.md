@@ -1,11 +1,7 @@
-# 1.0.8
+# 1.0.9
 
-## Version 1.0.8 （2022/11/19）
+## Version 1.0.9 （2022/11/19）
 
 发布功能
 
-1. 添加 PackPageSql
-2. 添加 ReplaceSqlVariable
-3. 添加 DoQueryWithColumnTypes
-4. 添加 DoExecs
-5. 添加 DoQueryCount
+1. test

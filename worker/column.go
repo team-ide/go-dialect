@@ -14,7 +14,7 @@ func ColumnsSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, o
 	if sqlInfo == "" {
 		return
 	}
-	dataList, err := DoQuery(db, sqlInfo)
+	dataList, err := DoQuery(db, sqlInfo, nil)
 	if err != nil {
 		err = errors.New("ColumnsSelect error sql:" + sqlInfo + ",error:" + err.Error())
 		return
