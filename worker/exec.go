@@ -87,12 +87,33 @@ func DoQueryWithColumnTypes(db *sql.DB, sqlInfo string, args ...interface{}) (co
 	}
 	cache := GetSqlValueCache(columnTypes) //临时存储每行数据
 	for rows.Next() {
-		_ = rows.Scan(cache...)
+		err = rows.Scan(cache...)
+		if err != nil {
+			return
+		}
 		item := make(map[string]interface{})
 		for index, data := range cache {
 			item[columnTypes[index].Name()] = GetSqlValue(columnTypes[index], data)
 		}
 		list = append(list, item)
+	}
+
+	return
+}
+
+func DoQueryCount(db *sql.DB, sqlInfo string, args ...interface{}) (count int64, err error) {
+	rows, err := db.Query(sqlInfo, args...)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+	for rows.Next() {
+		err = rows.Scan(&count)
+		if err != nil {
+			return
+		}
 	}
 
 	return

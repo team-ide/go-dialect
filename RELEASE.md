@@ -1,6 +1,6 @@
-# 1.0.7
+# 1.0.8
 
-## Version 1.0.7 （2022/11/19）
+## Version 1.0.8 （2022/11/19）
 
 发布功能
 
@@ -8,3 +8,4 @@
 2. 添加 ReplaceSqlVariable
 3. 添加 DoQueryWithColumnTypes
 4. 添加 DoExecs
+5. 添加 DoQueryCount
