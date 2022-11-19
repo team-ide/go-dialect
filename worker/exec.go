@@ -140,6 +140,16 @@ func DoQueryStruct(db *sql.DB, sqlInfo string, args []interface{}, str interface
 	}
 	cache := GetSqlValueCache(columnTypes) //临时存储每行数据
 	strVOf := reflect.ValueOf(str)
+
+	var isBase bool
+	switch str.(type) {
+	case *int, *int8, *int16, *int32, *int64, *float32, *float64:
+		isBase = true
+		break
+	}
+	if isBase {
+		cache = []interface{}{str}
+	}
 	for rows.Next() {
 		if find {
 			err = errors.New("has more rows by query one")
@@ -150,7 +160,9 @@ func DoQueryStruct(db *sql.DB, sqlInfo string, args []interface{}, str interface
 		if err != nil {
 			return
 		}
-
+		if isBase {
+			continue
+		}
 		item := make(map[string]interface{})
 		for index, data := range cache {
 			item[columnTypes[index].Name()] = GetSqlValue(columnTypes[index], data)

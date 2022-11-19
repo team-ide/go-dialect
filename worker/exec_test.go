@@ -111,8 +111,8 @@ func TestQueryUser(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	one := &UserModel{}
-	_, err = DoQueryStruct(db, `SELECT * FROM TM_USER WHERE userId=?`, []interface{}{1}, one)
+	var one int64
+	_, err = DoQueryStruct(db, `SELECT value FROM TM_ID WHERE idType=?`, []interface{}{5001}, &one)
 	if err != nil {
 		panic(err)
 	}
@@ -120,17 +120,5 @@ func TestQueryUser(t *testing.T) {
 	fmt.Println(string(bs))
 }
 
-type UserModel struct {
-	UserId     int64     `json:"userId,omitempty"`
-	Name       string    `json:"name,omitempty"`
-	Avatar     string    `json:"avatar,omitempty"`
-	Account    string    `json:"account,omitempty"`
-	Email      string    `json:"email,omitempty"`
-	Activated  int8      `json:"activated,omitempty"` // 激活 用户在注册时候使用邮箱激活，或管理员激活，未激活状态可以登录但不可以使用系统功能
-	Locked     int8      `json:"locked,omitempty"`    // 锁定 账号异常系统自动锁定，如登录异常，系统可以自动解锁或管理员解锁
-	Enabled    int8      `json:"enabled,omitempty"`   // 启用/禁用 管理员可以禁用用户，用户无法登录和使用系统，需要管理员启用
-	Deleted    int8      `json:"deleted,omitempty"`   // 删除 已删除用户不可再使用
-	CreateTime time.Time `json:"createTime,omitempty"`
-	UpdateTime time.Time `json:"updateTime,omitempty"`
-	DeleteTime time.Time `json:"deleteTime,omitempty"`
+type Model struct {
 }
