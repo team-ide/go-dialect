@@ -287,3 +287,13 @@ func (this_ *mappingDialect) InsertDataListSql(param *ParamModel, ownerName stri
 	}
 	return
 }
+func (this_ *mappingDialect) PackPageSql(sqlInfo *string, pageSize int, pageNo int) {
+	if this_.SqlMapping.PackPageSql != nil {
+		this_.SqlMapping.PackPageSql(sqlInfo, pageSize, pageNo)
+	}
+}
+func (this_ *mappingDialect) ReplaceSqlVariable(sqlInfo *string, args *[]interface{}) {
+	if this_.SqlMapping.ReplaceSqlVariable != nil {
+		this_.SqlMapping.ReplaceSqlVariable(sqlInfo, args)
+	}
+}

@@ -47,26 +47,35 @@ func DoExec(db *sql.DB, sqlList []string) (errSql string, err error) {
 	return
 }
 
-func DoQuery(db *sql.DB, sqlInfo string, args ...interface{}) ([]map[string]interface{}, error) {
+func DoQuery(db *sql.DB, sqlInfo string, args ...interface{}) (list []map[string]interface{}, err error) {
+	_, list, err = DoQueryWithColumnTypes(db, sqlInfo, args)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func DoQueryWithColumnTypes(db *sql.DB, sqlInfo string, args ...interface{}) (columnTypes []*sql.ColumnType, list []map[string]interface{}, err error) {
 	rows, err := db.Query(sqlInfo, args...)
 	if err != nil {
-		return nil, err
+		return
 	}
 	defer func() {
 		_ = rows.Close()
 	}()
-	columns, _ := rows.Columns()
-	columnTypes, _ := rows.ColumnTypes()
+	columnTypes, err = rows.ColumnTypes()
+	if err != nil {
+		return
+	}
 	cache := GetSqlValueCache(columnTypes) //临时存储每行数据
-	var list []map[string]interface{}      //返回的切片
 	for rows.Next() {
 		_ = rows.Scan(cache...)
 		item := make(map[string]interface{})
 		for index, data := range cache {
-			item[columns[index]] = GetSqlValue(columnTypes[index], data)
+			item[columnTypes[index].Name()] = GetSqlValue(columnTypes[index], data)
 		}
 		list = append(list, item)
 	}
 
-	return list, nil
+	return
 }

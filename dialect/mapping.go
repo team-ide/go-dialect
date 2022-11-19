@@ -57,6 +57,9 @@ type SqlMapping struct {
 	SqlValuePackChar   string
 	SqlValueEscapeChar string
 
+	PackPageSql        func(sqlInfo *string, pageSize int, pageNo int)
+	ReplaceSqlVariable func(sqlInfo *string, args *[]interface{})
+
 	MethodCache map[string]interface{}
 }
 
