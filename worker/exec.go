@@ -4,13 +4,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 )
 
-func DoExec(db *sql.DB, sqlInfo string, args ...interface{}) (result sql.Result, errSql string, err error) {
+func DoExec(db *sql.DB, sqlInfo string, args ...interface{}) (result sql.Result, err error) {
 	if len(sqlInfo) == 0 {
 		return
 	}
-	resultList, errSql, err := DoExecs(db, []string{sqlInfo}, []interface{}{args})
+	resultList, _, _, err := DoExecs(db, []string{sqlInfo}, []interface{}{args})
 	if err != nil {
 		return
 	}
@@ -20,7 +21,7 @@ func DoExec(db *sql.DB, sqlInfo string, args ...interface{}) (result sql.Result,
 	return
 }
 
-func DoExecs(db *sql.DB, sqlList []string, argsList ...[]interface{}) (resultList []sql.Result, errSql string, err error) {
+func DoExecs(db *sql.DB, sqlList []string, argsList ...[]interface{}) (resultList []sql.Result, errSql string, errArgs []interface{}, err error) {
 	sqlListSize := len(sqlList)
 	if sqlListSize == 0 {
 		return
@@ -34,17 +35,6 @@ func DoExecs(db *sql.DB, sqlList []string, argsList ...[]interface{}) (resultLis
 		return
 	}
 
-	var lastSql string
-	defer func() {
-		if err != nil {
-			errSql = lastSql
-		} else {
-			if e := recover(); e != nil {
-				err = errors.New(fmt.Sprint(e))
-				errSql = lastSql
-			}
-		}
-	}()
 	tx, err := db.Begin()
 	if err != nil {
 		return
@@ -57,13 +47,16 @@ func DoExecs(db *sql.DB, sqlList []string, argsList ...[]interface{}) (resultLis
 		}
 	}()
 	var result sql.Result
-	for _, one := range sqlList {
-		if one == "" {
+	for i := 0; i < sqlListSize; i++ {
+		sqlInfo := sqlList[i]
+		args := argsList[i]
+		if strings.TrimSpace(sqlInfo) == "" {
 			continue
 		}
-		lastSql = one
-		result, err = tx.Exec(one)
+		result, err = tx.Exec(sqlInfo, args...)
 		if err != nil {
+			errSql = sqlInfo
+			errArgs = args
 			return
 		}
 		resultList = append(resultList, result)
