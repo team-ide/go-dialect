@@ -62,6 +62,35 @@ func TableSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	return
 }
 
+func TablesDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, ignoreError bool) (list []*dialect.TableModel, err error) {
+	sqlInfo, err := dia.TablesSelectSql(param, ownerName)
+	if err != nil {
+		return
+	}
+	if sqlInfo == "" {
+		return
+	}
+	dataList, err := DoQuery(db, sqlInfo, nil)
+	if err != nil {
+		err = errors.New("TablesSelect error sql:" + sqlInfo + ",error:" + err.Error())
+		return
+	}
+	for _, data := range dataList {
+		model, e := dia.TableModel(data)
+		if e != nil {
+			model = &dialect.TableModel{
+				Error: e.Error(),
+			}
+		}
+
+		err = appendTableDetail(db, dia, param, ownerName, model, ignoreError)
+		if err != nil {
+			return
+		}
+		list = append(list, model)
+	}
+	return
+}
 func TableDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, tableName string, ignoreError bool) (table *dialect.TableModel, err error) {
 	sqlInfo, err := dia.TableSelectSql(param, ownerName, tableName)
 	if err != nil {
@@ -81,38 +110,44 @@ func TableDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 			model = &dialect.TableModel{
 				Error: e.Error(),
 			}
+		}
+		table = model
+		err = appendTableDetail(db, dia, param, ownerName, table, ignoreError)
+	}
+	return
+}
+
+func appendTableDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, table *dialect.TableModel, ignoreError bool) (err error) {
+
+	var e error
+	table.ColumnList, e = ColumnsSelect(db, dia, param, ownerName, table.TableName, ignoreError)
+	if e != nil {
+		if !ignoreError {
+			err = e
+			return
+		}
+		table.Error += e.Error()
+	} else {
+		ps, e := PrimaryKeysSelect(db, dia, param, ownerName, table.TableName, ignoreError)
+		if e != nil {
+			if !ignoreError {
+				err = e
+				return
+			}
+			table.Error += e.Error()
 		} else {
-			model.ColumnList, e = ColumnsSelect(db, dia, param, ownerName, model.TableName, ignoreError)
+			table.AddPrimaryKey(ps...)
+			is, e := IndexesSelect(db, dia, param, ownerName, table.TableName, ignoreError)
 			if e != nil {
 				if !ignoreError {
 					err = e
 					return
 				}
-				model.Error = e.Error()
+				table.Error += e.Error()
 			} else {
-				ps, e := PrimaryKeysSelect(db, dia, param, ownerName, model.TableName, ignoreError)
-				if e != nil {
-					if !ignoreError {
-						err = e
-						return
-					}
-					model.Error = e.Error()
-				} else {
-					model.AddPrimaryKey(ps...)
-					is, e := IndexesSelect(db, dia, param, ownerName, model.TableName, ignoreError)
-					if e != nil {
-						if !ignoreError {
-							err = e
-							return
-						}
-						model.Error = e.Error()
-					} else {
-						model.AddIndex(is...)
-					}
-				}
+				table.AddIndex(is...)
 			}
 		}
-		table = model
 	}
 
 	return
