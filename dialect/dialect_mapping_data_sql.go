@@ -9,11 +9,10 @@ func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName stri
 	if len(dataList) == 0 {
 		return
 	}
-	var keys []string
+
+	var columnCache = map[string]*ColumnModel{}
 	for _, column := range columnList {
-		if column.PrimaryKey {
-			keys = append(keys, column.ColumnName)
-		}
+		columnCache[column.ColumnName] = column
 	}
 
 	for _, data := range dataList {
@@ -21,13 +20,10 @@ func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName stri
 		var values []interface{}
 		insertColumns := ""
 		insertValues := ""
-		for _, column := range columnList {
-			value, valueOk := data[column.ColumnName]
-			if !valueOk {
-				continue
-			}
+		for name, value := range data {
+			column := columnCache[name]
 
-			insertColumns += this_.ColumnNamePack(param, column.ColumnName) + ", "
+			insertColumns += this_.ColumnNamePack(param, name) + ", "
 			this_.AppendSqlValue(param, &insertValues, column, value, &values)
 			insertValues += ", "
 		}
@@ -61,11 +57,9 @@ func (this_ *mappingDialect) DataListUpdateSql(param *ParamModel, ownerName stri
 		err = errors.New("更新数据与更新条件数量不一致")
 		return
 	}
-	var keyColumnList []*ColumnModel
+	var columnCache = map[string]*ColumnModel{}
 	for _, column := range columnList {
-		if column.PrimaryKey {
-			keyColumnList = append(keyColumnList, column)
-		}
+		columnCache[column.ColumnName] = column
 	}
 
 	for index, data := range dataList {
@@ -84,26 +78,19 @@ func (this_ *mappingDialect) DataListUpdateSql(param *ParamModel, ownerName stri
 		sql += this_.TableNamePack(param, tableName)
 		sql += " SET "
 
-		for _, column := range columnList {
-			value, valueOK := data[column.ColumnName]
-			if !valueOK {
-				continue
-			}
-
-			sql += "" + this_.ColumnNamePack(param, column.ColumnName) + "="
+		for name, value := range data {
+			column := columnCache[name]
+			sql += "" + this_.ColumnNamePack(param, name) + "="
 			this_.AppendSqlValue(param, &sql, column, value, &values)
 			sql += ", "
 		}
 		sql = strings.TrimSuffix(sql, ", ")
 
 		sql += " WHERE "
-		whereColumnList := keyColumnList
-		if len(keyColumnList) == 0 {
-			whereColumnList = columnList
-		}
-		for _, column := range whereColumnList {
-			sql += "" + this_.ColumnNamePack(param, column.ColumnName) + "="
-			this_.AppendSqlValue(param, &sql, column, dataWhere[column.ColumnName], &values)
+		for name, value := range dataWhere {
+			column := columnCache[name]
+			sql += "" + this_.ColumnNamePack(param, name) + "="
+			this_.AppendSqlValue(param, &sql, column, value, &values)
 			sql += " AND "
 		}
 		sql = strings.TrimSuffix(sql, " AND ")
@@ -126,11 +113,9 @@ func (this_ *mappingDialect) DataListDeleteSql(param *ParamModel, ownerName stri
 	if len(dataWhereList) == 0 {
 		return
 	}
-	var keyColumnList []*ColumnModel
+	var columnCache = map[string]*ColumnModel{}
 	for _, column := range columnList {
-		if column.PrimaryKey {
-			keyColumnList = append(keyColumnList, column)
-		}
+		columnCache[column.ColumnName] = column
 	}
 
 	for _, dataWhere := range dataWhereList {
@@ -148,13 +133,11 @@ func (this_ *mappingDialect) DataListDeleteSql(param *ParamModel, ownerName stri
 		sql += this_.TableNamePack(param, tableName)
 
 		sql += " WHERE "
-		whereColumnList := keyColumnList
-		if len(keyColumnList) == 0 {
-			whereColumnList = columnList
-		}
-		for _, column := range whereColumnList {
-			sql += "" + this_.ColumnNamePack(param, column.ColumnName) + "="
-			this_.AppendSqlValue(param, &sql, column, dataWhere[column.ColumnName], &values)
+
+		for name, value := range dataWhere {
+			column := columnCache[name]
+			sql += "" + this_.ColumnNamePack(param, name) + "="
+			this_.AppendSqlValue(param, &sql, column, value, &values)
 			sql += " AND "
 		}
 		sql = strings.TrimSuffix(sql, " AND ")
