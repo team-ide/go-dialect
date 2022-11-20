@@ -100,12 +100,11 @@ func (this_ *mappingDialect) DataListUpdateSql(param *ParamModel, ownerName stri
 		whereColumnList := keyColumnList
 		if len(keyColumnList) == 0 {
 			whereColumnList = columnList
-		} else {
-			for _, column := range whereColumnList {
-				sql += "" + this_.ColumnNamePack(param, column.ColumnName) + "="
-				this_.AppendSqlValue(param, &sql, column, dataWhere[column.ColumnName], &values)
-				sql += " AND "
-			}
+		}
+		for _, column := range whereColumnList {
+			sql += "" + this_.ColumnNamePack(param, column.ColumnName) + "="
+			this_.AppendSqlValue(param, &sql, column, dataWhere[column.ColumnName], &values)
+			sql += " AND "
 		}
 		sql = strings.TrimSuffix(sql, " AND ")
 
@@ -152,12 +151,11 @@ func (this_ *mappingDialect) DataListDeleteSql(param *ParamModel, ownerName stri
 		whereColumnList := keyColumnList
 		if len(keyColumnList) == 0 {
 			whereColumnList = columnList
-		} else {
-			for _, column := range whereColumnList {
-				sql += "" + this_.ColumnNamePack(param, column.ColumnName) + "="
-				this_.AppendSqlValue(param, &sql, column, dataWhere[column.ColumnName], &values)
-				sql += " AND "
-			}
+		}
+		for _, column := range whereColumnList {
+			sql += "" + this_.ColumnNamePack(param, column.ColumnName) + "="
+			this_.AppendSqlValue(param, &sql, column, dataWhere[column.ColumnName], &values)
+			sql += " AND "
 		}
 		sql = strings.TrimSuffix(sql, " AND ")
 
