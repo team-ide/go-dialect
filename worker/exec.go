@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -138,7 +139,6 @@ func DoQueryStruct(db *sql.DB, sqlInfo string, args []interface{}, str interface
 	if err != nil {
 		return
 	}
-	cache := GetSqlValueCache(columnTypes) //临时存储每行数据
 	strVOf := reflect.ValueOf(str)
 
 	var isBase bool
@@ -147,15 +147,18 @@ func DoQueryStruct(db *sql.DB, sqlInfo string, args []interface{}, str interface
 		isBase = true
 		break
 	}
-	if isBase {
-		cache = []interface{}{str}
-	}
+	var cache []interface{}
 	for rows.Next() {
 		if find {
 			err = errors.New("has more rows by query one")
 			return
 		}
 		find = true
+		if isBase {
+			cache = []interface{}{str}
+		} else {
+			cache = GetSqlValueCache(columnTypes) //临时存储每行数据
+		}
 		err = rows.Scan(cache...)
 		if err != nil {
 			return
@@ -183,9 +186,9 @@ func DoQueryWithColumnTypes(db *sql.DB, sqlInfo string, args []interface{}) (col
 	if err != nil {
 		return
 	}
-	cache := GetSqlValueCache(columnTypes) //临时存储每行数据
 	for rows.Next() {
 
+		cache := GetSqlValueCache(columnTypes) //临时存储每行数据
 		err = rows.Scan(cache...)
 		if err != nil {
 			return
@@ -200,15 +203,24 @@ func DoQueryWithColumnTypes(db *sql.DB, sqlInfo string, args []interface{}) (col
 	return
 }
 
-func SetStructColumnValues(columnValueMap map[string]interface{}, strValue reflect.Value) {
-	if len(columnValueMap) == 0 {
+var (
+	structFieldMapCache  = map[reflect.Type]map[string]reflect.StructField{}
+	structColumnMapCache = map[reflect.Type]map[string]reflect.StructField{}
+	structMapLock        sync.Mutex
+)
+
+func getStructColumn(tOf reflect.Type) (structFieldMap map[string]reflect.StructField, structColumnMap map[string]reflect.StructField) {
+	structMapLock.Lock()
+	defer structMapLock.Unlock()
+	structFieldMap, ok := structFieldMapCache[tOf]
+	structColumnMap = structColumnMapCache[tOf]
+	if ok {
+		//fmt.Println("find from cache")
 		return
 	}
-	tOf := strValue.Type()
-
-	structFieldMap := map[string]reflect.StructField{}
-	structColumnMap := map[string]reflect.StructField{}
-	for i := 0; i < strValue.NumField(); i++ {
+	structFieldMap = map[string]reflect.StructField{}
+	structColumnMap = map[string]reflect.StructField{}
+	for i := 0; i < tOf.NumField(); i++ {
 		field := tOf.Field(i)
 		structFieldMap[field.Name] = field
 		str := field.Tag.Get("column")
@@ -223,6 +235,17 @@ func SetStructColumnValues(columnValueMap map[string]interface{}, strValue refle
 			}
 		}
 	}
+	structFieldMapCache[tOf] = structFieldMap
+	structColumnMapCache[tOf] = structColumnMap
+	return
+}
+func SetStructColumnValues(columnValueMap map[string]interface{}, strValue reflect.Value) {
+	if len(columnValueMap) == 0 {
+		return
+	}
+	tOf := strValue.Type()
+
+	_, structColumnMap := getStructColumn(tOf)
 
 	for columnName, columnValue := range columnValueMap {
 		field, find := structColumnMap[columnName]

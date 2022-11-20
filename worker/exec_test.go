@@ -49,7 +49,7 @@ func TestDoQueryOne(t *testing.T) {
 
 func TestDoQueryPage(t *testing.T) {
 	page := NewPage()
-	page.PageNo = 3
+	page.PageNo = 1
 	page.PageSize = 3
 	db, err := db_mysql.Open(db_mysql.GetDSN("root", "123456", "127.0.0.1", 3306, ""))
 	if err != nil {
@@ -68,6 +68,16 @@ func TestDoQueryPage(t *testing.T) {
 	}
 	var dataList []*QueryStruct
 
+	err = DoQueryPageStructs(db, dia, `select user as a from mysql.user `, []interface{}{}, page, &dataList)
+	if err != nil {
+		panic(err)
+	}
+	bs, _ = json.Marshal(page)
+	fmt.Println(string(bs))
+	for _, one := range dataList {
+		bs, _ = json.Marshal(one)
+		fmt.Println(string(bs))
+	}
 	err = DoQueryPageStructs(db, dia, `select user as a from mysql.user `, []interface{}{}, page, &dataList)
 	if err != nil {
 		panic(err)
