@@ -17,6 +17,7 @@ type Dialect interface {
 	GetColumnTypeInfos() (columnTypeInfoList []*ColumnTypeInfo)
 	GetColumnTypeInfo(typeName string) (columnTypeInfo *ColumnTypeInfo, err error)
 	ColumnTypePack(column *ColumnModel) (columnTypePack string, err error)
+	GetIndexTypeInfos() (indexTypeInfoList []*IndexTypeInfo)
 	//FormatDefaultValue(column *ColumnModel) (defaultValue string)
 	//ToColumnTypeInfo(columnType string) (columnTypeInfo *ColumnTypeInfo, length, decimal int, err error)
 

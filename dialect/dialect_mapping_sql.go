@@ -120,6 +120,7 @@ func (this_ *mappingDialect) TableCreateSql(param *ParamModel, ownerName string,
 
 	var tableCreateColumnSql string
 	for i, column := range table.ColumnList {
+
 		tableCreateColumnSql, err = this_.TableCreateColumnSql(param, column)
 		if err != nil {
 			return
@@ -156,19 +157,23 @@ func (this_ *mappingDialect) TableCreateSql(param *ParamModel, ownerName string,
 
 	var sqlList_ []string
 
-	sqlList_, err = this_.TableCommentSql(param, ownerName, table.TableName, table.TableComment)
-	if err != nil {
-		return
+	if table.TableComment != "" {
+		sqlList_, err = this_.TableCommentSql(param, ownerName, table.TableName, table.TableComment)
+		if err != nil {
+			return
+		}
+		sqlList = append(sqlList, sqlList_...)
 	}
-	sqlList = append(sqlList, sqlList_...)
 
 	if !this_.TableCreateColumnHasComment {
 		for _, column := range table.ColumnList {
-			sqlList_, err = this_.ColumnCommentSql(param, ownerName, table.TableName, column.ColumnName, column.ColumnComment)
-			if err != nil {
-				return
+			if column.ColumnComment != "" {
+				sqlList_, err = this_.ColumnCommentSql(param, ownerName, table.TableName, column.ColumnName, column.ColumnComment)
+				if err != nil {
+					return
+				}
+				sqlList = append(sqlList, sqlList_...)
 			}
-			sqlList = append(sqlList, sqlList_...)
 		}
 	}
 
@@ -388,6 +393,7 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 		//fmt.Println(data)
 		return
 	}
+	column.ColumnDataType = columnTypeInfo.Name
 	if columnTypeInfo.FullColumnByColumnType != nil {
 		err = columnTypeInfo.FullColumnByColumnType(columnType, column)
 		if err != nil {
@@ -592,6 +598,13 @@ func (this_ *mappingDialect) IndexModel(data map[string]interface{}) (index *Ind
 	if GetStringValue(data["UNIQUENESS"]) == "UNIQUE" {
 		index.IndexType = "unique"
 	}
+	indexTypeInfo, err := this_.GetIndexTypeInfo(index.IndexType)
+	if err != nil {
+		//fmt.Println(data)
+		return
+	}
+	index.IndexType = indexTypeInfo.Name
+
 	return
 }
 
