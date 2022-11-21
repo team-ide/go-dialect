@@ -188,6 +188,19 @@ DROP INDEX {indexNamePack}
 		pageSql += " ROWS ONLY "
 		return
 	}
+	mapping.ReplaceSqlVariable = func(sqlInfo string, args []interface{}) (variableSql string) {
+		strList := strings.Split(sqlInfo, "?")
+		if len(strList) < 1 {
+			variableSql = sqlInfo
+			return
+		}
+		variableSql = strList[0]
+		for i := 1; i < len(strList); i++ {
+			variableSql += ":" + strconv.Itoa(i)
+			variableSql += strList[i]
+		}
+		return
+	}
 	return
 }
 

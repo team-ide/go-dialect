@@ -43,6 +43,7 @@ func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName stri
 			sql += " VALUES (" + insertValues + ")"
 		}
 
+		sql = this_.ReplaceSqlVariable(sql, values)
 		sqlList = append(sqlList, sql)
 		valuesList = append(valuesList, values)
 	}
@@ -95,6 +96,7 @@ func (this_ *mappingDialect) DataListUpdateSql(param *ParamModel, ownerName stri
 		}
 		sql = strings.TrimSuffix(sql, " AND ")
 
+		sql = this_.ReplaceSqlVariable(sql, values)
 		sqlList = append(sqlList, sql)
 		valuesList = append(valuesList, values)
 	}
@@ -142,6 +144,7 @@ func (this_ *mappingDialect) DataListDeleteSql(param *ParamModel, ownerName stri
 		}
 		sql = strings.TrimSuffix(sql, " AND ")
 
+		sql = this_.ReplaceSqlVariable(sql, values)
 		sqlList = append(sqlList, sql)
 		valuesList = append(valuesList, values)
 	}
@@ -250,5 +253,6 @@ func (this_ *mappingDialect) DataListSelectSql(param *ParamModel, ownerName stri
 		}
 
 	}
+	sql = this_.ReplaceSqlVariable(sql, values)
 	return
 }

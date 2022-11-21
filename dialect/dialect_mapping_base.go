@@ -294,12 +294,13 @@ func (this_ *mappingDialect) PackPageSql(selectSql string, pageSize int, pageNo 
 	if this_.SqlMapping.PackPageSql != nil {
 		return this_.SqlMapping.PackPageSql(selectSql, pageSize, pageNo)
 	}
-	pageSql += selectSql + fmt.Sprintf(" LIMIT %d,%d", pageSize*(pageNo-1), pageSize)
+	pageSql = selectSql + fmt.Sprintf(" LIMIT %d,%d", pageSize*(pageNo-1), pageSize)
 	return
 }
 func (this_ *mappingDialect) ReplaceSqlVariable(sqlInfo string, args []interface{}) (variableSql string) {
 	if this_.SqlMapping.ReplaceSqlVariable != nil {
 		return this_.SqlMapping.ReplaceSqlVariable(sqlInfo, args)
 	}
+	variableSql = sqlInfo
 	return
 }
