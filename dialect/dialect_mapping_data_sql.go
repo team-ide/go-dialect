@@ -5,6 +5,15 @@ import (
 	"strings"
 )
 
+func (this_ *mappingDialect) AppendSqlValue(param *ParamModel, sqlInfo *string, column *ColumnModel, value interface{}, args *[]interface{}) {
+	if param != nil && param.AppendSqlValue != nil && *param.AppendSqlValue {
+		*sqlInfo += this_.SqlValuePack(param, column, value)
+	} else {
+		*sqlInfo += "?"
+		*args = append(*args, value)
+	}
+}
+
 func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, valuesList [][]interface{}, err error) {
 	if len(dataList) == 0 {
 		return
@@ -102,15 +111,6 @@ func (this_ *mappingDialect) DataListUpdateSql(param *ParamModel, ownerName stri
 	}
 	return
 }
-
-func (this_ *mappingDialect) AppendSqlValue(param *ParamModel, sqlInfo *string, column *ColumnModel, value interface{}, args *[]interface{}) {
-	if param != nil && param.AppendSqlValue != nil && *param.AppendSqlValue {
-		*sqlInfo += this_.SqlValuePack(param, column, value)
-	} else {
-		*sqlInfo += "?"
-		*args = append(*args, value)
-	}
-}
 func (this_ *mappingDialect) DataListDeleteSql(param *ParamModel, ownerName string, tableName string, columnList []*ColumnModel, dataWhereList []map[string]interface{}) (sqlList []string, valuesList [][]interface{}, err error) {
 	if len(dataWhereList) == 0 {
 		return
@@ -168,8 +168,10 @@ type Order struct {
 
 func (this_ *mappingDialect) DataListSelectSql(param *ParamModel, ownerName string, tableName string, columnList []*ColumnModel, whereList []*Where, orderList []*Order) (sql string, values []interface{}, err error) {
 	selectColumns := ""
+	var columnCache = map[string]*ColumnModel{}
 	for _, column := range columnList {
 		selectColumns += this_.ColumnNamePack(param, column.ColumnName) + ","
+		columnCache[column.ColumnName] = column
 	}
 	selectColumns = strings.TrimSuffix(selectColumns, ",")
 	if selectColumns == "" {
@@ -186,52 +188,66 @@ func (this_ *mappingDialect) DataListSelectSql(param *ParamModel, ownerName stri
 	if len(whereList) > 0 {
 		sql += " WHERE"
 		for index, where := range whereList {
+			column := columnCache[where.Name]
 			sql += " " + this_.ColumnNamePack(param, where.Name)
 			value := where.Value
 			switch where.SqlConditionalOperation {
 			case "like":
-				sql += " LIKE ?"
-				values = append(values, "%"+value+"%")
+				sql += " LIKE "
+				value = "%" + value + "%"
+				this_.AppendSqlValue(param, &sql, column, value, &values)
 			case "not like":
-				sql += " NOT LIKE ?"
-				values = append(values, "%"+value+"%")
+				sql += " NOT LIKE "
+				value = "%" + value + "%"
+				this_.AppendSqlValue(param, &sql, column, value, &values)
 			case "like start":
-				sql += " LIKE ?"
-				values = append(values, ""+value+"%")
+				sql += " LIKE "
+				value = "" + value + "%"
+				this_.AppendSqlValue(param, &sql, column, value, &values)
 			case "not like start":
-				sql += " NOT LIKE ?"
-				values = append(values, ""+value+"%")
+				sql += " NOT LIKE "
+				value = "" + value + "%"
+				this_.AppendSqlValue(param, &sql, column, value, &values)
 			case "like end":
-				sql += " LIKE ?"
-				values = append(values, "%"+value+"")
+				sql += " LIKE "
+				value = "%" + value + ""
+				this_.AppendSqlValue(param, &sql, column, value, &values)
 			case "not like end":
-				sql += " NOT LIKE ?"
-				values = append(values, "%"+value+"")
+				sql += " NOT LIKE "
+				value = "%" + value + ""
+				this_.AppendSqlValue(param, &sql, column, value, &values)
 			case "is null":
 				sql += " IS NULL"
 			case "is not null":
 				sql += " IS NOT NULL"
 			case "is empty":
-				sql += " = ?"
-				values = append(values, "")
+				sql += " = "
+				value = ""
+				this_.AppendSqlValue(param, &sql, column, value, &values)
 			case "is not empty":
-				sql += " <> ?"
-				values = append(values, "")
+				sql += " <> "
+				this_.AppendSqlValue(param, &sql, column, value, &values)
 			case "between":
-				sql += " BETWEEN ? AND ?"
-				values = append(values, where.Before, where.After)
+				sql += " BETWEEN "
+				this_.AppendSqlValue(param, &sql, column, where.Before, &values)
+				sql += " AND "
+				this_.AppendSqlValue(param, &sql, column, where.After, &values)
 			case "not between":
-				sql += " NOT BETWEEN ? AND ?"
-				values = append(values, where.Before, where.After)
+				sql += " NOT BETWEEN "
+				this_.AppendSqlValue(param, &sql, column, where.Before, &values)
+				sql += " AND "
+				this_.AppendSqlValue(param, &sql, column, where.After, &values)
 			case "in":
-				sql += " IN (?)"
-				values = append(values, value)
+				sql += " IN ("
+				this_.AppendSqlValue(param, &sql, column, value, &values)
+				sql += ")"
 			case "not in":
-				sql += " NOT IN (?)"
-				values = append(values, value)
+				sql += " NOT IN ("
+				this_.AppendSqlValue(param, &sql, column, value, &values)
+				sql += ")"
 			default:
-				sql += " " + where.SqlConditionalOperation + " ?"
-				values = append(values, value)
+				sql += " " + where.SqlConditionalOperation + " "
+				this_.AppendSqlValue(param, &sql, column, value, &values)
 			}
 			// params_ = append(params_, where.Value)
 			if index < len(whereList)-1 {
