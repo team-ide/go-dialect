@@ -429,19 +429,18 @@ func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSo
 	var pageSize = batchNumber
 	var pageNo = 1
 
-	pageSql := this_.dia.PackPageSql(selectSqlInfo, pageSize, pageNo)
-
 	var dataList []map[string]interface{}
 	for {
 
 		if this_.IsStop {
 			return
 		}
-
+		pageSql := this_.dia.PackPageSql(selectSqlInfo, pageSize, pageNo)
 		dataList, err = DoQuery(this_.db, pageSql, nil)
 		if err != nil {
 			return
 		}
+		pageNo += 1
 		dataListCount := len(dataList)
 		this_.countIncr(&this_.DataReadyCount, dataListCount)
 		if dataListCount == 0 {
