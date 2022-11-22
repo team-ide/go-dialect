@@ -43,12 +43,12 @@ func doExport() {
 
 	var owners = getExportOwners(*exportOwner)
 	task := worker.NewTaskExport(db, dia, exportDia, &worker.TaskExportParam{
-		Owners:            owners,
-		ExportStruct:      *exportStruct == "" || *exportStruct == "1" || *exportStruct == "true",
-		ExportData:        *exportData == "" || *exportData == "1" || *exportData == "true",
-		ExportAppendOwner: *exportAppendOwner == "1" || *exportAppendOwner == "true",
-		Dir:               *exportDir,
-		ExportBatchSql:    true,
+		Owners:          owners,
+		ExportStruct:    *exportStruct == "" || *exportStruct == "1" || *exportStruct == "true",
+		ExportData:      *exportData == "" || *exportData == "1" || *exportData == "true",
+		AppendOwnerName: *exportAppendOwner == "1" || *exportAppendOwner == "true",
+		Dir:             *exportDir,
+		ExportBatchSql:  true,
 		FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
 			return tableName + "_" + index.IndexName
 		},

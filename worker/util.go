@@ -19,6 +19,14 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
+func PathIsDir(path string) (bool, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	return fileInfo.IsDir(), nil
+}
+
 //NowTime 获取当前时间戳
 func NowTime() int64 {
 	return GetTime(Now())

@@ -18,10 +18,18 @@ type Task struct {
 	IsEnd      bool   `json:"isEnd"`
 	IsStop     bool   `json:"isStop"`
 
-	DataCount    int `json:"dataCount"`
-	ReadyCount   int `json:"readyDataCount"`
-	SuccessCount int `json:"successCount"`
-	ErrorCount   int `json:"errorCount"`
+	OwnerCount        int `json:"ownerCount"`
+	OwnerSuccessCount int `json:"ownerSuccessCount"`
+	OwnerErrorCount   int `json:"ownerErrorCount"`
+
+	TableCount        int `json:"tableCount"`
+	TableSuccessCount int `json:"tableSuccessCount"`
+	TableErrorCount   int `json:"tableErrorCount"`
+
+	DataCount        int `json:"dataCount"`
+	DataReadyCount   int `json:"dataReadyCount"`
+	DataSuccessCount int `json:"dataSuccessCount"`
+	DataErrorCount   int `json:"dataErrorCount"`
 
 	countLock sync.Mutex
 
@@ -121,25 +129,9 @@ func (this_ *Task) Stop() {
 	this_.IsStop = true
 }
 
-func (this_ *Task) dataCountIncr() {
-	this_.countIncr(&this_.DataCount)
-}
-
-func (this_ *Task) readyCountIncr() {
-	this_.countIncr(&this_.ReadyCount)
-}
-
-func (this_ *Task) successCountIncr() {
-	this_.countIncr(&this_.SuccessCount)
-}
-
-func (this_ *Task) errorCountIncr() {
-	this_.countIncr(&this_.ErrorCount)
-}
-
-func (this_ *Task) countIncr(count *int) {
+func (this_ *Task) countIncr(count *int, num int) {
 	this_.countLock.Lock()
 	defer this_.countLock.Unlock()
-	*count++
+	*count += num
 	return
 }

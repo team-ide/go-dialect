@@ -54,9 +54,9 @@ func doImport() {
 			return
 		},
 		&worker.TaskImportParam{
-			Owners:                      owners,
-			ImportOwnerCreateIfNotExist: *importOwnerCreateIfNotExist == "1" || *importOwnerCreateIfNotExist == "true",
-			ImportOwnerCreatePassword:   password,
+			Owners:                owners,
+			OwnerCreateIfNotExist: *importOwnerCreateIfNotExist == "1" || *importOwnerCreateIfNotExist == "true",
+			OwnerCreatePassword:   password,
 			FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
 				return tableName + "_" + index.IndexName
 			},

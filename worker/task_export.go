@@ -33,14 +33,14 @@ func NewTaskExport(db *sql.DB, dia dialect.Dialect, targetDialect dialect.Dialec
 type TaskExportParam struct {
 	Owners []*TaskExportOwner `json:"owners"`
 
-	DataSourceType    *DataSourceType `json:"dataSourceType"`
-	BatchNumber       int             `json:"batchNumber"`
-	ExportStruct      bool            `json:"exportStruct"`
-	ExportData        bool            `json:"exportData"`
-	ExportBatchSql    bool            `json:"exportBatchSql"`
-	ContinueIsError   bool            `json:"continueIsError"`
-	Dir               string          `json:"dir"`
-	ExportAppendOwner bool            `json:"exportAppendOwner"`
+	DataSourceType  *DataSourceType `json:"dataSourceType"`
+	BatchNumber     int             `json:"batchNumber"`
+	ExportStruct    bool            `json:"exportStruct"`
+	ExportData      bool            `json:"exportData"`
+	ExportBatchSql  bool            `json:"exportBatchSql"`
+	ErrorContinue   bool            `json:"errorContinue"`
+	Dir             string          `json:"dir"`
+	AppendOwnerName bool            `json:"appendOwnerName"`
 
 	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string `json:"-"`
 	OnProgress      func(progress *TaskProgress)                                               `json:"-"`
@@ -54,8 +54,15 @@ type TaskExportOwner struct {
 }
 
 type TaskExportTable struct {
+	SourceName string              `json:"sourceName"`
+	TargetName string              `json:"targetName"`
+	Columns    []*TaskExportColumn `json:"columns"`
+}
+
+type TaskExportColumn struct {
 	SourceName string `json:"sourceName"`
 	TargetName string `json:"targetName"`
+	Value      string `json:"value"`
 }
 
 type taskExport struct {
@@ -71,11 +78,29 @@ func (this_ *taskExport) do() (err error) {
 			err = errors.New(fmt.Sprint(e))
 		}
 	}()
-	if len(this_.Owners) == 0 {
-		return
+	owners := this_.Owners
+	if len(owners) == 0 {
+		var list []*dialect.OwnerModel
+		list, err = OwnersSelect(this_.db, this_.dia, this_.Param)
+		if err != nil {
+			return
+		}
+		for _, one := range list {
+			owners = append(owners, &TaskExportOwner{
+				SourceName: one.OwnerName,
+			})
+		}
 	}
+
+	this_.countIncr(&this_.OwnerCount, len(owners))
 	for _, owner := range this_.Owners {
-		err = this_.exportOwner(owner)
+		var success bool
+		success, err = this_.exportOwner(owner)
+		if success {
+			this_.countIncr(&this_.OwnerSuccessCount, 1)
+		} else {
+			this_.countIncr(&this_.OwnerErrorCount, 1)
+		}
 		if err != nil {
 			return
 		}
@@ -110,7 +135,7 @@ func (this_ *taskExport) getFileName(dir string, name string) (fileName string, 
 	return
 }
 
-func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (err error) {
+func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (success bool, err error) {
 	progress := &TaskProgress{
 		Title: "导出[" + owner.SourceName + "]",
 	}
@@ -122,7 +147,7 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (err error) {
 			progress.Error = err.Error()
 		}
 
-		if this_.ContinueIsError {
+		if this_.ErrorContinue {
 			err = nil
 		}
 	}()
@@ -152,6 +177,7 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (err error) {
 			})
 		}
 	}
+	this_.countIncr(&this_.TableCount, len(tables))
 
 	ownerName := owner.TargetName
 	if ownerName == "" {
@@ -159,7 +185,7 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (err error) {
 	}
 
 	var ownerDataSource DataSource
-	if !this_.DataSourceType.OwnerIsDir {
+	if this_.DataSourceType == DataSourceTypeSql {
 		fileName := ownerName + "." + this_.DataSourceType.FileSuffix
 		fileName, err = this_.getFileName("", fileName)
 		if err != nil {
@@ -189,17 +215,22 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (err error) {
 				continue
 			}
 		}
-
-		err = this_.exportTable(ownerDataSource, owner.SourceName, table.SourceName, owner.TargetName, table.TargetName)
+		var success_ bool
+		success_, err = this_.exportTable(ownerDataSource, owner.SourceName, table.SourceName, owner.TargetName, table.TargetName, table.Columns)
+		if success_ {
+			this_.countIncr(&this_.TableSuccessCount, 1)
+		} else {
+			this_.countIncr(&this_.TableErrorCount, 1)
+		}
 		if err != nil {
 			return
 		}
 	}
-
+	success = true
 	return
 }
 
-func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName string, sourceTableName string, targetOwnerName string, targetTableName string) (err error) {
+func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName string, sourceTableName string, targetOwnerName string, targetTableName string, columns []*TaskExportColumn) (success bool, err error) {
 	if targetOwnerName == "" {
 		targetOwnerName = sourceOwnerName
 	}
@@ -217,7 +248,7 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 			progress.Error = err.Error()
 		}
 
-		if this_.ContinueIsError {
+		if this_.ErrorContinue {
 			err = nil
 		}
 	}()
@@ -234,7 +265,7 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 	}
 
 	var tableDataSource DataSource
-	if this_.DataSourceType.OwnerIsDir {
+	if this_.DataSourceType != DataSourceTypeSql {
 		fileName := targetTableName + "." + this_.DataSourceType.FileSuffix
 		fileName, err = this_.getFileName(targetOwnerName, fileName)
 		if err != nil {
@@ -262,11 +293,12 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 		}
 	}
 	if this_.ExportData {
-		err = this_.exportTableData(ownerDataSource, tableDataSource, tableDetail, targetOwnerName, targetTableName)
+		err = this_.exportTableData(ownerDataSource, tableDataSource, tableDetail, targetOwnerName, targetTableName, columns)
 		if err != nil {
 			return
 		}
 	}
+	success = true
 	return
 }
 
@@ -278,7 +310,7 @@ func (this_ *taskExport) exportTableStruct(ownerDataSource DataSource, tableData
 	var oldOwnerName = tableDetail.OwnerName
 	var oldTableName = tableDetail.TableName
 	tableDetail.OwnerName = targetOwnerName
-	if this_.ExportAppendOwner {
+	if this_.AppendOwnerName {
 		tableDetail.OwnerName = targetOwnerName
 	} else {
 		tableDetail.OwnerName = ""
@@ -295,7 +327,7 @@ func (this_ *taskExport) exportTableStruct(ownerDataSource DataSource, tableData
 			progress.Error = err.Error()
 		}
 
-		if this_.ContinueIsError {
+		if this_.ErrorContinue {
 			err = nil
 		}
 	}()
@@ -334,7 +366,7 @@ func (this_ *taskExport) exportTableStruct(ownerDataSource DataSource, tableData
 	return
 }
 
-func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSource DataSource, tableDetail *dialect.TableModel, targetOwnerName string, targetTableName string) (err error) {
+func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSource DataSource, tableDetail *dialect.TableModel, targetOwnerName string, targetTableName string, columns []*TaskExportColumn) (err error) {
 
 	progress := &TaskProgress{
 		Title: "导出表数据[" + tableDetail.OwnerName + "." + tableDetail.TableName + "] 到 [" + targetOwnerName + "." + targetTableName + "]",
@@ -347,7 +379,7 @@ func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSo
 			progress.Error = err.Error()
 		}
 
-		if this_.ContinueIsError {
+		if this_.ErrorContinue {
 			err = nil
 		}
 	}()
@@ -366,31 +398,58 @@ func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSo
 	}
 	selectSqlInfo += this_.dia.TableNamePack(this_.Param, tableDetail.TableName)
 
-	list, err := DoQuery(this_.db, selectSqlInfo, nil)
+	countSql, err := dialect.FormatCountSql(selectSqlInfo)
+	if err != nil {
+		return
+	}
+	totalCount, err := DoQueryCount(this_.db, countSql, nil)
 	if err != nil {
 		return
 	}
 
+	this_.countIncr(&this_.DataCount, totalCount)
 	batchNumber := this_.BatchNumber
 	if batchNumber <= 0 {
 		batchNumber = 100
 	}
+	var pageSize = batchNumber
+	var pageNo = 1
 
-	dataListGroup := SplitArrayMap(list, batchNumber)
+	pageSql := this_.dia.PackPageSql(selectSqlInfo, pageSize, pageNo)
 
-	for _, dataList := range dataListGroup {
-		err = this_.exportDataList(ownerDataSource, tableDataSource, dataList, targetOwnerName, targetTableName, tableDetail.ColumnList)
+	var dataList []map[string]interface{}
+	for {
+		dataList, err = DoQuery(this_.db, pageSql, nil)
 		if err != nil {
 			return
 		}
+		dataListCount := len(dataList)
+		this_.countIncr(&this_.DataReadyCount, dataListCount)
+		if dataListCount == 0 {
+			break
+		}
+		var success bool
+		success, err = this_.exportDataList(ownerDataSource, tableDataSource, dataList, targetOwnerName, targetTableName, tableDetail.ColumnList, columns)
+		if success {
+			this_.countIncr(&this_.DataSuccessCount, dataListCount)
+		} else {
+			this_.countIncr(&this_.DataErrorCount, dataListCount)
+		}
+		if err != nil {
+			return
+		}
+		if dataListCount == 0 {
+			break
+		}
 	}
+
 	return
 }
 
-func (this_ *taskExport) exportDataList(ownerDataSource DataSource, tableDataSource DataSource, dataList []map[string]interface{}, targetOwnerName string, targetTableName string, columnList []*dialect.ColumnModel) (err error) {
+func (this_ *taskExport) exportDataList(ownerDataSource DataSource, tableDataSource DataSource, dataList []map[string]interface{}, targetOwnerName string, targetTableName string, columnList []*dialect.ColumnModel, columns []*TaskExportColumn) (success bool, err error) {
 
 	progress := &TaskProgress{
-		Title: "插入数据[" + targetOwnerName + "." + targetTableName + "]",
+		Title: "导出数据[" + targetOwnerName + "." + targetTableName + "]",
 	}
 	defer func() {
 		if e := recover(); e != nil {
@@ -400,17 +459,53 @@ func (this_ *taskExport) exportDataList(ownerDataSource DataSource, tableDataSou
 			progress.Error = err.Error()
 		}
 
-		if this_.ContinueIsError {
+		if this_.ErrorContinue {
 			err = nil
 		}
 	}()
 
 	this_.addProgress(progress)
+	var columnCache = make(map[string]*dialect.ColumnModel)
+	for _, one := range columnList {
+		columnCache[one.ColumnName] = one
+	}
+	var newColumnList = columnList
+	if len(columns) > 0 {
+		newColumnList = []*dialect.ColumnModel{}
+		for _, one := range columns {
+			if one.SourceName == "" {
+				continue
+			}
+			column := columnCache[one.SourceName]
+			targetName := one.TargetName
+			if targetName == "" {
+				targetName = one.SourceName
+			}
+			newColumn := &dialect.ColumnModel{}
+			newColumn.ColumnName = targetName
+			if targetName != one.SourceName || one.Value != "" {
+				for _, data := range dataList {
+					if one.Value != "" {
+						data[targetName] = one.Value
+					} else {
+						data[targetName] = data[one.SourceName]
+					}
+				}
+			}
+			if column != nil {
+				newColumn.ColumnDataType = column.ColumnDataType
+				newColumn.ColumnDefault = column.ColumnDefault
+				newColumn.ColumnLength = column.ColumnLength
+				newColumn.ColumnDecimal = column.ColumnDecimal
+			}
+			newColumnList = append(newColumnList, newColumn)
+		}
+	}
 	var sqlOwner = ""
-	if this_.ExportAppendOwner {
+	if this_.AppendOwnerName {
 		sqlOwner = targetOwnerName
 	}
-	sqlList, batchSqlList, err := this_.targetDialect.InsertDataListSql(this_.Param, sqlOwner, targetTableName, columnList, dataList)
+	sqlList, batchSqlList, err := this_.targetDialect.InsertDataListSql(this_.Param, sqlOwner, targetTableName, newColumnList, dataList)
 	if err != nil {
 		return
 	}
@@ -460,6 +555,7 @@ func (this_ *taskExport) exportDataList(ownerDataSource DataSource, tableDataSou
 			}
 		}
 	}
+	success = true
 
 	return
 }
