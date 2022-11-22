@@ -111,6 +111,10 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (success bool, err 
 
 	this_.addProgress(progress)
 
+	if this_.IsStop {
+		return
+	}
+
 	ownerName := owner.Name
 
 	//
@@ -223,6 +227,10 @@ func (this_ *taskImport) importSql(workDb *sql.DB, ownerName string, path string
 
 	this_.addProgress(progress)
 
+	if this_.IsStop {
+		return
+	}
+
 	param := &DataSourceParam{
 		Path:      path,
 		SheetName: ownerName,
@@ -237,8 +245,14 @@ func (this_ *taskImport) importSql(workDb *sql.DB, ownerName string, path string
 		_ = ownerDataSource.ReadEnd()
 	}()
 	err = ownerDataSource.Read(nil, func(data *DataSourceData) (err error) {
+
+		if this_.IsStop {
+			return
+		}
+
 		if data.HasSql {
 			this_.countIncr(&this_.DataCount, 1)
+
 			var result sql.Result
 			result, err = DoExec(workDb, data.Sql, nil)
 			if err != nil {
@@ -280,6 +294,10 @@ func (this_ *taskImport) importTable(workDb *sql.DB, ownerName string, tableName
 	}()
 
 	this_.addProgress(progress)
+
+	if this_.IsStop {
+		return
+	}
 
 	if tablePath == "" {
 		if ownerPath == "" {
@@ -374,6 +392,10 @@ func (this_ *taskImport) importTableData(workDb *sql.DB, tableDataSource DataSou
 
 	this_.addProgress(progress)
 
+	if this_.IsStop {
+		return
+	}
+
 	batchNumber := this_.BatchNumber
 	if batchNumber <= 0 {
 		batchNumber = 100
@@ -402,6 +424,10 @@ func (this_ *taskImport) importTableData(workDb *sql.DB, tableDataSource DataSou
 	var dataList []map[string]interface{}
 
 	err = tableDataSource.Read(newColumnList, func(data *DataSourceData) (err error) {
+
+		if this_.IsStop {
+			return
+		}
 		if data.HasData && data.Data != nil {
 			dataList = append(dataList, data.Data)
 			this_.countIncr(&this_.DataCount, 1)
@@ -420,6 +446,11 @@ func (this_ *taskImport) importTableData(workDb *sql.DB, tableDataSource DataSou
 		return
 	}
 	if len(dataList) >= 0 {
+
+		if this_.IsStop {
+			return
+		}
+
 		err = this_.importDataList(workDb, dataList, targetOwnerName, targetTableName, newColumnList)
 		dataList = make([]map[string]interface{}, 0)
 		if err != nil {
@@ -452,6 +483,10 @@ func (this_ *taskImport) importDataList(workDb *sql.DB, dataList []map[string]in
 	}()
 
 	this_.addProgress(progress)
+
+	if this_.IsStop {
+		return
+	}
 
 	this_.countIncr(&this_.DataReadyCount, dataListCount)
 

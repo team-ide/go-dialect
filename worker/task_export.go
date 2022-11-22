@@ -154,6 +154,10 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (success bool, err 
 
 	this_.addProgress(progress)
 
+	if this_.IsStop {
+		return
+	}
+
 	ownerOne, err := OwnerSelect(this_.db, this_.dia, this_.Param, owner.SourceName)
 	if err != nil {
 		return
@@ -255,6 +259,9 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 
 	this_.addProgress(progress)
 
+	if this_.IsStop {
+		return
+	}
 	tableDetail, err := TableDetail(this_.db, this_.dia, this_.Param, sourceOwnerName, sourceTableName, false)
 	if err != nil {
 		return
@@ -334,6 +341,9 @@ func (this_ *taskExport) exportTableStruct(ownerDataSource DataSource, tableData
 
 	this_.addProgress(progress)
 
+	if this_.IsStop {
+		return
+	}
 	if this_.FormatIndexName != nil {
 		for _, index := range tableDetail.IndexList {
 			index.IndexName = this_.FormatIndexName(tableDetail.OwnerName, tableDetail.TableName, index)
@@ -386,6 +396,10 @@ func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSo
 
 	this_.addProgress(progress)
 
+	if this_.IsStop {
+		return
+	}
+
 	selectSqlInfo := "SELECT "
 	var columnNames []string
 	for _, one := range tableDetail.ColumnList {
@@ -419,6 +433,11 @@ func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSo
 
 	var dataList []map[string]interface{}
 	for {
+
+		if this_.IsStop {
+			return
+		}
+
 		dataList, err = DoQuery(this_.db, pageSql, nil)
 		if err != nil {
 			return
@@ -465,6 +484,10 @@ func (this_ *taskExport) exportDataList(ownerDataSource DataSource, tableDataSou
 	}()
 
 	this_.addProgress(progress)
+
+	if this_.IsStop {
+		return
+	}
 	var columnCache = make(map[string]*dialect.ColumnModel)
 	for _, one := range columnList {
 		columnCache[one.ColumnName] = one

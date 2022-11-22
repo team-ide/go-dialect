@@ -33,9 +33,8 @@ type Task struct {
 
 	countLock sync.Mutex
 
-	Extend           interface{}     `json:"extend"`
-	Errors           []string        `json:"errors"`
-	TaskProgressList []*TaskProgress `json:"taskProgressList"`
+	Extend interface{} `json:"extend"`
+	Errors []string    `json:"errors"`
 
 	onProgress func(progress *TaskProgress)
 	dia        dialect.Dialect
@@ -55,14 +54,6 @@ var (
 	taskCacheLock sync.Mutex
 )
 
-func GetTask(taskId string) (task *Task) {
-	taskCacheLock.Lock()
-	defer taskCacheLock.Unlock()
-
-	task = taskCache[taskId]
-	return
-}
-
 func addTask(task *Task) {
 	taskCacheLock.Lock()
 	defer taskCacheLock.Unlock()
@@ -72,14 +63,34 @@ func addTask(task *Task) {
 	return
 }
 
+func GetTask(taskId string) (task *Task) {
+	taskCacheLock.Lock()
+	defer taskCacheLock.Unlock()
+
+	task = taskCache[taskId]
+	return
+}
+
 func StopTask(taskId string) {
 	taskCacheLock.Lock()
 	defer taskCacheLock.Unlock()
 
 	task := taskCache[taskId]
 	if task != nil {
-		task.Stop()
+		task.stop()
 	}
+	return
+}
+
+func ClearTask(taskId string) {
+	taskCacheLock.Lock()
+	defer taskCacheLock.Unlock()
+
+	task := taskCache[taskId]
+	if task != nil {
+		task.stop()
+	}
+	delete(taskCache, taskId)
 	return
 }
 
@@ -113,7 +124,6 @@ func (this_ *Task) Start() (err error) {
 }
 
 func (this_ *Task) addProgress(progress *TaskProgress) {
-	this_.TaskProgressList = append(this_.TaskProgressList, progress)
 	if this_.onProgress != nil {
 		this_.onProgress(progress)
 	}
@@ -125,7 +135,7 @@ func (this_ *Task) addError(err string) {
 	return
 }
 
-func (this_ *Task) Stop() {
+func (this_ *Task) stop() {
 	this_.IsStop = true
 }
 
