@@ -33,8 +33,8 @@ type Task struct {
 
 	countLock sync.Mutex
 
-	Extend interface{} `json:"extend"`
-	Errors []string    `json:"errors"`
+	Extend map[string]interface{} `json:"extend"`
+	Errors []string               `json:"errors"`
 
 	onProgress func(progress *TaskProgress)
 	dia        dialect.Dialect
