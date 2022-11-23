@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func NewTaskImport(db *sql.DB, dia dialect.Dialect, newDb func(ownerName string) (db *sql.DB, err error), taskImportParam *TaskImportParam) (res *taskImport) {
+func NewTaskImport(db *sql.DB, dia dialect.Dialect, newDb func(owner *TaskImportOwner) (db *sql.DB, err error), taskImportParam *TaskImportParam) (res *taskImport) {
 	if taskImportParam.DataSourceType == nil {
 		taskImportParam.DataSourceType = DataSourceTypeSql
 	}
@@ -33,7 +33,6 @@ type TaskImportParam struct {
 	DataSourceType        *DataSourceType `json:"dataSourceType"`
 	BatchNumber           int             `json:"batchNumber"`
 	OwnerCreateIfNotExist bool            `json:"ownerCreateIfNotExist"`
-	OwnerCreatePassword   string          `json:"ownerCreatePassword"`
 	ErrorContinue         bool            `json:"errorContinue"`
 
 	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string `json:"-"`
@@ -45,6 +44,8 @@ type TaskImportOwner struct {
 	Path           string             `json:"path"`
 	SkipTableNames []string           `json:"skipTableNames"`
 	Tables         []*TaskImportTable `json:"tables"`
+	Username       string             `json:"username"`
+	Password       string             `json:"password"`
 }
 
 type TaskImportTable struct {
@@ -61,7 +62,7 @@ type TaskImportColumn struct {
 type taskImport struct {
 	*Task
 	*TaskImportParam `json:"-"`
-	newDb            func(ownerName string) (db *sql.DB, err error)
+	newDb            func(owner *TaskImportOwner) (db *sql.DB, err error)
 }
 
 func (this_ *taskImport) do() (err error) {
@@ -130,7 +131,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (success bool, err 
 			})
 			_, err = OwnerCreate(this_.db, this_.dia, this_.Param, &dialect.OwnerModel{
 				OwnerName:             ownerName,
-				OwnerPassword:         this_.OwnerCreatePassword,
+				OwnerPassword:         owner.Password,
 				OwnerCharacterSetName: "utf8mb4",
 			})
 			if err != nil {
@@ -143,7 +144,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (success bool, err 
 		}
 	}
 
-	workDb, err := this_.newDb(ownerName)
+	workDb, err := this_.newDb(owner)
 	if err != nil {
 		return
 	}

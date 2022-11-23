@@ -46,17 +46,37 @@ func doSync() {
 		password = *sourcePassword
 	}
 	var owners = getSyncOwners(*syncOwner)
+	for _, owner := range owners {
+		owner.Password = password
+	}
 	task := worker.NewTaskSync(db, dia, targetDb, targetDia,
-		func(ownerName string) (workDb *sql.DB, err error) {
-			if *targetDialect == "sqlite" || *targetDialect == "sqlite3" {
-				workDb = targetDb
+		func(owner *worker.TaskSyncOwner) (workDb *sql.DB, err error) {
+			ownerName := owner.TargetName
+			if ownerName == "" {
+				ownerName = owner.SourceName
+			}
+			ownerUsername := owner.Username
+			ownerPassword := owner.Password
+
+			if ownerPassword == "" {
+				ownerPassword = password
+			}
+
+			if *sourceDialect == "sqlite" || *sourceDialect == "sqlite3" {
+				workDb = db
 				return
 			}
 			if *sourceDialect == "mysql" {
-				workDb, err = getDbInfo(*sourceDialect, *sourceUser, password, *sourceHost, *sourcePort, ownerName)
+				if ownerUsername == "" {
+					ownerUsername = *sourceUser
+				}
+				workDb, err = getDbInfo(*sourceDialect, ownerUsername, ownerPassword, *sourceHost, *sourcePort, ownerName)
 				return
 			}
-			workDb, err = getDbInfo(*targetDialect, *targetUser, password, *targetHost, *targetPort, ownerName)
+			if ownerUsername == "" {
+				ownerUsername = ownerName
+			}
+			workDb, err = getDbInfo(*sourceDialect, ownerName, password, *sourceHost, *sourcePort, *sourceDatabase)
 			return
 		},
 		&worker.TaskSyncParam{
@@ -64,7 +84,6 @@ func doSync() {
 			SyncStruct:            *syncStruct == "" || *syncStruct == "1" || *syncStruct == "true",
 			SyncData:              *syncData == "" || *syncData == "1" || *syncData == "true",
 			OwnerCreateIfNotExist: *syncOwnerCreateIfNotExist == "1" || *syncOwnerCreateIfNotExist == "true",
-			OwnerCreatePassword:   password,
 			FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
 				return tableName + "_" + index.IndexName
 			},

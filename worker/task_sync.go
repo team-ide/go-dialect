@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func NewTaskSync(sourceDB *sql.DB, sourceDialect dialect.Dialect, targetDb *sql.DB, targetDialect dialect.Dialect, newDb func(ownerName string) (db *sql.DB, err error), taskSyncParam *TaskSyncParam) (res *taskSync) {
+func NewTaskSync(sourceDB *sql.DB, sourceDialect dialect.Dialect, targetDb *sql.DB, targetDialect dialect.Dialect, newDb func(owner *TaskSyncOwner) (db *sql.DB, err error), taskSyncParam *TaskSyncParam) (res *taskSync) {
 	task := &Task{
 		dia:        sourceDialect,
 		db:         sourceDB,
@@ -28,12 +28,11 @@ func NewTaskSync(sourceDB *sql.DB, sourceDialect dialect.Dialect, targetDb *sql.
 type TaskSyncParam struct {
 	Owners []*TaskSyncOwner `json:"owners"`
 
-	BatchNumber           int    `json:"batchNumber"`
-	SyncStruct            bool   `json:"syncStruct"`
-	SyncData              bool   `json:"syncData"`
-	ContinueIsError       bool   `json:"continueIsError"`
-	OwnerCreateIfNotExist bool   `json:"ownerCreateIfNotExist"`
-	OwnerCreatePassword   string `json:"ownerCreatePassword"`
+	BatchNumber           int  `json:"batchNumber"`
+	SyncStruct            bool `json:"syncStruct"`
+	SyncData              bool `json:"syncData"`
+	ErrorContinue         bool `json:"errorContinue"`
+	OwnerCreateIfNotExist bool `json:"ownerCreateIfNotExist"`
 
 	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string `json:"-"`
 	OnProgress      func(progress *TaskProgress)                                               `json:"-"`
@@ -44,9 +43,17 @@ type TaskSyncOwner struct {
 	TargetName     string           `json:"targetName"`
 	SkipTableNames []string         `json:"skipTableNames"`
 	Tables         []*TaskSyncTable `json:"tables"`
+	Username       string           `json:"username"`
+	Password       string           `json:"password"`
 }
 
 type TaskSyncTable struct {
+	SourceName string            `json:"sourceName"`
+	TargetName string            `json:"targetName"`
+	Columns    []*TaskSyncColumn `json:"columns"`
+}
+
+type TaskSyncColumn struct {
 	SourceName string `json:"sourceName"`
 	TargetName string `json:"targetName"`
 }
@@ -56,7 +63,7 @@ type taskSync struct {
 	*TaskSyncParam
 	targetDialect dialect.Dialect
 	targetDb      *sql.DB
-	newDb         func(ownerName string) (db *sql.DB, err error)
+	newDb         func(owner *TaskSyncOwner) (db *sql.DB, err error)
 }
 
 func (this_ *taskSync) do() (err error) {
@@ -67,11 +74,19 @@ func (this_ *taskSync) do() (err error) {
 		}
 	}()
 
-	if len(this_.Owners) == 0 {
+	owners := this_.Owners
+	if len(owners) == 0 {
 		return
 	}
-	for _, owner := range this_.Owners {
-		err = this_.syncOwner(owner)
+	this_.countIncr(&this_.OwnerCount, len(owners))
+	for _, owner := range owners {
+		var success bool
+		success, err = this_.syncOwner(owner)
+		if success {
+			this_.countIncr(&this_.OwnerSuccessCount, 1)
+		} else {
+			this_.countIncr(&this_.OwnerErrorCount, 1)
+		}
 		if err != nil {
 			return
 		}
@@ -80,7 +95,7 @@ func (this_ *taskSync) do() (err error) {
 	return
 }
 
-func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
+func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (success bool, err error) {
 	progress := &TaskProgress{
 		Title: "同步[" + owner.SourceName + "]",
 	}
@@ -92,7 +107,7 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 			progress.Error = err.Error()
 		}
 
-		if this_.ContinueIsError {
+		if this_.ErrorContinue {
 			err = nil
 		}
 	}()
@@ -144,7 +159,7 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 		})
 		_, err = OwnerCreate(this_.targetDb, this_.targetDialect, this_.Param, &dialect.OwnerModel{
 			OwnerName:             targetOwnerName,
-			OwnerPassword:         this_.OwnerCreatePassword,
+			OwnerPassword:         owner.Password,
 			OwnerCharacterSetName: "utf8mb4",
 		})
 		if err != nil {
@@ -152,11 +167,12 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 		}
 	}
 
-	workDb, err := this_.newDb(targetOwnerName)
+	workDb, err := this_.newDb(owner)
 	if err != nil {
 		return
 	}
 
+	this_.countIncr(&this_.TableCount, len(tables))
 	for _, table := range tables {
 
 		if len(owner.SkipTableNames) > 0 {
@@ -171,16 +187,23 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (err error) {
 			}
 		}
 
-		err = this_.syncTable(workDb, owner.SourceName, table.SourceName, owner.TargetName, table.TargetName)
+		var success_ bool
+		success_, err = this_.syncTable(workDb, owner.SourceName, table.SourceName, owner.TargetName, table.TargetName)
+		if success_ {
+			this_.countIncr(&this_.TableSuccessCount, 1)
+		} else {
+			this_.countIncr(&this_.TableErrorCount, 1)
+		}
 		if err != nil {
 			return
 		}
 	}
+	success = true
 
 	return
 }
 
-func (this_ *taskSync) syncTable(workDb *sql.DB, sourceOwnerName string, sourceTableName string, targetOwnerName string, targetTableName string) (err error) {
+func (this_ *taskSync) syncTable(workDb *sql.DB, sourceOwnerName string, sourceTableName string, targetOwnerName string, targetTableName string) (success bool, err error) {
 	if targetOwnerName == "" {
 		targetOwnerName = sourceOwnerName
 	}
@@ -198,7 +221,7 @@ func (this_ *taskSync) syncTable(workDb *sql.DB, sourceOwnerName string, sourceT
 			progress.Error = err.Error()
 		}
 
-		if this_.ContinueIsError {
+		if this_.ErrorContinue {
 			err = nil
 		}
 	}()
@@ -234,6 +257,7 @@ func (this_ *taskSync) syncTable(workDb *sql.DB, sourceOwnerName string, sourceT
 			return
 		}
 	}
+	success = true
 	return
 }
 
@@ -250,7 +274,7 @@ func (this_ *taskSync) syncTableSyncStructure(workDb *sql.DB, newTableDetail *di
 			progress.Error = err.Error()
 		}
 
-		if this_.ContinueIsError {
+		if this_.ErrorContinue {
 			err = nil
 		}
 	}()
@@ -291,7 +315,7 @@ func (this_ *taskSync) syncTableSyncData(workDb *sql.DB, newTableDetail *dialect
 			progress.Error = err.Error()
 		}
 
-		if this_.ContinueIsError {
+		if this_.ErrorContinue {
 			err = nil
 		}
 	}()
@@ -310,31 +334,63 @@ func (this_ *taskSync) syncTableSyncData(workDb *sql.DB, newTableDetail *dialect
 	}
 	selectSqlInfo += this_.dia.TableNamePack(this_.Param, newTableDetail.TableName)
 
-	list, err := DoQuery(this_.db, selectSqlInfo, nil)
+	countSql, err := dialect.FormatCountSql(selectSqlInfo)
 	if err != nil {
 		return
 	}
-	var columnList = newTableDetail.ColumnList
-	if len(oldTableDetail.ColumnList) > 0 {
-		columnList = oldTableDetail.ColumnList
+	totalCount, err := DoQueryCount(this_.db, countSql, nil)
+	if err != nil {
+		return
 	}
+
+	this_.countIncr(&this_.DataCount, totalCount)
 	batchNumber := this_.BatchNumber
 	if batchNumber <= 0 {
 		batchNumber = 100
 	}
+	var pageSize = batchNumber
+	var pageNo = 1
 
-	dataListGroup := SplitArrayMap(list, batchNumber)
+	var dataList []map[string]interface{}
+	var columnList = newTableDetail.ColumnList
+	if len(oldTableDetail.ColumnList) > 0 {
+		columnList = oldTableDetail.ColumnList
+	}
+	for {
 
-	for _, dataList := range dataListGroup {
-		err = this_.insertDataList(workDb, dataList, oldTableDetail.OwnerName, oldTableDetail.TableName, columnList)
+		if this_.IsStop {
+			return
+		}
+		pageSql := this_.dia.PackPageSql(selectSqlInfo, pageSize, pageNo)
+		dataList, err = DoQuery(this_.db, pageSql, nil)
 		if err != nil {
 			return
 		}
+		pageNo += 1
+		dataListCount := len(dataList)
+		this_.countIncr(&this_.DataReadyCount, dataListCount)
+		if dataListCount == 0 {
+			break
+		}
+		var success bool
+		success, err = this_.insertDataList(workDb, dataList, oldTableDetail.OwnerName, oldTableDetail.TableName, columnList)
+		if success {
+			this_.countIncr(&this_.DataSuccessCount, dataListCount)
+		} else {
+			this_.countIncr(&this_.DataErrorCount, dataListCount)
+		}
+		if err != nil {
+			return
+		}
+		if dataListCount == 0 {
+			break
+		}
 	}
+
 	return
 }
 
-func (this_ *taskSync) insertDataList(workDb *sql.DB, dataList []map[string]interface{}, targetOwnerName string, targetTableName string, columnList []*dialect.ColumnModel) (err error) {
+func (this_ *taskSync) insertDataList(workDb *sql.DB, dataList []map[string]interface{}, targetOwnerName string, targetTableName string, columnList []*dialect.ColumnModel) (success bool, err error) {
 
 	progress := &TaskProgress{
 		Title: "插入数据[" + targetOwnerName + "." + targetTableName + "]",
@@ -347,7 +403,7 @@ func (this_ *taskSync) insertDataList(workDb *sql.DB, dataList []map[string]inte
 			progress.Error = err.Error()
 		}
 
-		if this_.ContinueIsError {
+		if this_.ErrorContinue {
 			err = nil
 		}
 	}()
@@ -366,5 +422,6 @@ func (this_ *taskSync) insertDataList(workDb *sql.DB, dataList []map[string]inte
 		}
 		return
 	}
+	success = true
 	return
 }

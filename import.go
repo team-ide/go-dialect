@@ -33,22 +33,39 @@ func doImport() {
 	if dataSourceType == nil {
 		panic("fileType [" + *fileType + "] not support")
 	}
-	var owners = getImportOwners(*importOwner)
 
 	password := *importOwnerCreatePassword
 	if password == "" {
 		password = *sourcePassword
 	}
+	var owners = getImportOwners(*importOwner)
+	for _, owner := range owners {
+		owner.Password = password
+	}
+
 	task := worker.NewTaskImport(db, dia,
-		func(ownerName string) (workDb *sql.DB, err error) {
+		func(owner *worker.TaskImportOwner) (workDb *sql.DB, err error) {
+			ownerName := owner.Name
+			ownerUsername := owner.Username
+			ownerPassword := owner.Password
+
+			if ownerPassword == "" {
+				ownerPassword = password
+			}
 
 			if *sourceDialect == "sqlite" || *sourceDialect == "sqlite3" {
 				workDb = db
 				return
 			}
 			if *sourceDialect == "mysql" {
-				workDb, err = getDbInfo(*sourceDialect, *sourceUser, password, *sourceHost, *sourcePort, ownerName)
+				if ownerUsername == "" {
+					ownerUsername = *sourceUser
+				}
+				workDb, err = getDbInfo(*sourceDialect, ownerUsername, ownerPassword, *sourceHost, *sourcePort, ownerName)
 				return
+			}
+			if ownerUsername == "" {
+				ownerUsername = ownerName
 			}
 			workDb, err = getDbInfo(*sourceDialect, ownerName, password, *sourceHost, *sourcePort, *sourceDatabase)
 			return
@@ -56,7 +73,6 @@ func doImport() {
 		&worker.TaskImportParam{
 			Owners:                owners,
 			OwnerCreateIfNotExist: *importOwnerCreateIfNotExist == "1" || *importOwnerCreateIfNotExist == "true",
-			OwnerCreatePassword:   password,
 			FormatIndexName: func(ownerName string, tableName string, index *dialect.IndexModel) string {
 				return tableName + "_" + index.IndexName
 			},
