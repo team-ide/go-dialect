@@ -243,21 +243,22 @@ func formatStringValue(packingCharacter string, escapeChar string, valueString s
 	}
 	//valueString = strings.ReplaceAll(valueString, "\n", `\\n`)
 	out := packingCharacter
-	var valueLen = len(valueString)
+	ss := strings.Split(valueString, "")
+	var valueLen = len(ss)
 	for i := 0; i < valueLen; i++ {
-		s := valueString[i]
+		s := ss[i]
 		switch s {
-		case packingCharacter[0]:
+		case packingCharacter:
 			out += escapeChar + packingCharacter
 			break
-		case '\\':
+		case "\\":
 			if escapeChar == "\\" {
 				out += "\\"
 			}
 			out += "\\"
 			break
 		default:
-			out += string(s)
+			out += s
 			break
 		}
 	}
