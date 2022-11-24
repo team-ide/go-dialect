@@ -117,19 +117,19 @@ WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
   AND COLUMN_NAME={sqlValuePack(columnName)}
 `,
 		ColumnAdd: `
-ALTER TABLE [{ownerName}.]{tableName} ADD COLUMN {columnName} {columnType} [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}]
-`,
-		ColumnComment: `
-ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {columnName} {columnName} {columnType} [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}]
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD COLUMN {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)} [COMMENT {sqlValuePack(columnComment)}] [AFTER {columnBeforeColumn}]
 `,
 		ColumnDelete: `
-ALTER TABLE [{ownerName}.]{tableName} DROP COLUMN {columnName}
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP COLUMN {columnNamePack}
+`,
+		ColumnComment: `
 `,
 		ColumnRename: `
-ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {oldColumnName} {newColumnName} {columnType} [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}]
 `,
+		ColumnUpdateHasRename:  true,
+		ColumnUpdateHasComment: true,
 		ColumnUpdate: `
-ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {columnName} {columnName} {columnType} [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}] [AFTER {columnAfter}]
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} CHANGE COLUMN {oldColumnNamePack} {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)} [COMMENT {sqlValuePack(columnComment)}] [AFTER {columnBeforeColumn}]
 `,
 
 		// 主键 相关 SQL

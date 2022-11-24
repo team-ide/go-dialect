@@ -94,6 +94,10 @@ WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
   AND TABLE_NAME={sqlValuePack(tableName)}
   AND COLUMN_NAME={sqlValuePack(columnName)}
 `
+	mapping.ColumnUpdate = `
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} ALTER COLUMN {columnNamePack} TYPE {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
+`
+
 	mapping.PrimaryKeysSelect = `
 SELECT
     t2.COLUMN_NAME columnName,

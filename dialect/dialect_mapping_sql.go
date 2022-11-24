@@ -465,17 +465,58 @@ func (this_ *mappingDialect) ColumnAddSql(param *ParamModel, ownerName string, t
 	return
 }
 
-func (this_ *mappingDialect) ColumnUpdateSql(param *ParamModel, ownerName string, tableName string, column *ColumnModel, newColumn *ColumnModel) (sqlList []string, err error) {
-	sqlList, err = this_.FormatSql(this_.ColumnUpdate, param,
-		column,
-		newColumn,
-		map[string]string{
-			"ownerName": ownerName,
-			"tableName": tableName,
-		},
-	)
-	if err != nil {
-		return
+func (this_ *mappingDialect) ColumnUpdateSql(param *ParamModel, ownerName string, tableName string, oldColumn *ColumnModel, column *ColumnModel) (sqlList []string, err error) {
+	if oldColumn.ColumnName == "" {
+		oldColumn.ColumnName = column.ColumnName
+	}
+	data := map[string]string{
+		"ownerName":     ownerName,
+		"tableName":     tableName,
+		"oldColumnName": oldColumn.ColumnName,
+	}
+	var sqlList_ []string
+	var hasChangeName bool
+	if oldColumn.ColumnName != column.ColumnName {
+		hasChangeName = true
+	}
+	var hasChangeComment bool
+	if oldColumn.ColumnComment != column.ColumnComment {
+		hasChangeComment = true
+	}
+	if !this_.ColumnUpdateHasRename {
+		if hasChangeName {
+			sqlList_, err = this_.ColumnRenameSql(param, ownerName, tableName, oldColumn.ColumnName, column.ColumnName)
+			if err != nil {
+				return
+			}
+			sqlList = append(sqlList, sqlList_...)
+			hasChangeName = false
+		}
+	}
+	if !this_.ColumnUpdateHasComment {
+		if hasChangeComment {
+			sqlList_, err = this_.ColumnCommentSql(param, ownerName, tableName, column.ColumnName, column.ColumnComment)
+			if err != nil {
+				return
+			}
+			sqlList = append(sqlList, sqlList_...)
+			hasChangeComment = false
+		}
+	}
+	if hasChangeName || hasChangeComment ||
+		oldColumn.ColumnDataType != column.ColumnDataType ||
+		oldColumn.ColumnLength != column.ColumnLength ||
+		oldColumn.ColumnDecimal != column.ColumnDecimal ||
+		oldColumn.ColumnDefault != column.ColumnDefault {
+		sqlList_, err = this_.FormatSql(this_.ColumnUpdate, param,
+			oldColumn,
+			column,
+			data,
+		)
+		if err != nil {
+			return
+		}
+		sqlList = append(sqlList, sqlList_...)
 	}
 	return
 }
@@ -494,13 +535,13 @@ func (this_ *mappingDialect) ColumnDeleteSql(param *ParamModel, ownerName string
 	return
 }
 
-func (this_ *mappingDialect) ColumnRenameSql(param *ParamModel, ownerName string, tableName string, columnName string, newColumnName string) (sqlList []string, err error) {
+func (this_ *mappingDialect) ColumnRenameSql(param *ParamModel, ownerName string, tableName string, oldColumnName string, columnName string) (sqlList []string, err error) {
 	sqlList, err = this_.FormatSql(this_.ColumnRename, param,
 		map[string]string{
 			"ownerName":     ownerName,
 			"tableName":     tableName,
+			"oldColumnName": oldColumnName,
 			"columnName":    columnName,
-			"newColumnName": newColumnName,
 		},
 	)
 	if err != nil {

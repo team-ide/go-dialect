@@ -34,13 +34,15 @@ type SqlMapping struct {
 	TableComment                string
 	TableRename                 string
 
-	ColumnsSelect string
-	ColumnSelect  string
-	ColumnAdd     string
-	ColumnDelete  string
-	ColumnComment string
-	ColumnRename  string
-	ColumnUpdate  string
+	ColumnsSelect          string
+	ColumnSelect           string
+	ColumnAdd              string
+	ColumnDelete           string
+	ColumnComment          string
+	ColumnRename           string
+	ColumnUpdateHasRename  bool
+	ColumnUpdateHasComment bool
+	ColumnUpdate           string
 
 	PrimaryKeysSelect string
 	PrimaryKeyAdd     string

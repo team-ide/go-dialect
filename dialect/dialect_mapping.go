@@ -180,12 +180,12 @@ func (this_ *mappingDialect) NewStatementContext(param *ParamModel, dataList ...
 	}
 	statementContext.SetData("tableNamePack", tableNamePack)
 
-	newTableNamePack := ""
-	newTableName, _ := statementContext.GetData("newTableName")
-	if newTableName != nil && newTableName != "" {
-		newTableNamePack = this_.TableNamePack(param, newTableName.(string))
+	oldTableNamePack := ""
+	oldTableName, _ := statementContext.GetData("oldTableName")
+	if oldTableName != nil && oldTableName != "" {
+		oldTableNamePack = this_.TableNamePack(param, oldTableName.(string))
 	}
-	statementContext.SetData("newTableNamePack", newTableNamePack)
+	statementContext.SetData("oldTableNamePack", oldTableNamePack)
 
 	columnNamePack := ""
 	columnName, _ := statementContext.GetData("columnName")
@@ -194,12 +194,12 @@ func (this_ *mappingDialect) NewStatementContext(param *ParamModel, dataList ...
 	}
 	statementContext.SetData("columnNamePack", columnNamePack)
 
-	newColumnNamePack := ""
-	newColumnName, _ := statementContext.GetData("newColumnName")
-	if newColumnName != nil && newColumnName != "" {
-		newColumnNamePack = this_.ColumnNamePack(param, newColumnName.(string))
+	oldColumnNamePack := ""
+	oldColumnName, _ := statementContext.GetData("oldColumnName")
+	if oldColumnName != nil && oldColumnName != "" {
+		oldColumnNamePack = this_.ColumnNamePack(param, oldColumnName.(string))
 	}
-	statementContext.SetData("newColumnNamePack", newColumnNamePack)
+	statementContext.SetData("oldColumnNamePack", oldColumnNamePack)
 
 	columnNamesPack := ""
 	columnNames, _ := statementContext.GetData("columnNames")

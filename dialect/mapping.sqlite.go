@@ -84,17 +84,18 @@ FROM pragma_table_info({tableNamePack}) AS t_i
 WHERE name={sqlValuePack(columnName)}
 `,
 		ColumnAdd: `
-ALTER TABLE [{ownerName}.]{tableName} ADD COLUMN {columnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}]
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD COLUMN {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
 `,
-		ColumnComment: ``,
 		ColumnDelete: `
-ALTER TABLE [{ownerName}.]{tableName} DROP COLUMN {columnName}
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP COLUMN {columnNamePack}
 `,
 		ColumnRename: `
-ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {oldColumnName} {newColumnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}]
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} RENAME COLUMN {oldColumnNamePack} TO {columnNamePack}
 `,
+		ColumnComment:          ``,
+		ColumnUpdateHasRename:  false,
+		ColumnUpdateHasComment: false,
 		ColumnUpdate: `
-ALTER TABLE [{ownerName}.]{tableName} CHANGE COLUMN {columnName} {columnName} {columnType} [CHARACTER SET {characterSetName}] [DEFAULT {columnDefault}] {columnNotNull(columnNotNull)} [COMMENT {columnComment}] [AFTER {columnAfter}]
 `,
 
 		// 主键 相关 SQL
