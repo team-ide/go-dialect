@@ -103,6 +103,9 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (success bool, err 
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {
@@ -190,6 +193,7 @@ func (this_ *taskImport) importOwner(owner *TaskImportOwner) (success bool, err 
 				}
 			}
 			if skip {
+				this_.countIncr(&this_.TableSuccessCount, 1)
 				continue
 			}
 		}
@@ -219,6 +223,9 @@ func (this_ *taskImport) importSql(workDb *sql.DB, ownerName string, path string
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {
@@ -287,6 +294,9 @@ func (this_ *taskImport) importTable(workDb *sql.DB, ownerName string, tableName
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {
@@ -384,6 +394,9 @@ func (this_ *taskImport) importTableData(workDb *sql.DB, tableDataSource DataSou
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {
@@ -473,6 +486,9 @@ func (this_ *taskImport) importDataList(workDb *sql.DB, dataList []map[string]in
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 			this_.countIncr(&this_.DataErrorCount, dataListCount)
 		} else {
 			this_.countIncr(&this_.DataSuccessCount, dataListCount)

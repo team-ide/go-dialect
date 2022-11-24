@@ -31,7 +31,8 @@ func NewTaskExport(db *sql.DB, dia dialect.Dialect, targetDialect dialect.Dialec
 }
 
 type TaskExportParam struct {
-	Owners []*TaskExportOwner `json:"owners"`
+	Owners         []*TaskExportOwner `json:"owners"`
+	SkipOwnerNames []string           `json:"skipOwnerNames"`
 
 	DataSourceType  *DataSourceType `json:"dataSourceType"`
 	BatchNumber     int             `json:"batchNumber"`
@@ -93,7 +94,19 @@ func (this_ *taskExport) do() (err error) {
 	}
 
 	this_.countIncr(&this_.OwnerCount, len(owners))
-	for _, owner := range this_.Owners {
+	for _, owner := range owners {
+		if len(this_.SkipOwnerNames) > 0 {
+			var skip bool
+			for _, skipTableName := range this_.SkipOwnerNames {
+				if strings.EqualFold(owner.SourceName, skipTableName) {
+					skip = true
+				}
+			}
+			if skip {
+				this_.countIncr(&this_.OwnerSuccessCount, 1)
+				continue
+			}
+		}
 		var success bool
 		success, err = this_.exportOwner(owner)
 		if success {
@@ -145,6 +158,9 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (success bool, err 
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {
@@ -216,6 +232,7 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (success bool, err 
 				}
 			}
 			if skip {
+				this_.countIncr(&this_.TableSuccessCount, 1)
 				continue
 			}
 		}
@@ -250,6 +267,9 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {
@@ -332,6 +352,9 @@ func (this_ *taskExport) exportTableStruct(ownerDataSource DataSource, tableData
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {
@@ -387,6 +410,9 @@ func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSo
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {
@@ -438,6 +464,7 @@ func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSo
 		pageSql := this_.dia.PackPageSql(selectSqlInfo, pageSize, pageNo)
 		dataList, err = DoQuery(this_.db, pageSql, nil)
 		if err != nil {
+			err = errors.New("query page query sql:" + pageSql + ",error:" + err.Error())
 			return
 		}
 		pageNo += 1
@@ -475,6 +502,9 @@ func (this_ *taskExport) exportDataList(ownerDataSource DataSource, tableDataSou
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {

@@ -33,7 +33,7 @@ func getTable() (table *dialect.TableModel) {
 }
 
 func testDLL(db *sql.DB, dia dialect.Dialect, ownerName string) {
-	initKinBase()
+	initKingBase()
 	table := getTable()
 	testTableCreate(db, dia, ownerName, getTable())
 

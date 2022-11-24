@@ -1,8 +1,8 @@
 package dialect
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -63,7 +63,6 @@ func (this_ *SqlMapping) GetColumnTypeInfo(typeName string) (columnTypeInfo *Col
 	columnTypeInfo = this_.columnTypeInfoCache[key]
 	if columnTypeInfo == nil {
 		err = errors.New("dialect [" + this_.DialectType().Name + "] GetColumnTypeInfo not support column type name [" + typeName + "]")
-		fmt.Println(err)
 		return
 	}
 	return
@@ -72,6 +71,8 @@ func (this_ *SqlMapping) GetColumnTypeInfo(typeName string) (columnTypeInfo *Col
 func (this_ *SqlMapping) ColumnTypePack(column *ColumnModel) (columnTypePack string, err error) {
 	columnTypeInfo, err := this_.GetColumnTypeInfo(column.ColumnDataType)
 	if err != nil {
+		bs, _ := json.Marshal(column)
+		err = errors.New("ColumnTypePack error column:" + string(bs) + ",error:" + err.Error())
 		return
 	}
 	if columnTypeInfo.ColumnTypePack != nil {

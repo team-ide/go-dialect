@@ -78,6 +78,10 @@ func TablesDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ow
 	for _, data := range dataList {
 		model, e := dia.TableModel(data)
 		if e != nil {
+			if !ignoreError {
+				err = e
+				return
+			}
 			model = &dialect.TableModel{
 				Error: e.Error(),
 			}
@@ -107,6 +111,10 @@ func TableDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	if len(dataList) > 0 {
 		model, e := dia.TableModel(dataList[0])
 		if e != nil {
+			if !ignoreError {
+				err = e
+				return
+			}
 			model = &dialect.TableModel{
 				Error: e.Error(),
 			}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-dialect/worker"
 	"strings"
@@ -16,10 +17,10 @@ func doExport() {
 		println("请输入 导出 生成文件目录")
 		return
 	}
-	if *exportOwner == "" {
-		println("请输入 导出 库或表所属者")
-		return
-	}
+	//if *exportOwner == "" {
+	//	println("请输入 导出 库或表所属者")
+	//	return
+	//}
 	db, err := getDbInfo(*sourceDialect, *sourceUser, *sourcePassword, *sourceHost, *sourcePort, *sourceDatabase)
 	if err != nil {
 		panic(err)
@@ -42,7 +43,14 @@ func doExport() {
 	}
 
 	var owners = getExportOwners(*exportOwner)
+	bs, _ := json.Marshal(owners)
+	fmt.Println("owners:", string(bs))
+
+	skipOwnerStr := *skipOwner
+	skipOwnerStr = strings.TrimSpace(skipOwnerStr)
+
 	task := worker.NewTaskExport(db, dia, exportDia, &worker.TaskExportParam{
+		SkipOwnerNames:  strings.Split(skipOwnerStr, ","),
 		Owners:          owners,
 		ExportStruct:    *exportStruct == "" || *exportStruct == "1" || *exportStruct == "true",
 		ExportData:      *exportData == "" || *exportData == "1" || *exportData == "true",
@@ -53,10 +61,13 @@ func doExport() {
 			return tableName + "_" + index.IndexName
 		},
 		DataSourceType: dataSourceType,
+		BatchNumber:    1000,
+		ErrorContinue:  true,
 		OnProgress: func(progress *worker.TaskProgress) {
-			bs, err := json.Marshal(progress)
-			if err != nil {
-				panic(err)
+			bs, _ := json.Marshal(progress)
+			progress.OnError = func(err error) {
+				println("progress:" + string(bs))
+				println("progress error:" + err.Error())
 			}
 			println(string(bs))
 		},
@@ -69,8 +80,13 @@ func doExport() {
 }
 
 func getExportOwners(ownerInfoStr string) (owners []*worker.TaskExportOwner) {
+	ownerInfoStr = strings.TrimSpace(ownerInfoStr)
 	ownerStrList := strings.Split(ownerInfoStr, ",")
 	for _, ownerStr := range ownerStrList {
+		ownerStr = strings.TrimSpace(ownerStr)
+		if ownerStr == "" {
+			continue
+		}
 		ss := strings.Split(ownerStr, "=")
 		if len(ss) > 1 {
 			owners = append(owners, &worker.TaskExportOwner{

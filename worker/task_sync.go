@@ -105,6 +105,9 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (success bool, err error)
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {
@@ -183,6 +186,7 @@ func (this_ *taskSync) syncOwner(owner *TaskSyncOwner) (success bool, err error)
 				}
 			}
 			if skip {
+				this_.countIncr(&this_.TableSuccessCount, 1)
 				continue
 			}
 		}
@@ -219,6 +223,9 @@ func (this_ *taskSync) syncTable(workDb *sql.DB, sourceOwnerName string, sourceT
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {
@@ -272,6 +279,9 @@ func (this_ *taskSync) syncTableSyncStructure(workDb *sql.DB, newTableDetail *di
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {
@@ -313,6 +323,9 @@ func (this_ *taskSync) syncTableSyncData(workDb *sql.DB, newTableDetail *dialect
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {
@@ -401,6 +414,9 @@ func (this_ *taskSync) insertDataList(workDb *sql.DB, dataList []map[string]inte
 		}
 		if err != nil {
 			progress.Error = err.Error()
+			if progress.OnError != nil {
+				progress.OnError(err)
+			}
 		}
 
 		if this_.ErrorContinue {

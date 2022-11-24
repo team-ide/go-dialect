@@ -44,9 +44,10 @@ type Task struct {
 }
 
 type TaskProgress struct {
-	Title string   `json:"title"`
-	Infos []string `json:"infos"`
-	Error string   `json:"error"`
+	Title   string          `json:"title"`
+	Infos   []string        `json:"infos"`
+	Error   string          `json:"error"`
+	OnError func(err error) `json:"-"`
 }
 
 var (

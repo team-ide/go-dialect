@@ -93,6 +93,18 @@ SQL方言
 ```shell
 
 docker run -itd --name mysql-3306 -m 1024m -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql:5.7
+# 导出 mysql 所有库 为 mysql 的 sql
+go run . -do export -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -fileType sql -exportDir temp/export/from-mysql -exportDialect mysql
+# 导出 oracle 所有库 为 mysql 的 sql
+go run . -do export -sourceDialect oracle -sourceHost 127.0.0.1 -sourcePort 1521 -sourceUser root -sourcePassword 123456 -sourceDatabase xe -fileType sql -exportDir temp/export/from-oracle -exportDialect mysql
+# 导出 dm 所有库 为 mysql 的 sql
+go run . -do export -sourceDialect dm -sourceHost 127.0.0.1 -sourcePort 5236 -sourceUser SYSDBA -sourcePassword SYSDBA -fileType sql -exportDir temp/export/from-dm -exportDialect mysql
+# 导出 kingbase 所有库 为 mysql 的 sql
+go run . -do export -sourceDialect kingbase -sourceHost 127.0.0.1 -sourcePort 54321 -sourceUser SYSTEM -sourcePassword 123456 -sourceDatabase TEST -fileType sql -exportDir temp/export/from-kingbase -exportDialect mysql
+# 导出 shentong 所有库 为 mysql 的 sql
+go run . -do export -sourceDialect shentong -sourceHost 127.0.0.1 -sourcePort 2003 -sourceUser sysdba -sourcePassword szoscar55 -sourceDatabase OSRDB -fileType sql -exportDir temp/export/from-shentong -exportDialect mysql
+
+
 
 # 导出 mysql 数据库的 mysql,information_schema,performance_schema,sys 库 为 mysql 的 sql
 go run . -do export -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -fileType sql -exportDir temp/export/test -exportOwner mysql,information_schema,performance_schema,sys -exportDialect mysql

@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"encoding/json"
+	"errors"
 	"strconv"
 	"strings"
 )
@@ -390,7 +391,8 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 	}
 	columnTypeInfo, err := this_.GetColumnTypeInfo(column.ColumnDataType)
 	if err != nil {
-		//fmt.Println(data)
+		bs, _ = json.Marshal(data)
+		err = errors.New("ColumnModel error column data:" + string(bs) + ",error:" + err.Error())
 		return
 	}
 	column.ColumnDataType = columnTypeInfo.Name

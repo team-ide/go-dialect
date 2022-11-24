@@ -44,7 +44,7 @@ func init() {
 	appendTestDialectOracle()
 	appendTestDialectShenTong()
 	appendTestDialectDM()
-	appendTestDialectKinBase()
+	appendTestDialectKingBase()
 }
 
 func appendTestDialectMysql() {
@@ -158,11 +158,11 @@ func appendTestDialectDM() {
 	one.init()
 }
 
-func appendTestDialectKinBase() {
+func appendTestDialectKingBase() {
 	one := &testDialect{}
-	testDialectCache["kinbase"] = one
+	testDialectCache["kingbase"] = one
 	testDialectList = append(testDialectList, one)
-	one.mapping = dialect.NewMappingKinBase()
+	one.mapping = dialect.NewMappingKingBase()
 
 	one.owner = &dialect.OwnerModel{
 		OwnerName:     "TEST_DB",
@@ -221,7 +221,7 @@ func TestMysql(t *testing.T) {
 		fmt.Println(string(bs))
 	}
 }
-func TestKinBase(t *testing.T) {
+func TestKingBase(t *testing.T) {
 
 	db, err := db_kingbase_v8r3.Open(db_kingbase_v8r3.GetDSN("SYSTEM", "123456", "127.0.0.1", 54321, "TEST"))
 	if err != nil {
@@ -234,9 +234,9 @@ func TestKinBase(t *testing.T) {
 	//list, err := worker.DoQuery(db, `SELECT * FROM information_schema.schemata`)
 
 	//list, err := worker.DoQuery(db, `DROP SCHEMA TEST_DB`)
-	//owners, err := worker.OwnersSelect(db, testDialectCache["kinbase"].dialect, nil)
+	//owners, err := worker.OwnersSelect(db, testDialectCache["kingbase"].dialect, nil)
 	//for _, owner := range owners {
-	//	tables, err := worker.TablesSelect(db, testDialectCache["kinbase"].dialect, nil, owner.OwnerName)
+	//	tables, err := worker.TablesSelect(db, testDialectCache["kingbase"].dialect, nil, owner.OwnerName)
 	//	if err != nil {
 	//		println(err)
 	//		//panic(err)
@@ -296,7 +296,7 @@ func TestKinBase(t *testing.T) {
 	}
 }
 
-func TestKinBaseSchema(t *testing.T) {
+func TestKingBaseSchema(t *testing.T) {
 	schema := "TEST_DB"
 
 	dsn := db_kingbase_v8r6.GetDSN("TEST_DB", "123456", "127.0.0.1", 54321, "TEST")

@@ -1,6 +1,8 @@
 package dialect
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -74,7 +76,11 @@ func (this_ *mappingDialect) SqlValuePack(param *ParamModel, column *ColumnModel
 func (this_ *mappingDialect) ColumnDefaultPack(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
 	var columnTypeInfo *ColumnTypeInfo
 	if column != nil {
-		columnTypeInfo, _ = this_.GetColumnTypeInfo(column.ColumnDataType)
+		columnTypeInfo, err = this_.GetColumnTypeInfo(column.ColumnDataType)
+		if err != nil {
+			bs, _ := json.Marshal(column)
+			err = errors.New("ColumnDefaultPack error column:" + string(bs) + ",error:" + err.Error())
+		}
 	}
 	if columnTypeInfo != nil && columnTypeInfo.ColumnDefaultPack != nil {
 		columnDefaultPack, err = columnTypeInfo.ColumnDefaultPack(param, column)

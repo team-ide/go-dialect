@@ -81,7 +81,7 @@ var (
 	TypeSqlite     = &Type{Name: "sqlite"}
 	TypeOracle     = &Type{Name: "oracle"}
 	TypeDM         = &Type{Name: "dm"}
-	TypeKinBase    = &Type{Name: "kinbase"}
+	TypeKingBase   = &Type{Name: "kingbase"}
 	TypeShenTong   = &Type{Name: "shentong"}
 	TypePostgresql = &Type{Name: "postgresql"}
 )
@@ -98,7 +98,7 @@ func NewDialect(dialectType string) (dia Dialect, err error) {
 		dia, err = NewMappingDialect(NewMappingDM())
 		break
 	case "kingbase", "kb":
-		dia, err = NewMappingDialect(NewMappingKinBase())
+		dia, err = NewMappingDialect(NewMappingKingBase())
 		break
 	case "oracle":
 		dia, err = NewMappingDialect(NewMappingOracle())
