@@ -43,7 +43,7 @@ type Dialect interface {
 	TableSelectSql(param *ParamModel, ownerName string, tableName string) (sql string, err error)
 	TableCreateSql(param *ParamModel, ownerName string, table *TableModel) (sqlList []string, err error)
 	TableCommentSql(param *ParamModel, ownerName string, tableName string, tableComment string) (sqlList []string, err error)
-	TableRenameSql(param *ParamModel, ownerName string, tableName string, newTableName string) (sqlList []string, err error)
+	TableRenameSql(param *ParamModel, ownerName string, oldTableName string, tableName string) (sqlList []string, err error)
 	TableDeleteSql(param *ParamModel, ownerName string, tableName string) (sqlList []string, err error)
 
 	ColumnModel(data map[string]interface{}) (table *ColumnModel, err error)
@@ -51,7 +51,7 @@ type Dialect interface {
 	ColumnSelectSql(param *ParamModel, ownerName string, tableName string, columnName string) (sql string, err error)
 	ColumnAddSql(param *ParamModel, ownerName string, tableName string, column *ColumnModel) (sqlList []string, err error)
 	ColumnCommentSql(param *ParamModel, ownerName string, tableName string, columnName string, columnComment string) (sqlList []string, err error)
-	ColumnUpdateSql(param *ParamModel, ownerName string, tableName string, column *ColumnModel, newColumn *ColumnModel) (sqlList []string, err error)
+	ColumnUpdateSql(param *ParamModel, ownerName string, tableName string, oldColumn *ColumnModel, column *ColumnModel) (sqlList []string, err error)
 	ColumnDeleteSql(param *ParamModel, ownerName string, tableName string, columnName string) (sqlList []string, err error)
 
 	PrimaryKeyModel(data map[string]interface{}) (primaryKey *PrimaryKeyModel, err error)
