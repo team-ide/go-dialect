@@ -330,6 +330,48 @@ show superuser_reserved_connections;
 		fmt.Println(string(bs))
 	}
 }
+
+func TestDm(t *testing.T) {
+
+	db, err := db_dm.Open(db_dm.GetDSN("SYSDBA", "SYSDBA", "127.0.0.1", 5236))
+	if err != nil {
+		panic(err)
+	}
+	db.SetMaxIdleConns(1)
+	db.SetMaxOpenConns(2)
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+	sqlInfo := `
+SELECT 
+	t.COLUMN_NAME columnName,
+	t.DATA_DEFAULT columnDefault,
+	t.CHARACTER_SET_NAME columnCharacterSetName,
+	t.NULLABLE isNullable,
+	t.DATA_TYPE columnDataType,
+	t.DATA_LENGTH,
+	t.DATA_PRECISION,
+	t.DATA_SCALE,
+	tc.COMMENTS columnComment,
+	t.TABLE_NAME tableName,
+	t.OWNER ownerName
+FROM ALL_TAB_COLUMNS t
+LEFT JOIN ALL_COL_COMMENTS tc ON(tc.OWNER=t.OWNER AND tc.TABLE_NAME=t.TABLE_NAME AND tc.COLUMN_NAME=t.COLUMN_NAME)
+WHERE t.OWNER='VRV_JOB'
+    AND t.TABLE_NAME='JOB_EXECUTOR_LOG'
+`
+	list, err := worker.DoQuery(db, sqlInfo, nil)
+
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("list:", len(list))
+	for _, one := range list {
+		bs, _ := json.Marshal(one)
+		fmt.Println(string(bs))
+	}
+}
 func TestOracle(t *testing.T) {
 
 	db, err := db_oracle.Open(db_oracle.GetDSN("root", "123456", "127.0.0.1", 1521, "xe"))

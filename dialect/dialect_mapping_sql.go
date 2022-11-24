@@ -322,20 +322,28 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 		return
 	}
 
+	var isNullable string
 	if data["isNullable"] != nil {
-		isNullable, ok := data["isNullable"].(string)
-		if ok {
-			if strings.EqualFold(isNullable, "no") || strings.EqualFold(isNullable, "n") {
-				column.ColumnNotNull = true
-			}
+		isNullable = GetStringValue(data["isNullable"])
+	}
+	if data["ISNULLABLE"] != nil {
+		isNullable = GetStringValue(data["ISNULLABLE"])
+	}
+	if isNullable != "" {
+		if strings.EqualFold(isNullable, "no") || strings.EqualFold(isNullable, "n") {
+			column.ColumnNotNull = true
 		}
 	}
-	if GetStringValue(data["isNotNull"]) == "1" {
+
+	if GetStringValue(data["isNotNull"]) == "1" || GetStringValue(data["ISNOTNULL"]) == "1" {
 		column.ColumnNotNull = true
 	}
 	var columnType string
 	if data["columnType"] != nil {
 		columnType = data["columnType"].(string)
+	}
+	if data["COLUMNTYPE"] != nil {
+		columnType = data["COLUMNTYPE"].(string)
 	}
 	if column.ColumnDataType == "" {
 		if strings.Contains(columnType, "(") {

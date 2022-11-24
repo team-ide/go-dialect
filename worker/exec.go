@@ -71,7 +71,7 @@ func DoExecs(db *sql.DB, sqlList []string, argsList [][]interface{}) (resultList
 }
 
 func DoQuery(db *sql.DB, sqlInfo string, args []interface{}) (list []map[string]interface{}, err error) {
-	_, list, err = DoQueryWithColumnTypes(db, sqlInfo, args)
+	_, _, list, err = DoQueryWithColumnTypes(db, sqlInfo, args)
 	if err != nil {
 		return
 	}
@@ -79,7 +79,7 @@ func DoQuery(db *sql.DB, sqlInfo string, args []interface{}) (list []map[string]
 }
 
 func DoQueryOne(db *sql.DB, sqlInfo string, args []interface{}) (data map[string]interface{}, err error) {
-	_, list, err := DoQueryWithColumnTypes(db, sqlInfo, args)
+	_, _, list, err := DoQueryWithColumnTypes(db, sqlInfo, args)
 	if err != nil {
 		return
 	}
@@ -174,7 +174,7 @@ func DoQueryStruct(db *sql.DB, sqlInfo string, args []interface{}, str interface
 	}
 	return
 }
-func DoQueryWithColumnTypes(db *sql.DB, sqlInfo string, args []interface{}) (columnTypes []*sql.ColumnType, list []map[string]interface{}, err error) {
+func DoQueryWithColumnTypes(db *sql.DB, sqlInfo string, args []interface{}) (columns []string, columnTypes []*sql.ColumnType, list []map[string]interface{}, err error) {
 	rows, err := db.Query(sqlInfo, args...)
 	if err != nil {
 		return
@@ -182,6 +182,10 @@ func DoQueryWithColumnTypes(db *sql.DB, sqlInfo string, args []interface{}) (col
 	defer func() {
 		_ = rows.Close()
 	}()
+	columns, err = rows.Columns()
+	if err != nil {
+		return
+	}
 	columnTypes, err = rows.ColumnTypes()
 	if err != nil {
 		return
@@ -195,7 +199,7 @@ func DoQueryWithColumnTypes(db *sql.DB, sqlInfo string, args []interface{}) (col
 		}
 		item := make(map[string]interface{})
 		for index, data := range cache {
-			item[columnTypes[index].Name()] = GetSqlValue(columnTypes[index], data)
+			item[columns[index]] = GetSqlValue(columnTypes[index], data)
 		}
 		list = append(list, item)
 	}
