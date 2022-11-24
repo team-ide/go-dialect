@@ -325,7 +325,7 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 	if data["isNullable"] != nil {
 		isNullable, ok := data["isNullable"].(string)
 		if ok {
-			if strings.EqualFold(isNullable, "no") {
+			if strings.EqualFold(isNullable, "no") || strings.EqualFold(isNullable, "n") {
 				column.ColumnNotNull = true
 			}
 		}
