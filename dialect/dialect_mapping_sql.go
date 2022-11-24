@@ -519,7 +519,7 @@ func (this_ *mappingDialect) ColumnUpdateSql(param *ParamModel, ownerName string
 	}
 	if !this_.ColumnUpdateHasAfter {
 		if hasChangeAfter {
-			sqlList_, err = this_.ColumnAfterSql(param, ownerName, tableName, column.ColumnName, column.ColumnComment)
+			sqlList_, err = this_.ColumnAfterSql(param, ownerName, tableName, column.ColumnName, column.ColumnAfterColumn)
 			if err != nil {
 				return
 			}
@@ -531,7 +531,8 @@ func (this_ *mappingDialect) ColumnUpdateSql(param *ParamModel, ownerName string
 		oldColumn.ColumnDataType != column.ColumnDataType ||
 		oldColumn.ColumnLength != column.ColumnLength ||
 		oldColumn.ColumnDecimal != column.ColumnDecimal ||
-		oldColumn.ColumnDefault != column.ColumnDefault {
+		oldColumn.ColumnDefault != column.ColumnDefault ||
+		oldColumn.ColumnNotNull != column.ColumnNotNull {
 		sqlList_, err = this_.FormatSql(this_.ColumnUpdate, param,
 			oldColumn,
 			column,
@@ -642,6 +643,7 @@ func (this_ *mappingDialect) PrimaryKeyAddSql(param *ParamModel, ownerName strin
 			"ownerName":   ownerName,
 			"tableName":   tableName,
 			"columnNames": columnNames,
+			"primaryKeys": columnNames,
 		},
 	)
 	if err != nil {
