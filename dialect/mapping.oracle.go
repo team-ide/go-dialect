@@ -144,7 +144,7 @@ WHERE t2.OWNER={sqlValuePack(ownerName)}
 	AND t2.CONSTRAINT_TYPE = 'P'
 `,
 		PrimaryKeyAdd: `
-ALTER TABLE [{ownerName}.]{tableName} ADD PRIMARY KEY ({columnNames})
+ALTER TABLE [{ownerName}.]{tableName} ADD PRIMARY KEY ({columnNamesPack})
 `,
 		PrimaryKeyDelete: `
 ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY

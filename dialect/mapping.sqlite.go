@@ -108,7 +108,7 @@ FROM pragma_index_list({tableNamePack}) AS a,pragma_index_info(a.name) b
 WHERE a.origin = "pk"
 `,
 		PrimaryKeyAdd: `
-ALTER TABLE [{ownerName}.]{tableName} ADD PRIMARY KEY ({columnNames})
+ALTER TABLE [{ownerName}.]{tableName} ADD PRIMARY KEY ({columnNamesPack})
 `,
 		PrimaryKeyDelete: `
 ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
