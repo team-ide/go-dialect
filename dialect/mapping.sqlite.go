@@ -95,6 +95,7 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} RENAME COLUMN {oldColumnNamePack} 
 		ColumnComment:          ``,
 		ColumnUpdateHasRename:  false,
 		ColumnUpdateHasComment: false,
+		ColumnUpdateHasAfter:   false,
 		ColumnUpdate: `
 `,
 

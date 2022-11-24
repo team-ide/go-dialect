@@ -117,7 +117,7 @@ WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
   AND COLUMN_NAME={sqlValuePack(columnName)}
 `,
 		ColumnAdd: `
-ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD COLUMN {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)} [COMMENT {sqlValuePack(columnComment)}] [AFTER {columnBeforeColumn}]
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD COLUMN {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)} [COMMENT {sqlValuePack(columnComment)}] [AFTER {columnAfterColumnPack}]
 `,
 		ColumnDelete: `
 ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP COLUMN {columnNamePack}
@@ -128,8 +128,9 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP COLUMN {columnNamePack}
 `,
 		ColumnUpdateHasRename:  true,
 		ColumnUpdateHasComment: true,
+		ColumnUpdateHasAfter:   true,
 		ColumnUpdate: `
-ALTER TABLE [{ownerNamePack}.]{tableNamePack} CHANGE COLUMN {oldColumnNamePack} {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)} [COMMENT {sqlValuePack(columnComment)}] [AFTER {columnBeforeColumn}]
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} CHANGE COLUMN {oldColumnNamePack} {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)} [COMMENT {sqlValuePack(columnComment)}] [AFTER {columnAfterColumnPack}]
 `,
 
 		// 主键 相关 SQL

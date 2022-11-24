@@ -126,6 +126,7 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} RENAME COLUMN {oldColumnNamePack} 
 `,
 		ColumnUpdateHasRename:  false,
 		ColumnUpdateHasComment: false,
+		ColumnUpdateHasAfter:   false,
 		ColumnUpdate: `
 ALTER TABLE [{ownerNamePack}.]{tableNamePack} MODIFY {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
 `,

@@ -112,7 +112,7 @@ type ColumnModel struct {
 	ColumnDecimal          int    `json:"columnDecimal"`
 	ColumnNotNull          bool   `json:"columnNotNull"`
 	ColumnDefault          string `json:"columnDefault"`
-	ColumnBeforeColumn     string `json:"columnBeforeColumn"`
+	ColumnAfterColumn      string `json:"columnAfterColumn"`
 	ColumnCharacterSetName string `json:"columnCharacterSetName"`
 
 	PrimaryKey bool `json:"primaryKey"`

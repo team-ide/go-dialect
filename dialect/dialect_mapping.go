@@ -43,6 +43,7 @@ type mappingDialect struct {
 	ColumnComment *RootStatement
 	ColumnRename  *RootStatement
 	ColumnUpdate  *RootStatement
+	ColumnAfter   *RootStatement
 
 	PrimaryKeysSelect *RootStatement
 	PrimaryKeyAdd     *RootStatement
@@ -200,6 +201,13 @@ func (this_ *mappingDialect) NewStatementContext(param *ParamModel, dataList ...
 		oldColumnNamePack = this_.ColumnNamePack(param, oldColumnName.(string))
 	}
 	statementContext.SetData("oldColumnNamePack", oldColumnNamePack)
+
+	columnAfterColumnPack := ""
+	columnAfterColumn, _ := statementContext.GetData("columnAfterColumn")
+	if columnAfterColumn != nil && columnAfterColumn != "" {
+		columnAfterColumnPack = this_.ColumnNamePack(param, columnAfterColumn.(string))
+	}
+	statementContext.SetData("columnAfterColumnPack", columnAfterColumnPack)
 
 	columnNamesPack := ""
 	columnNames, _ := statementContext.GetData("columnNames")

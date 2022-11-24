@@ -483,6 +483,10 @@ func (this_ *mappingDialect) ColumnUpdateSql(param *ParamModel, ownerName string
 	if oldColumn.ColumnComment != column.ColumnComment {
 		hasChangeComment = true
 	}
+	var hasChangeAfter bool
+	if oldColumn.ColumnAfterColumn != column.ColumnAfterColumn {
+		hasChangeAfter = true
+	}
 	if !this_.ColumnUpdateHasRename {
 		if hasChangeName {
 			sqlList_, err = this_.ColumnRenameSql(param, ownerName, tableName, oldColumn.ColumnName, column.ColumnName)
@@ -503,7 +507,17 @@ func (this_ *mappingDialect) ColumnUpdateSql(param *ParamModel, ownerName string
 			hasChangeComment = false
 		}
 	}
-	if hasChangeName || hasChangeComment ||
+	if !this_.ColumnUpdateHasAfter {
+		if hasChangeAfter {
+			sqlList_, err = this_.ColumnAfterSql(param, ownerName, tableName, column.ColumnName, column.ColumnComment)
+			if err != nil {
+				return
+			}
+			sqlList = append(sqlList, sqlList_...)
+			hasChangeAfter = false
+		}
+	}
+	if hasChangeName || hasChangeComment || hasChangeAfter ||
 		oldColumn.ColumnDataType != column.ColumnDataType ||
 		oldColumn.ColumnLength != column.ColumnLength ||
 		oldColumn.ColumnDecimal != column.ColumnDecimal ||
@@ -557,6 +571,21 @@ func (this_ *mappingDialect) ColumnCommentSql(param *ParamModel, ownerName strin
 			"tableName":     tableName,
 			"columnName":    columnName,
 			"columnComment": columnComment,
+		},
+	)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (this_ *mappingDialect) ColumnAfterSql(param *ParamModel, ownerName string, tableName string, columnName string, columnAfterColumn string) (sqlList []string, err error) {
+	sqlList, err = this_.FormatSql(this_.ColumnAfter, param,
+		map[string]string{
+			"ownerName":         ownerName,
+			"tableName":         tableName,
+			"columnName":        columnName,
+			"columnAfterColumn": columnAfterColumn,
 		},
 	)
 	if err != nil {

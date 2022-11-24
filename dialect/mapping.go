@@ -42,7 +42,9 @@ type SqlMapping struct {
 	ColumnRename           string
 	ColumnUpdateHasRename  bool
 	ColumnUpdateHasComment bool
+	ColumnUpdateHasAfter   bool
 	ColumnUpdate           string
+	ColumnAfter            string
 
 	PrimaryKeysSelect string
 	PrimaryKeyAdd     string
