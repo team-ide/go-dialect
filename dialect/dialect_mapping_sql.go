@@ -469,10 +469,20 @@ func (this_ *mappingDialect) ColumnUpdateSql(param *ParamModel, ownerName string
 	if oldColumn.ColumnName == "" {
 		oldColumn.ColumnName = column.ColumnName
 	}
+	columnTypePack, err := this_.ColumnTypePack(column)
+	if err != nil {
+		return
+	}
+	columnDefaultPack, err := this_.ColumnDefaultPack(param, column)
+	if err != nil {
+		return
+	}
 	data := map[string]string{
-		"ownerName":     ownerName,
-		"tableName":     tableName,
-		"oldColumnName": oldColumn.ColumnName,
+		"ownerName":         ownerName,
+		"tableName":         tableName,
+		"oldColumnName":     oldColumn.ColumnName,
+		"columnTypePack":    columnTypePack,
+		"columnDefaultPack": columnDefaultPack,
 	}
 	var sqlList_ []string
 	var hasChangeName bool
