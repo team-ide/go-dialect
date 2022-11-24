@@ -35,7 +35,7 @@ func ColumnsSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, o
 	var last *dialect.ColumnModel
 	for _, column := range list {
 		if last != nil {
-			column.ColumnAfterColumn = column.ColumnName
+			column.ColumnAfterColumn = last.ColumnName
 		}
 		last = column
 	}
