@@ -120,6 +120,13 @@ func (this_ *mappingDialect) TableCreateSql(param *ParamModel, ownerName string,
 	var tableCreateColumnContent string
 
 	var tableCreateColumnSql string
+	for _, column := range table.ColumnList {
+		if column.PrimaryKey {
+			if StringsIndex(table.PrimaryKeys, column.ColumnName) < 0 {
+				table.PrimaryKeys = append(table.PrimaryKeys, column.ColumnName)
+			}
+		}
+	}
 	for i, column := range table.ColumnList {
 
 		tableCreateColumnSql, err = this_.TableCreateColumnSql(param, column)
