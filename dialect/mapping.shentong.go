@@ -9,15 +9,17 @@ import (
 func NewMappingShenTong() (mapping *SqlMapping) {
 	// https://blog.csdn.net/asd051377305/article/details/108766792
 
-	mapping = NewMappingOracle()
-	mapping.dialectType = TypeShenTong
-	mapping.OwnerCreate = `
-CREATE USER {ownerName} WITH PASSWORD {sqlValuePack(ownerPassword)};
-`
-	mapping.OwnerDelete = `
-DROP USER {ownerName} cascade;
-`
-	mapping.OwnerNamePackChar = ""
+	mapping = &SqlMapping{
+		dialectType: TypeShenTong,
+
+		OwnerNamePackChar:  "",
+		TableNamePackChar:  "\"",
+		ColumnNamePackChar: "\"",
+		SqlValuePackChar:   "'",
+		SqlValueEscapeChar: "'",
+	}
+
+	appendShenTongSql(mapping)
 
 	mapping.PackPageSql = func(selectSql string, pageSize int, pageNo int) (pageSql string) {
 		pageSql = selectSql + fmt.Sprintf(" LIMIT %d OFFSET %d", pageSize, pageSize*(pageNo-1))
@@ -37,14 +39,14 @@ DROP USER {ownerName} cascade;
 		return
 	}
 
-	mapping.columnTypeInfoList = nil
-	mapping.columnTypeInfoCache = nil
+	for _, one := range shenTongColumnTypeList {
+		mapping.AddColumnTypeInfo(one)
+	}
 
-	mapping.indexTypeInfoList = nil
-	mapping.indexTypeInfoCache = nil
+	for _, one := range shenTongIndexTypeList {
+		mapping.AddIndexTypeInfo(one)
+	}
 
-	AppendShenTongColumnType(mapping)
-	AppendShenTongIndexType(mapping)
 	return
 }
 
@@ -169,34 +171,4 @@ func AppendShenTongColumnType(mapping *SqlMapping) {
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BYTE", Format: "NUMBER($l)", IsNumber: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CLASS234882065", Format: "CLOB", IsString: true, IsExtend: true})
 
-}
-
-func AppendShenTongIndexType(mapping *SqlMapping) {
-
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "", Format: "INDEX",
-		NotSupportDataTypes: []string{"CLOB", "BLOB"},
-	})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "INDEX", Format: "INDEX",
-		NotSupportDataTypes: []string{"CLOB", "BLOB"},
-	})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "NORMAL", Format: "INDEX",
-		NotSupportDataTypes: []string{"CLOB", "BLOB"},
-	})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "UNIQUE", Format: "UNIQUE",
-		NotSupportDataTypes: []string{"CLOB", "BLOB"},
-		IndexTypeFormat: func(index *IndexModel) (indexTypeFormat string, err error) {
-			indexTypeFormat = "UNIQUE INDEX"
-			return
-		},
-	})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "FULLTEXT", Format: "FULLTEXT", IsExtend: true,
-		IndexTypeFormat: func(index *IndexModel) (indexTypeFormat string, err error) {
-			return
-		},
-	})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "SPATIAL", Format: "SPATIAL", IsExtend: true,
-		IndexTypeFormat: func(index *IndexModel) (indexTypeFormat string, err error) {
-			return
-		},
-	})
 }

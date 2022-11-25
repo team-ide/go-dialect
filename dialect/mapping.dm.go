@@ -3,25 +3,26 @@ package dialect
 import "strings"
 
 func NewMappingDM() (mapping *SqlMapping) {
-	mapping = NewMappingOracle()
-	mapping.dialectType = TypeDM
+	mapping = &SqlMapping{
+		dialectType: TypeDM,
 
-	mapping.OwnerCreate = `
-CREATE USER {doubleQuotationMarksPack(ownerName)} IDENTIFIED BY {doubleQuotationMarksPack(ownerPassword)};
-GRANT DBA TO {doubleQuotationMarksPack(ownerName)};
-`
+		OwnerNamePackChar:  "\"",
+		TableNamePackChar:  "\"",
+		ColumnNamePackChar: "\"",
+		SqlValuePackChar:   "'",
+		SqlValueEscapeChar: "'",
+	}
 
-	mapping.PackPageSql = nil
-	mapping.ReplaceSqlVariable = nil
+	appendDmSql(mapping)
 
-	mapping.columnTypeInfoList = nil
-	mapping.columnTypeInfoCache = nil
+	for _, one := range dmColumnTypeList {
+		mapping.AddColumnTypeInfo(one)
+	}
 
-	mapping.indexTypeInfoList = nil
-	mapping.indexTypeInfoCache = nil
+	for _, one := range dmIndexTypeList {
+		mapping.AddIndexTypeInfo(one)
+	}
 
-	AppendDmColumnType(mapping)
-	AppendDmIndexType(mapping)
 	return
 }
 
@@ -162,34 +163,4 @@ func AppendDmColumnType(mapping *SqlMapping) {
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "XID", Format: "CLOB", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TDEKEY", Format: "CLOB", IsString: true, IsExtend: true})
 
-}
-
-func AppendDmIndexType(mapping *SqlMapping) {
-
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "", Format: "INDEX",
-		NotSupportDataTypes: []string{"CLOB", "BLOB"},
-	})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "INDEX", Format: "INDEX",
-		NotSupportDataTypes: []string{"CLOB", "BLOB"},
-	})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "NORMAL", Format: "INDEX",
-		NotSupportDataTypes: []string{"CLOB", "BLOB"},
-	})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "UNIQUE", Format: "UNIQUE",
-		NotSupportDataTypes: []string{"CLOB", "BLOB"},
-		IndexTypeFormat: func(index *IndexModel) (indexTypeFormat string, err error) {
-			indexTypeFormat = "UNIQUE INDEX"
-			return
-		},
-	})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "FULLTEXT", Format: "FULLTEXT", IsExtend: true,
-		IndexTypeFormat: func(index *IndexModel) (indexTypeFormat string, err error) {
-			return
-		},
-	})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "SPATIAL", Format: "SPATIAL", IsExtend: true,
-		IndexTypeFormat: func(index *IndexModel) (indexTypeFormat string, err error) {
-			return
-		},
-	})
 }

@@ -11,6 +11,8 @@ func NewMappingPostgresql() (mapping *SqlMapping) {
 		dialectType: TypePostgresql,
 	}
 
+	appendPostgresqlSql(mapping)
+
 	mapping.PackPageSql = func(selectSql string, pageSize int, pageNo int) (pageSql string) {
 		pageSql = selectSql + fmt.Sprintf(" LIMIT %d OFFSET %d", pageSize, pageSize*(pageNo-1))
 		return
@@ -28,5 +30,14 @@ func NewMappingPostgresql() (mapping *SqlMapping) {
 		}
 		return
 	}
+
+	for _, one := range postgresqlColumnTypeList {
+		mapping.AddColumnTypeInfo(one)
+	}
+
+	for _, one := range postgresqlIndexTypeList {
+		mapping.AddIndexTypeInfo(one)
+	}
+
 	return
 }

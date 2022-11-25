@@ -11,128 +11,18 @@ func NewMappingSqlite() (mapping *SqlMapping) {
 		ColumnNamePackChar: "\"",
 		SqlValuePackChar:   "'",
 		SqlValueEscapeChar: "'",
-
-		// 库或所属者 相关 SQL
-		OwnersSelect: `
-SELECT 
-	name ownerName
-FROM pragma_database_list AS t_i 
-ORDER BY name
-`,
-		OwnerSelect: `
-SELECT 
-	name ownerName
-FROM pragma_database_list AS t_i 
-WHERE name={sqlValuePack(ownerName)}
-`,
-		OwnerCreate: ``,
-		OwnerDelete: ``,
-
-		// 表 相关 SQL
-		TablesSelect: `
-SELECT 
-	name tableName,
-    sql 
-FROM sqlite_master 
-WHERE type ='table'
-ORDER BY name
-`,
-		TableSelect: `
-SELECT 
-	name tableName,
-    sql 
-FROM sqlite_master 
-WHERE type ='table'
-  AND name={sqlValuePack(tableName)}
-`,
-		TableCreate: `
-CREATE TABLE [{ownerNamePack}.]{tableNamePack}(
-{ tableCreateColumnContent }
-{ tableCreatePrimaryKeyContent }
-)
-`,
-		TableCreateColumn: `
-	{columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
-`,
-		TableCreatePrimaryKey: `
-PRIMARY KEY ({primaryKeysPack})
-`,
-		TableComment: ``,
-		TableRename: `
-ALTER TABLE [{ownerName}.]{oldTableName} RENAME AS {newTableName}
-`,
-		TableDelete: `
-DROP TABLE IF EXISTS [{ownerName}.]{tableName}
-`,
-
-		// 字段 相关 SQL
-		ColumnsSelect: `
-SELECT 
-	name columnName,
-	dflt_value columnDefault,
-	"notnull" isNotNull,
-	type columnType
-FROM pragma_table_info({tableNamePack}) AS t_i 
-`,
-		ColumnSelect: `
-SELECT 
-	name columnName,
-	dflt_value columnDefault,
-	"notnull" isNotNull,
-	type columnType
-FROM pragma_table_info({tableNamePack}) AS t_i 
-WHERE name={sqlValuePack(columnName)}
-`,
-		ColumnAdd: `
-ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD COLUMN {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
-`,
-		ColumnDelete: `
-ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP COLUMN {columnNamePack}
-`,
-		ColumnRename: `
-ALTER TABLE [{ownerNamePack}.]{tableNamePack} RENAME COLUMN {oldColumnNamePack} TO {columnNamePack}
-`,
-		ColumnComment:          ``,
-		ColumnUpdateHasRename:  false,
-		ColumnUpdateHasComment: false,
-		ColumnUpdateHasAfter:   false,
-		ColumnUpdate: `
-`,
-
-		// 主键 相关 SQL
-		PrimaryKeysSelect: `
-SELECT 
-	a.name indexName,
-	b.name columnName 
-FROM pragma_index_list({tableNamePack}) AS a,pragma_index_info(a.name) b 
-WHERE a.origin = "pk"
-`,
-		PrimaryKeyAdd: `
-ALTER TABLE [{ownerName}.]{tableName} ADD PRIMARY KEY ({columnNamesPack})
-`,
-		PrimaryKeyDelete: `
-ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
-`,
-
-		// 索引 相关 SQL
-		IndexesSelect: `
-SELECT 
-	a.name indexName,
-	a."unique" isUnique,
-	b.name columnName 
-FROM pragma_index_list({tableNamePack}) AS a,pragma_index_info(a.name) b 
-WHERE a.origin != "pk"
-`,
-		IndexAdd: `
-CREATE {indexType} [{indexNamePack}] ON {tableNamePack}({columnNamesPack})
-`,
-		IndexDelete: `
-ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP INDEX {indexNamePack}
-`,
 	}
 
-	AppendSqliteColumnType(mapping)
-	AppendSqliteIndexType(mapping)
+	appendShenTongSql(mapping)
+
+	for _, one := range sqliteColumnTypeList {
+		mapping.AddColumnTypeInfo(one)
+	}
+
+	for _, one := range sqliteIndexTypeList {
+		mapping.AddIndexTypeInfo(one)
+	}
+
 	return
 }
 
@@ -293,29 +183,5 @@ func AppendSqliteColumnType(mapping *SqlMapping) {
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BINARY", Format: "BINARY($l)", IsNumber: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BYTE", Format: "BYTE($l)", IsNumber: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CLASS234882065", Format: "CLASS234882065", IsString: true, IsExtend: true})
-
-}
-
-func AppendSqliteIndexType(mapping *SqlMapping) {
-
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "", Format: "INDEX"})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "INDEX", Format: "INDEX"})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "NORMAL", Format: "INDEX", IsExtend: true})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "UNIQUE", Format: "UNIQUE",
-		IndexTypeFormat: func(index *IndexModel) (indexTypeFormat string, err error) {
-			indexTypeFormat = "UNIQUE INDEX"
-			return
-		},
-	})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "FULLTEXT", Format: "FULLTEXT", IsExtend: true,
-		IndexTypeFormat: func(index *IndexModel) (indexTypeFormat string, err error) {
-			return
-		},
-	})
-	mapping.AddIndexTypeInfo(&IndexTypeInfo{Name: "SPATIAL", Format: "SPATIAL", IsExtend: true,
-		IndexTypeFormat: func(index *IndexModel) (indexTypeFormat string, err error) {
-			return
-		},
-	})
 
 }
