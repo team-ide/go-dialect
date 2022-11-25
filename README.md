@@ -96,7 +96,7 @@ docker run -itd --name mysql-3306 -m 1024m -p 3306:3306 -e MYSQL_ROOT_PASSWORD=1
 # 导出 mysql 所有库 为 mysql 的 sql
 go run . -do export -sourceDialect mysql -sourceHost 127.0.0.1 -sourcePort 3306 -sourceUser root -sourcePassword 123456 -fileType sql -exportDir temp/export/from-mysql -exportDialect mysql
 # 导出 oracle 所有库 为 mysql 的 sql
-go run . -do export -sourceDialect oracle -sourceHost 127.0.0.1 -sourcePort 1521 -sourceUser root -sourcePassword 123456 -sourceDatabase xe -fileType sql -exportDir temp/export/from-oracle -exportDialect mysql
+go run . -do export -sourceDialect oracle -sourceHost 127.0.0.1 -sourcePort 1521 -sourceUser root -sourcePassword 123456 -sourceDatabase xe -fileType sql -exportDir temp/export/from-oracle -exportDialect mysql -skipOwner APEX_040000
 # 导出 dm 所有库 为 mysql 的 sql
 go run . -do export -sourceDialect dm -sourceHost 127.0.0.1 -sourcePort 5236 -sourceUser SYSDBA -sourcePassword SYSDBA -fileType sql -exportDir temp/export/from-dm -exportDialect mysql
 # 导出 kingbase 所有库 为 mysql 的 sql

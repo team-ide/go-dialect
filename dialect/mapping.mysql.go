@@ -181,9 +181,6 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP INDEX {indexNamePack}
 }
 
 func AppendMysqlColumnType(mapping *SqlMapping) {
-	for _, columnType := range mysqlColumnTypeList {
-		mapping.AddColumnTypeInfo(columnType)
-	}
 
 	// sqlite
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "REAL", Format: "DOUBLE($l, $d)", IsNumber: true, IsExtend: true})
@@ -198,6 +195,9 @@ func AppendMysqlColumnType(mapping *SqlMapping) {
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NCLOB", Format: "LONGTEXT", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "XMLTYPE", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
 
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NROWID", Format: "TEXT($l)", IsString: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BFILE", Format: "LONGTEXT", IsString: true, IsExtend: true})
+
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "ANYDATA", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "ROWID", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NCHAR", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
@@ -205,8 +205,8 @@ func AppendMysqlColumnType(mapping *SqlMapping) {
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SDO_TOPO_GEOMETRY_LAYER_ARRAY", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SDO_GEOMETRY", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SDO_NUMBER_ARRAY", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONG", Format: "DECIMAL($l, $d)", IsNumber: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONG RAW", Format: "DECIMAL($l, $d)", IsNumber: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONG", Format: "LONGBLOB", IsString: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONG RAW", Format: "LONGBLOB", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "UNDEFINED", Format: "VARCHAR", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "MLSLABEL", Format: "VARCHAR($l)", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "WRI$_REPT_ABSTRACT_T", Format: "VARCHAR($l)", IsString: true, IsExtend: true})

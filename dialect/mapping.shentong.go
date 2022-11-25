@@ -50,54 +50,14 @@ DROP USER {ownerName} cascade;
 
 func AppendShenTongColumnType(mapping *SqlMapping) {
 
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NUMBER", Format: "NUMBER($l, $d)", IsNumber: true})
-
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "DATE", Format: "DATE", IsDateTime: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "VARCHAR2", Format: "VARCHAR2($l)", IsString: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CHAR", Format: "CHAR($l)", IsString: true})
-
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TIMESTAMP", Format: "TIMESTAMP", IsDateTime: true,
-		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
-			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
-				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
-				columnDefaultPack = "CURRENT_TIMESTAMP"
-			}
-			//if strings.Contains(strings.ToLower(column.ColumnExtra), "on update current_timestamp") {
-			//	columnDefaultPack += " ON UPDATE CURRENT_TIMESTAMP"
-			//}
-			return
-		},
-	})
-
-	// 神通
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "CLOB", Format: "CLOB($l)", IsString: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BLOB", Format: "BLOB", IsString: true})
-
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "INT1", Format: "INT1(1)", IsNumber: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "INT2", Format: "INT2(2)", IsNumber: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_INT2", Format: "INT2(2)", IsNumber: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "INT4", Format: "INT4(4)", IsNumber: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_INT4", Format: "INT4(4)", IsNumber: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "INT8", Format: "INT8(8)", IsNumber: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_INT8", Format: "INT8(8)", IsNumber: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "FLOAT2", Format: "FLOAT2(8)", IsNumber: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "FLOAT4", Format: "FLOAT4(8)", IsNumber: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "FLOAT8", Format: "FLOAT8(8)", IsNumber: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_FLOAT8", Format: "FLOAT8(8)", IsNumber: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "OIDVECTOR", Format: "OIDVECTOR", IsString: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BOOL", Format: "BOOL(1)", IsString: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "INT2VECTOR", Format: "INT2VECTOR", IsString: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BFILE", Format: "BFILE", IsString: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_ACLITEM", Format: "_ACLITEM", IsString: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "TIMESTAMPTZ", Format: "TIMESTAMPTZ($l)", IsString: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_TEXT", Format: "_TEXT", IsString: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "_OID", Format: "_OID", IsString: true, IsExtend: true})
-
 	// oracle
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "RAW", Format: "RAW($l)", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NVARCHAR2", Format: "NVARCHAR2($l)", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NCLOB", Format: "NCLOB($l)", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "XMLTYPE", Format: "XMLTYPE($l)", IsString: true, IsExtend: true})
+
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "NROWID", Format: "VARBINARY($l)", IsString: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "BFILE", Format: "BLOB", IsString: true, IsExtend: true})
 
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "ANYDATA", Format: "ANYDATA($l)", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "ROWID", Format: "ROWID($l)", IsString: true, IsExtend: true})
@@ -106,8 +66,8 @@ func AppendShenTongColumnType(mapping *SqlMapping) {
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SDO_TOPO_GEOMETRY_LAYER_ARRAY", Format: "SDO_TOPO_GEOMETRY_LAYER_ARRAY($l)", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SDO_GEOMETRY", Format: "SDO_GEOMETRY($l)", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "SDO_NUMBER_ARRAY", Format: "SDO_NUMBER_ARRAY($l)", IsString: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONG", Format: "LONG", IsNumber: true, IsExtend: true})
-	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONG RAW", Format: "LONG RAW", IsNumber: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONG", Format: "BLOB", IsString: true, IsExtend: true})
+	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "LONG RAW", Format: "BLOB", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "UNDEFINED", Format: "UNDEFINED", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "MLSLABEL", Format: "MLSLABEL($l)", IsString: true, IsExtend: true})
 	mapping.AddColumnTypeInfo(&ColumnTypeInfo{Name: "WRI$_REPT_ABSTRACT_T", Format: "WRI$_REPT_ABSTRACT_T($l)", IsString: true, IsExtend: true})

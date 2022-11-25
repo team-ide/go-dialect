@@ -69,7 +69,7 @@ func doExport() {
 				println("progress:" + string(bs))
 				println("progress error:" + err.Error())
 			}
-			println(string(bs))
+			//println(string(bs))
 		},
 	})
 	err = task.Start()
