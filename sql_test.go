@@ -481,12 +481,12 @@ func TestAllSql(t *testing.T) {
 		fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] create table result---")
 		fmt.Println(string(bs))
 
-		for _, to := range testDialectList {
-			//if from == to {
-			//	continue
-			//}
-			fromTableToTableSql(from, table, to)
-		}
+		//for _, to := range testDialectList {
+		//if from == to {
+		//	continue
+		//}
+		//	fromTableToTableSql(from, table, to)
+		//}
 	}
 }
 

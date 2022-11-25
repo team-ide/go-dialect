@@ -16,6 +16,8 @@ func NewMappingOracle() (mapping *SqlMapping) {
 		SqlValueEscapeChar: "'",
 	}
 
+	appendOracleSql(mapping)
+
 	mapping.PackPageSql = func(selectSql string, pageSize int, pageNo int) (pageSql string) {
 		pageSql = `SELECT * FROM(SELECT ROWNUM rn,t.* FROM(` + selectSql + `) t WHERE ROWNUM <=` + strconv.Itoa(pageSize*pageNo) + ")"
 		pageSql += `WHERE rn>=` + strconv.Itoa(pageSize*(pageNo-1)+1)
