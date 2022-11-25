@@ -41,8 +41,8 @@ func (this_ *testDialect) init() {
 func init() {
 	//appendTestDialectMysql()
 	//appendTestDialectSqlite()
-	appendTestDialectOracle()
-	//appendTestDialectShenTong()
+	//appendTestDialectOracle()
+	appendTestDialectShenTong()
 	//appendTestDialectDM()
 	//appendTestDialectKingBase()
 }
