@@ -42,8 +42,8 @@ func init() {
 	//appendTestDialectMysql()
 	//appendTestDialectSqlite()
 	//appendTestDialectOracle()
-	appendTestDialectShenTong()
-	//appendTestDialectDM()
+	//appendTestDialectShenTong()
+	appendTestDialectDM()
 	//appendTestDialectKingBase()
 }
 

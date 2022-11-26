@@ -10,13 +10,28 @@ func appendShenTongColumnType(columnType *ColumnTypeInfo) {
 	shenTongColumnTypeList = append(shenTongColumnTypeList, columnType)
 }
 func init() {
+	// -128 到 127
+	appendShenTongColumnType(&ColumnTypeInfo{Name: "TINYINT", Format: "TINYINT", IsNumber: true})
+	// -2^31 到 2^31-1
+	appendShenTongColumnType(&ColumnTypeInfo{Name: "INT", Format: "INT", IsNumber: true})
+	appendShenTongColumnType(&ColumnTypeInfo{Name: "INTEGER", Format: "INTEGER", IsNumber: true})
+	appendShenTongColumnType(&ColumnTypeInfo{Name: "INT4", Format: "INT4", IsNumber: true})
 
 	appendShenTongColumnType(&ColumnTypeInfo{Name: "NUMERIC", Format: "NUMERIC($l, $d)", IsNumber: true})
 
-	appendShenTongColumnType(&ColumnTypeInfo{Name: "BPCHAR", Format: "BPCHAR($l)", IsString: true})
+	appendShenTongColumnType(&ColumnTypeInfo{Name: "DECIMAL", Format: "DECIMAL", IsNumber: true})
+
+	appendShenTongColumnType(&ColumnTypeInfo{Name: "SERIAL", Format: "SERIAL", IsNumber: true})
+
+	appendShenTongColumnType(&ColumnTypeInfo{Name: "CHAR", Format: "CHAR($l)", IsString: true})
 	appendShenTongColumnType(&ColumnTypeInfo{Name: "VARCHAR", Format: "VARCHAR($l)", IsString: true})
+	appendShenTongColumnType(&ColumnTypeInfo{Name: "BPCHAR", Format: "BPCHAR($l)", IsString: true})
+	appendShenTongColumnType(&ColumnTypeInfo{Name: "BINARY", Format: "BINARY($l)", IsString: true})
+	appendShenTongColumnType(&ColumnTypeInfo{Name: "VARBINARY", Format: "VARBINARY($l)", IsString: true})
 
 	appendShenTongColumnType(&ColumnTypeInfo{Name: "DATE", Format: "DATE", IsDateTime: true})
+
+	appendShenTongColumnType(&ColumnTypeInfo{Name: "TIME", Format: "TIME", IsDateTime: true})
 
 	appendShenTongColumnType(&ColumnTypeInfo{Name: "TIMESTAMP", Format: "TIMESTAMP", IsDateTime: true,
 		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
@@ -24,15 +39,11 @@ func init() {
 				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
 				columnDefaultPack = "CURRENT_TIMESTAMP"
 			}
-			//if strings.Contains(strings.ToLower(column.ColumnExtra), "on update current_timestamp") {
-			//	columnDefaultPack += " ON UPDATE CURRENT_TIMESTAMP"
-			//}
 			return
 		},
 	})
 	appendShenTongColumnType(&ColumnTypeInfo{Name: "INT1", Format: "INT1", IsNumber: true})
 	appendShenTongColumnType(&ColumnTypeInfo{Name: "INT2", Format: "INT2", IsNumber: true})
-	appendShenTongColumnType(&ColumnTypeInfo{Name: "INT4", Format: "INT4", IsNumber: true})
 	appendShenTongColumnType(&ColumnTypeInfo{Name: "INT8", Format: "INT8", IsNumber: true})
 
 	appendShenTongColumnType(&ColumnTypeInfo{Name: "_INT1", Format: "_INT1", IsNumber: true})
@@ -47,6 +58,7 @@ func init() {
 	appendShenTongColumnType(&ColumnTypeInfo{Name: "_FLOAT8", Format: "_FLOAT8", IsNumber: true})
 
 	appendShenTongColumnType(&ColumnTypeInfo{Name: "BOOL", Format: "BOOL", IsString: true})
+	appendShenTongColumnType(&ColumnTypeInfo{Name: "BOOLEAN", Format: "BOOLEAN", IsString: true})
 
 	appendShenTongColumnType(&ColumnTypeInfo{Name: "CLOB", Format: "CLOB", IsString: true})
 	appendShenTongColumnType(&ColumnTypeInfo{Name: "BLOB", Format: "BLOB", IsString: true})
