@@ -88,23 +88,28 @@ func (this_ *SqlMapping) ColumnTypePack(column *ColumnModel) (columnTypePack str
 		return
 	}
 	columnTypePack = columnTypeInfo.Format
-	lStr := ""
-	dStr := ""
-	if column.ColumnLength >= 0 {
-		lStr = strconv.Itoa(column.ColumnLength)
+	if strings.Contains(columnTypePack, "(") {
+		beforeStr := columnTypePack[0:strings.Index(columnTypePack, "(")]
+		endStr := columnTypePack[strings.Index(columnTypePack, "("):]
+		lStr := ""
+		dStr := ""
+		if column.ColumnLength >= 0 {
+			lStr = strconv.Itoa(column.ColumnLength)
+		}
+		if column.ColumnDecimal >= 0 {
+			dStr = strconv.Itoa(column.ColumnDecimal)
+		}
+		if column.ColumnLength == 0 && column.ColumnDecimal == 0 {
+			lStr = ""
+			dStr = ""
+		}
+		endStr = strings.ReplaceAll(endStr, "$l", lStr)
+		endStr = strings.ReplaceAll(endStr, "$d", dStr)
+		endStr = strings.ReplaceAll(endStr, " ", "")
+		endStr = strings.ReplaceAll(endStr, ",)", ")")
+		endStr = strings.TrimSuffix(endStr, "(,)")
+		endStr = strings.TrimSuffix(endStr, "()")
+		columnTypePack = beforeStr + endStr
 	}
-	if column.ColumnDecimal >= 0 {
-		dStr = strconv.Itoa(column.ColumnDecimal)
-	}
-	if column.ColumnLength == 0 && column.ColumnDecimal == 0 {
-		lStr = ""
-		dStr = ""
-	}
-	columnTypePack = strings.ReplaceAll(columnTypePack, "$l", lStr)
-	columnTypePack = strings.ReplaceAll(columnTypePack, "$d", dStr)
-	columnTypePack = strings.ReplaceAll(columnTypePack, " ", "")
-	columnTypePack = strings.ReplaceAll(columnTypePack, ",)", ")")
-	columnTypePack = strings.TrimSuffix(columnTypePack, "(,)")
-	columnTypePack = strings.TrimSuffix(columnTypePack, "()")
 	return
 }

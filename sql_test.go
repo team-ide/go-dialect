@@ -43,8 +43,8 @@ func init() {
 	//appendTestDialectSqlite()
 	//appendTestDialectOracle()
 	//appendTestDialectShenTong()
-	appendTestDialectDM()
-	//appendTestDialectKingBase()
+	//appendTestDialectDM()
+	appendTestDialectKingBase()
 }
 
 func appendTestDialectMysql() {
@@ -165,7 +165,7 @@ func appendTestDialectKingBase() {
 	one.mapping = dialect.NewMappingKingBase()
 
 	one.owner = &dialect.OwnerModel{
-		OwnerName:     "TEST_DB",
+		OwnerName:     "TEST_DB_USER",
 		OwnerPassword: "123456",
 	}
 	one.db = func() (db *sql.DB, err error) {
