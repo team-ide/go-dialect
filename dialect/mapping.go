@@ -92,7 +92,7 @@ func (this_ *SqlMapping) GenDemoTable() (table *TableModel) {
 			column.ColumnEnums = append(column.ColumnEnums, "option2")
 		}
 
-		if i%3 == 0 {
+		if i < 10 && i%3 == 0 {
 			column.ColumnNotNull = true
 		}
 		table.AddColumn(column)

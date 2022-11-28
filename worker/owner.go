@@ -59,6 +59,7 @@ func OwnerSelect(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 
 func OwnerCreate(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, owner *dialect.OwnerModel) (created bool, err error) {
 	sqlList, err := dia.OwnerCreateSql(param, owner)
+	//fmt.Println("OwnerCreate:", sqlList)
 	if err != nil {
 		return
 	}

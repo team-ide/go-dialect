@@ -11,6 +11,8 @@ func NewMappingMysql() (mapping *SqlMapping) {
 		SqlValueEscapeChar: "\\",
 	}
 
+	appendMysqlSql(mapping)
+
 	for _, one := range mysqlColumnTypeList {
 		mapping.AddColumnTypeInfo(one)
 	}

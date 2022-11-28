@@ -3,6 +3,7 @@ package dialect
 import (
 	"encoding/json"
 	"errors"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -61,6 +62,55 @@ func (this_ *SqlMapping) GetColumnTypeInfo(typeName string) (columnTypeInfo *Col
 
 	key := strings.ToLower(typeName)
 	columnTypeInfo = this_.columnTypeInfoCache[key]
+
+	if columnTypeInfo == nil {
+
+		var list = this_.columnTypeInfoList
+		for _, one := range list {
+			if len(one.Matches) == 0 {
+				continue
+			}
+			var matched = false
+			//fmt.Println("typeName:", typeName, ",MatchName:", one.Name, ",matches:", one.Matches)
+			for _, match := range one.Matches {
+				if match == strings.ToUpper(typeName) {
+					matched = true
+					break
+				}
+				//fmt.Println("typeName:", typeName, ",match:", match)
+				if strings.Contains(match, "&") {
+
+					match = strings.ReplaceAll(match, "&&", "&")
+					ss := strings.Split(match, "&")
+					for _, s := range ss {
+						s = strings.TrimSpace(s)
+						if s == "" {
+							continue
+						}
+						if strings.Contains(s, ">") || strings.Contains(s, "=") || strings.Contains(s, "<") {
+
+						} else {
+							if !regexp.MustCompile(s).MatchString(strings.ToUpper(typeName)) {
+								matched = false
+								break
+							}
+						}
+					}
+				} else {
+					if regexp.MustCompile(match).MatchString(strings.ToUpper(typeName)) {
+						matched = true
+						break
+					}
+				}
+
+			}
+			if matched {
+				columnTypeInfo = one
+				break
+			}
+		}
+	}
+
 	if columnTypeInfo == nil {
 		err = errors.New("dialect [" + this_.DialectType().Name + "] GetColumnTypeInfo not support column type name [" + typeName + "]")
 		return
@@ -105,7 +155,8 @@ func (this_ *SqlMapping) ColumnTypePack(column *ColumnModel) (columnTypePack str
 		}
 		endStr = strings.ReplaceAll(endStr, "$l", lStr)
 		endStr = strings.ReplaceAll(endStr, "$d", dStr)
-		endStr = strings.ReplaceAll(endStr, " ", "")
+		endStr = strings.ReplaceAll(endStr, " )", ")")
+		endStr = strings.ReplaceAll(endStr, " ,", ",")
 		endStr = strings.ReplaceAll(endStr, ",)", ")")
 		endStr = strings.TrimSuffix(endStr, "(,)")
 		endStr = strings.TrimSuffix(endStr, "()")

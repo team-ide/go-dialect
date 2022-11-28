@@ -126,11 +126,14 @@ type ColumnModel struct {
 }
 
 type ColumnTypeInfo struct {
-	Name   string `json:"name,omitempty"`
-	Format string `json:"format,omitempty"`
+	Name    string `json:"name,omitempty"`
+	Comment string `json:"comment,omitempty"`
+	Format  string `json:"format,omitempty"`
 
 	// IsNumber 如果 是 数字 数据存储 设置该属性
-	IsNumber bool `json:"isNumber,omitempty"`
+	IsNumber  bool `json:"isNumber,omitempty"`
+	IsInteger bool `json:"isInteger,omitempty"`
+	IsFloat   bool `json:"isFloat,omitempty"`
 
 	// IsString 如果 是 字符串 数据存储 设置该属性
 	IsString bool `json:"isString,omitempty"`
@@ -141,11 +144,14 @@ type ColumnTypeInfo struct {
 	// IsBytes 如果 是 流 数据存储 设置该属性
 	IsBytes bool `json:"isBytes,omitempty"`
 
+	IsBoolean bool `json:"isBoolean,omitempty"`
+
 	// IsEnum 如果 是 枚举 数据存储 设置该属性
 	IsEnum bool `json:"isEnum,omitempty"`
 
 	// IsExtend 如果 非 当前 数据库能支持的类型 设置该属性
-	IsExtend bool `json:"isExtend,omitempty"`
+	IsExtend bool     `json:"isExtend,omitempty"`
+	Matches  []string `json:"matches"`
 
 	ColumnDefaultPack      func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) `json:"-"`
 	ColumnTypePack         func(column *ColumnModel) (columnTypePack string, err error)                       `json:"-"`

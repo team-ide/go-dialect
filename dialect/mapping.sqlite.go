@@ -13,7 +13,7 @@ func NewMappingSqlite() (mapping *SqlMapping) {
 		SqlValueEscapeChar: "'",
 	}
 
-	appendShenTongSql(mapping)
+	appendSqliteSql(mapping)
 
 	for _, one := range sqliteColumnTypeList {
 		mapping.AddColumnTypeInfo(one)

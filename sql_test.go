@@ -39,11 +39,11 @@ func (this_ *testDialect) init() {
 }
 
 func init() {
-	//appendTestDialectMysql()
-	//appendTestDialectSqlite()
-	//appendTestDialectOracle()
-	//appendTestDialectShenTong()
-	//appendTestDialectDM()
+	appendTestDialectMysql()
+	appendTestDialectSqlite()
+	appendTestDialectOracle()
+	appendTestDialectShenTong()
+	appendTestDialectDM()
 	appendTestDialectKingBase()
 }
 
@@ -481,18 +481,29 @@ func TestAllSql(t *testing.T) {
 		fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] create table result---")
 		fmt.Println(string(bs))
 
-		//for _, to := range testDialectList {
-		//if from == to {
-		//	continue
-		//}
-		//	fromTableToTableSql(from, table, to)
-		//}
+		for _, to := range testDialectList {
+			//if from == to {
+			//	continue
+			//}
+			fromTableToTableSql(from, table, to)
+		}
 	}
 }
 
 func fromTableToTableSql(from *testDialect, fromTable *dialect.TableModel, to *testDialect) {
 	fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] to dialect [" + to.dialect.DialectType().Name + "] create table---")
 
+	for _, column := range fromTable.ColumnList {
+		column.ColumnDefault = ""
+		if to.dialect.DialectType() == dialect.TypeMysql {
+			info, _ := to.dialect.GetColumnTypeInfo(column.ColumnDataType)
+			if info != nil {
+				if info.Name == "TIMESTAMP" {
+					column.ColumnDefault = "current_timestamp"
+				}
+			}
+		}
+	}
 	bs, err := json.Marshal(fromTable)
 	if err != nil {
 		panic(err)
