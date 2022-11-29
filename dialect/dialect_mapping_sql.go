@@ -429,7 +429,8 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 		}
 	} else {
 		if strings.Contains(columnType, "(") {
-			if column.ColumnLength == 0 && column.ColumnPrecision == 0 && column.ColumnScale == 0 {
+			if (column.ColumnLength == 0 && column.ColumnPrecision == 0 && column.ColumnScale == 0) ||
+				(this_.dialectType == TypeMysql && columnTypeInfo.IsInteger) {
 				lengthStr := columnType[strings.Index(columnType, "(")+1 : strings.Index(columnType, ")")]
 				var v1 int
 				var v2 int
