@@ -125,7 +125,7 @@ func readRow(dia dialect.Dialect, rowInfo string, separator string, columnList [
 			continue
 		}
 		var info *dialect.ColumnTypeInfo
-		info, err = dia.GetColumnTypeInfo(column.ColumnDataType)
+		info, err = dia.GetColumnTypeInfo(column)
 		if err != nil {
 			return
 		}

@@ -15,7 +15,7 @@ type Type struct {
 type Dialect interface {
 	DialectType() (dialectType *Type)
 	GetColumnTypeInfos() (columnTypeInfoList []*ColumnTypeInfo)
-	GetColumnTypeInfo(typeName string) (columnTypeInfo *ColumnTypeInfo, err error)
+	GetColumnTypeInfo(column *ColumnModel) (columnTypeInfo *ColumnTypeInfo, err error)
 	ColumnTypePack(column *ColumnModel) (columnTypePack string, err error)
 	GetIndexTypeInfos() (indexTypeInfoList []*IndexTypeInfo)
 	//FormatDefaultValue(column *ColumnModel) (defaultValue string)

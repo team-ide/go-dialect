@@ -429,7 +429,8 @@ func (this_ *taskImport) importTableData(workDb *sql.DB, tableDataSource DataSou
 				newColumn.ColumnDataType = column.ColumnDataType
 				newColumn.ColumnDefault = column.ColumnDefault
 				newColumn.ColumnLength = column.ColumnLength
-				newColumn.ColumnDecimal = column.ColumnDecimal
+				newColumn.ColumnPrecision = column.ColumnPrecision
+				newColumn.ColumnScale = column.ColumnScale
 			}
 			newColumnList = append(newColumnList, newColumn)
 		}

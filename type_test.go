@@ -228,12 +228,22 @@ func formatDataType(dataType map[string]string) (info *dialect.ColumnTypeInfo) {
 
 		ss := strings.Split(inStr, ",")
 		format = nameStart + "("
-		if len(ss) > 0 {
-			format += "$l"
+		for _, s := range ss {
+			s = strings.TrimSpace(s)
+			if strings.EqualFold(s, "p") ||
+				strings.EqualFold(s, "precision") ||
+				strings.Contains(s, "精度") {
+				format += "$p, "
+			} else if strings.EqualFold(s, "s") ||
+				strings.EqualFold(s, "scale") ||
+				strings.Contains(s, "标度") ||
+				strings.Contains(s, "刻度") {
+				format += "$s, "
+			} else {
+				format += "$l, "
+			}
 		}
-		if len(ss) > 1 {
-			format += ", $d"
-		}
+		format = strings.TrimSuffix(format, ", ")
 
 		format += ")"
 		if strings.Contains(nameEnd, "(") {
@@ -245,9 +255,26 @@ func formatDataType(dataType map[string]string) (info *dialect.ColumnTypeInfo) {
 
 			ss = strings.Split(inStr, ",")
 			format += endStart + "("
-			if len(ss) > 0 {
-				format += "$d"
+			for _, s := range ss {
+				s = strings.TrimSpace(s)
+				if strings.EqualFold(s, "p") ||
+					strings.EqualFold(s, "precision") ||
+					strings.Contains(s, "精度") {
+					if strings.Contains(s, "小数秒精度") {
+						format += "$s, "
+					} else {
+						format += "$p, "
+					}
+				} else if strings.EqualFold(s, "s") ||
+					strings.EqualFold(s, "scale") ||
+					strings.Contains(s, "标度") ||
+					strings.Contains(s, "刻度") {
+					format += "$s, "
+				} else {
+					format += "$l, "
+				}
 			}
+			format = strings.TrimSuffix(format, ", ")
 			format += ")" + endEnd
 			name = nameStart + endStart + endEnd
 		} else {

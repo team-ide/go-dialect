@@ -364,14 +364,14 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 	}
 	dataPrecision := GetStringValue(data["DATA_PRECISION"])
 	if dataPrecision != "" && dataPrecision != "0" {
-		column.ColumnLength, err = StringToInt(dataPrecision)
+		column.ColumnPrecision, err = StringToInt(dataPrecision)
 		if err != nil {
 			return
 		}
 	}
 	dataScale := GetStringValue(data["DATA_SCALE"])
 	if dataScale != "" && dataScale != "0" {
-		column.ColumnDecimal, err = StringToInt(dataScale)
+		column.ColumnScale, err = StringToInt(dataScale)
 		if err != nil {
 			return
 		}
@@ -383,28 +383,29 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 			return
 		}
 	}
+
 	numericPrecision := GetStringValue(data["NUMERIC_PRECISION"])
 	if numericPrecision != "" && numericPrecision != "0" {
-		column.ColumnLength, err = StringToInt(numericPrecision)
+		column.ColumnPrecision, err = StringToInt(numericPrecision)
 		if err != nil {
 			return
 		}
 	}
 	numericScale := GetStringValue(data["NUMERIC_SCALE"])
 	if numericScale != "" && numericScale != "0" {
-		column.ColumnDecimal, err = StringToInt(numericScale)
+		column.ColumnScale, err = StringToInt(numericScale)
 		if err != nil {
 			return
 		}
 	}
 	datetimePrecision := GetStringValue(data["DATETIME_PRECISION"])
 	if datetimePrecision != "" && datetimePrecision != "0" {
-		column.ColumnLength, err = StringToInt(datetimePrecision)
+		column.ColumnPrecision, err = StringToInt(datetimePrecision)
 		if err != nil {
 			return
 		}
 	}
-	columnTypeInfo, err := this_.GetColumnTypeInfo(column.ColumnDataType)
+	columnTypeInfo, err := this_.GetColumnTypeInfo(column)
 	if err != nil {
 		bs, _ = json.Marshal(data)
 		err = errors.New("ColumnModel error column data:" + string(bs) + ",error:" + err.Error())
@@ -428,12 +429,37 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 		}
 	} else {
 		if strings.Contains(columnType, "(") {
-			lengthStr := columnType[strings.Index(columnType, "(")+1 : strings.Index(columnType, ")")]
-			if strings.Contains(lengthStr, ",") {
-				column.ColumnLength, _ = strconv.Atoi(lengthStr[0:strings.Index(lengthStr, ",")])
-				column.ColumnDecimal, _ = strconv.Atoi(lengthStr[strings.Index(lengthStr, ",")+1:])
-			} else {
-				column.ColumnLength, _ = strconv.Atoi(lengthStr)
+			if column.ColumnLength == 0 && column.ColumnPrecision == 0 && column.ColumnScale == 0 {
+				lengthStr := columnType[strings.Index(columnType, "(")+1 : strings.Index(columnType, ")")]
+				var v1 int
+				var v2 int
+				if strings.Contains(lengthStr, ",") {
+					v1, _ = strconv.Atoi(strings.TrimSpace(lengthStr[0:strings.Index(lengthStr, ",")]))
+					v2, _ = strconv.Atoi(strings.TrimSpace(lengthStr[strings.Index(lengthStr, ",")+1:]))
+					if strings.Contains(columnTypeInfo.Format, "$l") {
+						column.ColumnLength = v1
+					}
+					if strings.Contains(columnTypeInfo.Format, "$p") {
+						column.ColumnPrecision = v1
+						column.ColumnLength = v1
+					}
+					if strings.Contains(columnTypeInfo.Format, "$s") {
+						column.ColumnScale = v2
+					}
+				} else {
+					v1, _ = strconv.Atoi(lengthStr)
+					if strings.Contains(columnTypeInfo.Format, "$l") {
+						column.ColumnLength = v1
+					}
+					if strings.Contains(columnTypeInfo.Format, "$p") {
+						column.ColumnPrecision = v1
+						column.ColumnLength = v1
+					}
+					if strings.Contains(columnTypeInfo.Format, "$s") {
+						column.ColumnScale = v1
+					}
+				}
+
 			}
 		}
 	}
@@ -530,7 +556,8 @@ func (this_ *mappingDialect) ColumnUpdateSql(param *ParamModel, ownerName string
 	if hasChangeName || hasChangeComment || hasChangeAfter ||
 		oldColumn.ColumnDataType != column.ColumnDataType ||
 		oldColumn.ColumnLength != column.ColumnLength ||
-		oldColumn.ColumnDecimal != column.ColumnDecimal ||
+		oldColumn.ColumnPrecision != column.ColumnPrecision ||
+		oldColumn.ColumnScale != column.ColumnScale ||
 		oldColumn.ColumnDefault != column.ColumnDefault ||
 		oldColumn.ColumnNotNull != column.ColumnNotNull {
 		sqlList_, err = this_.FormatSql(this_.ColumnUpdate, param,

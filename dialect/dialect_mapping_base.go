@@ -68,7 +68,7 @@ func (this_ *mappingDialect) SqlValuePack(param *ParamModel, column *ColumnModel
 	}
 	var columnTypeInfo *ColumnTypeInfo
 	if column != nil {
-		columnTypeInfo, _ = this_.GetColumnTypeInfo(column.ColumnDataType)
+		columnTypeInfo, _ = this_.GetColumnTypeInfo(column)
 	}
 	return packingValue(column, columnTypeInfo, char, escapeChar, value)
 }
@@ -76,7 +76,7 @@ func (this_ *mappingDialect) SqlValuePack(param *ParamModel, column *ColumnModel
 func (this_ *mappingDialect) ColumnDefaultPack(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
 	var columnTypeInfo *ColumnTypeInfo
 	if column != nil {
-		columnTypeInfo, err = this_.GetColumnTypeInfo(column.ColumnDataType)
+		columnTypeInfo, err = this_.GetColumnTypeInfo(column)
 		if err != nil {
 			bs, _ := json.Marshal(column)
 			err = errors.New("ColumnDefaultPack error column:" + string(bs) + ",error:" + err.Error())

@@ -100,7 +100,7 @@ func (this_ *dataSourceExcel) Read(columnList []*dialect.ColumnModel, onRead fun
 					continue
 				}
 				var info *dialect.ColumnTypeInfo
-				info, err = this_.Dia.GetColumnTypeInfo(column.ColumnDataType)
+				info, err = this_.Dia.GetColumnTypeInfo(column)
 				if err != nil {
 					return
 				}

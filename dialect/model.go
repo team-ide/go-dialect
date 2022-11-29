@@ -109,7 +109,8 @@ type ColumnModel struct {
 	ColumnDataType string `json:"columnDataType"`
 	//ColumnType             string `json:"columnType"`
 	ColumnLength           int    `json:"columnLength"`
-	ColumnDecimal          int    `json:"columnDecimal"`
+	ColumnPrecision        int    `json:"columnPrecision"`
+	ColumnScale            int    `json:"columnScale"`
 	ColumnNotNull          bool   `json:"columnNotNull"`
 	ColumnDefault          string `json:"columnDefault"`
 	ColumnAfterColumn      string `json:"columnAfterColumn"`
@@ -126,9 +127,15 @@ type ColumnModel struct {
 }
 
 type ColumnTypeInfo struct {
-	Name    string `json:"name,omitempty"`
-	Comment string `json:"comment,omitempty"`
-	Format  string `json:"format,omitempty"`
+	Name         string `json:"name,omitempty"`
+	Comment      string `json:"comment,omitempty"`
+	Format       string `json:"format,omitempty"`
+	MinLength    *int   `json:"minLength"`
+	MaxLength    *int   `json:"maxLength"`
+	MinPrecision *int   `json:"minPrecision"`
+	MaxPrecision *int   `json:"maxPrecision"`
+	MinScale     *int   `json:"minScale"`
+	MaxScale     *int   `json:"maxScale"`
 
 	// IsNumber 如果 是 数字 数据存储 设置该属性
 	IsNumber  bool `json:"isNumber,omitempty"`

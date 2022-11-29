@@ -425,10 +425,14 @@ func TestToTableSql(t *testing.T) {
 
 func TestAllSql(t *testing.T) {
 	param := &dialect.ParamModel{}
+
+	var err error
+	var bs []byte
+
 	for _, from := range testDialectList {
 		fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] create table---")
 
-		bs, err := json.Marshal(from.table)
+		bs, err = json.Marshal(from.table)
 		if err != nil {
 			panic(err)
 		}
@@ -474,12 +478,44 @@ func TestAllSql(t *testing.T) {
 			from.killSession(from.owner, db)
 		}
 		_ = db.Close()
-		bs, err = json.Marshal(table)
-		if err != nil {
-			panic(err)
+
+		for columnIndex, fromColumn := range from.table.ColumnList {
+			savedColumn := table.ColumnList[columnIndex]
+			if fromColumn.ColumnName != savedColumn.ColumnName ||
+				//fromColumn.ColumnDataType != savedColumn.ColumnDataType ||
+				fromColumn.ColumnLength != savedColumn.ColumnLength ||
+				fromColumn.ColumnPrecision != savedColumn.ColumnPrecision ||
+				fromColumn.ColumnScale != savedColumn.ColumnScale {
+				fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] table column not eq---")
+				bs, err = json.Marshal(fromColumn)
+				if err != nil {
+					panic(err)
+				}
+				fmt.Println("fromColumn:", string(bs))
+				bs, err = json.Marshal(savedColumn)
+				if err != nil {
+					panic(err)
+				}
+				fmt.Println("savedColumn:", string(bs))
+				if fromColumn.ColumnLength == 0 &&
+					fromColumn.ColumnPrecision == 0 &&
+					fromColumn.ColumnScale == 0 {
+					continue
+				} else if fromColumn.ColumnLength != savedColumn.ColumnLength &&
+					fromColumn.ColumnPrecision == savedColumn.ColumnPrecision &&
+					fromColumn.ColumnScale == savedColumn.ColumnScale {
+					continue
+				}
+				panic("字段不一致")
+			}
 		}
+
+		//bs, err = json.Marshal(table)
+		//if err != nil {
+		//	panic(err)
+		//}
 		fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] create table result---")
-		fmt.Println(string(bs))
+		//fmt.Println(string(bs))
 
 		for _, to := range testDialectList {
 			//if from == to {
@@ -496,7 +532,7 @@ func fromTableToTableSql(from *testDialect, fromTable *dialect.TableModel, to *t
 	for _, column := range fromTable.ColumnList {
 		column.ColumnDefault = ""
 		if to.dialect.DialectType() == dialect.TypeMysql {
-			info, _ := to.dialect.GetColumnTypeInfo(column.ColumnDataType)
+			info, _ := to.dialect.GetColumnTypeInfo(column)
 			if info != nil {
 				if info.Name == "TIMESTAMP" {
 					column.ColumnDefault = "current_timestamp"

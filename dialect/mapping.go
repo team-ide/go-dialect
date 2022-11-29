@@ -83,8 +83,16 @@ func (this_ *SqlMapping) GenDemoTable() (table *TableModel) {
 		column := &ColumnModel{}
 		column.ColumnName = fmt.Sprintf("column_%d", i)
 		column.ColumnDataType = columnTypeInfo.Name
-		column.ColumnLength = 5
-		column.ColumnDecimal = 2
+
+		if strings.Contains(columnTypeInfo.Format, "$l") {
+			column.ColumnLength = 5
+		}
+		if strings.Contains(columnTypeInfo.Format, "$p") {
+			column.ColumnPrecision = 3
+		}
+		if strings.Contains(columnTypeInfo.Format, "$s") {
+			column.ColumnScale = 2
+		}
 		column.ColumnComment = fmt.Sprintf("column_%d-comment", i)
 
 		if columnTypeInfo.IsEnum {
