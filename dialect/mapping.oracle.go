@@ -16,6 +16,8 @@ func NewMappingOracle() (mapping *SqlMapping) {
 		SqlValueEscapeChar: "'",
 	}
 
+	mapping.IndexNameMaxLen = 30
+
 	appendOracleSql(mapping)
 
 	mapping.PackPageSql = func(selectSql string, pageSize int, pageNo int) (pageSql string) {

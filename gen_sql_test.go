@@ -10,7 +10,7 @@ import (
 )
 
 func TestSqlParseGen(t *testing.T) {
-	err := dataTypeParse(`数据库SQL.xlsx`, "dialect/mapping.sql.go")
+	err := sqlParse(`数据库SQL.xlsx`, "dialect/mapping.sql.go")
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +66,9 @@ func sqlParse(path string, outPath string) (err error) {
 					continue
 				}
 				value := cell.Value
-				value = strings.TrimSpace(value)
+				if title != "SQL" {
+					value = strings.TrimSpace(value)
+				}
 				if cell.VMerge > 0 {
 					RowMergeCell = cellIndex
 					RowMergeEnd = rowIndex + cell.VMerge
@@ -102,8 +104,6 @@ func sqlParse(path string, outPath string) (err error) {
 	}
 	_, err = outFile.WriteString(`package dialect
 
-import "strings"
-
 `)
 	if err != nil {
 		return
@@ -133,10 +133,32 @@ import "strings"
 		} else if strings.EqualFold(one.Name, "DB2") {
 			funcName = "appendDb2Sql"
 		}
-		code += "func " + funcName + "Init(){" + "\n"
-		//for _, sqlModel := range one.sqlList {
-		//
-		//}
+		code += "func " + funcName + "(mapping *SqlMapping) {" + "\n"
+		for _, sqlModel := range one.sqlList {
+			code += "\n"
+			if sqlModel.Comment != "" {
+				code += "\t// " + sqlModel.Comment + "\n"
+			}
+			code += "\tmapping." + sqlModel.Name + " = `" + "\n"
+			code += sqlModel.Sql
+			code += "`" + "\n"
+
+			if sqlModel.Name == "TableCreateColumn" {
+				if strings.Contains(strings.ToLower(sqlModel.Sql), "comment") {
+					code += "\tmapping.TableCreateColumnHasComment = true" + "\n"
+				}
+			} else if sqlModel.Name == "ColumnUpdate" {
+				if strings.Contains(strings.ToLower(sqlModel.Sql), "comment") {
+					code += "\tmapping.ColumnUpdateHasComment = true" + "\n"
+				}
+				if strings.Contains(strings.ToLower(sqlModel.Sql), strings.ToLower("oldColumnName")) {
+					code += "\tmapping.ColumnUpdateHasRename = true" + "\n"
+				}
+				if strings.Contains(strings.ToLower(sqlModel.Sql), "after") {
+					code += "\tmapping.ColumnUpdateHasAfter = true" + "\n"
+				}
+			}
+		}
 		code += "}" + "\n\n"
 		fmt.Println(code)
 		_, err = outFile.WriteString(code)

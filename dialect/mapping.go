@@ -54,6 +54,7 @@ type SqlMapping struct {
 	IndexAdd        string
 	IndexDelete     string
 	IndexNameMaxLen int
+	IndexNamePack   string
 
 	OwnerNamePackChar  string
 	TableNamePackChar  string
