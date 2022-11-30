@@ -41,3 +41,15 @@ func NewMappingPostgresql() (mapping *SqlMapping) {
 
 	return
 }
+
+var (
+	postgresqlIndexTypeList []*IndexTypeInfo
+)
+
+func appendPostgresqlIndexType(indexType *IndexTypeInfo) {
+	postgresqlIndexTypeList = append(postgresqlIndexTypeList, indexType)
+}
+
+func init() {
+
+}
