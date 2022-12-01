@@ -165,35 +165,35 @@ import "strings"
 					code = code[0 : len(code)-2]
 				} else {
 					code += `
-	ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
-		if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
-			strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
-			columnDefaultPack = "CURRENT_TIMESTAMP"
-		}
+		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
+			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
+				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
+				columnDefaultPack = "CURRENT_TIMESTAMP"
+			}
 `
 					if isMysql {
 						code += `
-		if strings.Contains(strings.ToLower(column.ColumnExtra), "on update current_timestamp") {
-			columnDefaultPack += " ON UPDATE CURRENT_TIMESTAMP"
-		}
+			if strings.Contains(strings.ToLower(column.ColumnExtra), "on update current_timestamp") {
+				columnDefaultPack += " ON UPDATE CURRENT_TIMESTAMP"
+			}
 `
 					}
 					code += `
-		return
-	},
+			return
+		},
 `
 				}
 			} else if dataType.IsEnum {
 				if isMysql {
 					code += `
-	FullColumnByColumnType: func(columnType string, column *ColumnModel) (err error) {
-		if strings.Contains(columnType, "(") {
-			setStr := columnType[strings.Index(columnType, "(")+1 : strings.Index(columnType, ")")]
-			setStr = strings.ReplaceAll(setStr, "'", "")
-			column.ColumnEnums = strings.Split(setStr, ",")
-		}
-		return
-	},
+		FullColumnByColumnType: func(columnType string, column *ColumnModel) (err error) {
+			if strings.Contains(columnType, "(") {
+				setStr := columnType[strings.Index(columnType, "(")+1 : strings.Index(columnType, ")")]
+				setStr = strings.ReplaceAll(setStr, "'", "")
+				column.ColumnEnums = strings.Split(setStr, ",")
+			}
+			return
+		},
 `
 				} else {
 					code = code[0 : len(code)-2]
