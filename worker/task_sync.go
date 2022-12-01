@@ -426,12 +426,12 @@ func (this_ *taskSync) insertDataList(workDb *sql.DB, dataList []map[string]inte
 
 	this_.addProgress(progress)
 
-	_, sqlList, err := this_.targetDialect.InsertDataListSql(this_.Param, targetOwnerName, targetTableName, columnList, dataList)
+	_, _, batchSqlList, batchSqlValuesList, err := this_.dia.DataListInsertSql(this_.Param, targetOwnerName, targetTableName, columnList, dataList)
 	if err != nil {
 		return
 	}
 	var errSql string
-	_, errSql, _, err = DoExecs(workDb, sqlList, nil)
+	_, errSql, _, err = DoExecs(workDb, batchSqlList, batchSqlValuesList)
 	if err != nil {
 		if errSql != "" {
 			err = errors.New("sql:" + errSql + " exec error," + err.Error())
