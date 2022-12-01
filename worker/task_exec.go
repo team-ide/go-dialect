@@ -177,12 +177,12 @@ func (this_ *taskExec) execInsert(workDb *sql.DB, dataList []map[string]interfac
 
 	this_.addProgress(progress)
 
-	_, sqlList, err := this_.dia.InsertDataListSql(this_.Param, ownerName, tableName, columnList, dataList)
+	_, _, batchSqlList, batchSqlValuesList, err := this_.dia.DataListInsertSql(this_.Param, ownerName, tableName, columnList, dataList)
 	if err != nil {
 		return
 	}
 	var errSql string
-	_, errSql, _, err = DoExecs(workDb, sqlList, nil)
+	_, errSql, _, err = DoExecs(workDb, batchSqlList, batchSqlValuesList)
 	if err != nil {
 		if errSql != "" {
 			err = errors.New("sql:" + errSql + " exec error," + err.Error())
@@ -217,12 +217,15 @@ func (this_ *taskExec) execTableUpdate(workDb *sql.DB, ownerName string, tableNa
 		batchNumber = 100
 	}
 
-	var dataList []map[string]interface{}
-	for _, data := range updateList {
-		dataList = append(dataList, data)
-		if len(dataList) >= batchNumber {
-			err = this_.execUpdate(workDb, dataList, ownerName, tableName, columnList)
-			dataList = make([]map[string]interface{}, 0)
+	var updateDataList_ []map[string]interface{}
+	var updateWhereList_ []map[string]interface{}
+	for index := range updateList {
+		updateDataList_ = append(updateDataList_, updateList[index])
+		updateWhereList_ = append(updateWhereList_, updateWhereList[index])
+		if len(updateDataList_) >= batchNumber {
+			err = this_.execUpdate(workDb, updateDataList_, updateWhereList_, ownerName, tableName, columnList)
+			updateDataList_ = make([]map[string]interface{}, 0)
+			updateWhereList_ = make([]map[string]interface{}, 0)
 			if err != nil {
 				return
 			}
@@ -231,9 +234,10 @@ func (this_ *taskExec) execTableUpdate(workDb *sql.DB, ownerName string, tableNa
 	if err != nil {
 		return
 	}
-	if len(dataList) >= 0 {
-		err = this_.execUpdate(workDb, dataList, ownerName, tableName, columnList)
-		dataList = make([]map[string]interface{}, 0)
+	if len(updateDataList_) >= 0 {
+		err = this_.execUpdate(workDb, updateDataList_, updateWhereList_, ownerName, tableName, columnList)
+		updateDataList_ = make([]map[string]interface{}, 0)
+		updateWhereList_ = make([]map[string]interface{}, 0)
 		if err != nil {
 			return
 		}
@@ -241,7 +245,7 @@ func (this_ *taskExec) execTableUpdate(workDb *sql.DB, ownerName string, tableNa
 	return
 }
 
-func (this_ *taskExec) execUpdate(workDb *sql.DB, dataList []map[string]interface{}, ownerName string, tableName string, columnList []*dialect.ColumnModel) (err error) {
+func (this_ *taskExec) execUpdate(workDb *sql.DB, updateList []map[string]interface{}, updateWhereList []map[string]interface{}, ownerName string, tableName string, columnList []*dialect.ColumnModel) (err error) {
 
 	progress := &TaskProgress{
 		Title: "插入数据[" + ownerName + "." + tableName + "]",
@@ -260,13 +264,12 @@ func (this_ *taskExec) execUpdate(workDb *sql.DB, dataList []map[string]interfac
 	}()
 
 	this_.addProgress(progress)
-
-	_, sqlList, err := this_.dia.InsertDataListSql(this_.Param, ownerName, tableName, columnList, dataList)
+	sqlList, sqlValuesList, err := this_.dia.DataListUpdateSql(this_.Param, ownerName, tableName, columnList, updateList, updateWhereList)
 	if err != nil {
 		return
 	}
 	var errSql string
-	_, errSql, _, err = DoExecs(workDb, sqlList, nil)
+	_, errSql, _, err = DoExecs(workDb, sqlList, sqlValuesList)
 	if err != nil {
 		if errSql != "" {
 			err = errors.New("sql:" + errSql + " exec error," + err.Error())
@@ -301,12 +304,12 @@ func (this_ *taskExec) execTableDelete(workDb *sql.DB, ownerName string, tableNa
 		batchNumber = 100
 	}
 
-	var dataList []map[string]interface{}
+	var dataWhereList []map[string]interface{}
 	for _, data := range deleteList {
-		dataList = append(dataList, data)
-		if len(dataList) >= batchNumber {
-			err = this_.execDelete(workDb, dataList, ownerName, tableName, columnList)
-			dataList = make([]map[string]interface{}, 0)
+		dataWhereList = append(dataWhereList, data)
+		if len(dataWhereList) >= batchNumber {
+			err = this_.execDelete(workDb, dataWhereList, ownerName, tableName, columnList)
+			dataWhereList = make([]map[string]interface{}, 0)
 			if err != nil {
 				return
 			}
@@ -315,9 +318,9 @@ func (this_ *taskExec) execTableDelete(workDb *sql.DB, ownerName string, tableNa
 	if err != nil {
 		return
 	}
-	if len(dataList) >= 0 {
-		err = this_.execDelete(workDb, dataList, ownerName, tableName, columnList)
-		dataList = make([]map[string]interface{}, 0)
+	if len(dataWhereList) >= 0 {
+		err = this_.execDelete(workDb, dataWhereList, ownerName, tableName, columnList)
+		dataWhereList = make([]map[string]interface{}, 0)
 		if err != nil {
 			return
 		}
@@ -325,7 +328,7 @@ func (this_ *taskExec) execTableDelete(workDb *sql.DB, ownerName string, tableNa
 	return
 }
 
-func (this_ *taskExec) execDelete(workDb *sql.DB, dataList []map[string]interface{}, ownerName string, tableName string, columnList []*dialect.ColumnModel) (err error) {
+func (this_ *taskExec) execDelete(workDb *sql.DB, dataWhereList []map[string]interface{}, ownerName string, tableName string, columnList []*dialect.ColumnModel) (err error) {
 
 	progress := &TaskProgress{
 		Title: "插入数据[" + ownerName + "." + tableName + "]",
@@ -345,12 +348,12 @@ func (this_ *taskExec) execDelete(workDb *sql.DB, dataList []map[string]interfac
 
 	this_.addProgress(progress)
 
-	_, sqlList, err := this_.dia.InsertDataListSql(this_.Param, ownerName, tableName, columnList, dataList)
+	sqlList, sqlValuesList, err := this_.dia.DataListDeleteSql(this_.Param, ownerName, tableName, columnList, dataWhereList)
 	if err != nil {
 		return
 	}
 	var errSql string
-	_, errSql, _, err = DoExecs(workDb, sqlList, nil)
+	_, errSql, _, err = DoExecs(workDb, sqlList, sqlValuesList)
 	if err != nil {
 		if errSql != "" {
 			err = errors.New("sql:" + errSql + " exec error," + err.Error())
