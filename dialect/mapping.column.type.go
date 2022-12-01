@@ -4,11 +4,11 @@ import "strings"
 
 // Mysql 数据库 字段类型
 var mysqlColumnTypeList = []*ColumnTypeInfo{
-	{Name: `TINYINT`, Format: `TINYINT($l)`, Matches: []string{`NUMBER&&columnLength<3&&columnScale==0`, `INT1`, `BOOL`, `BOOLEAN`}, IsNumber: true, IsInteger: true, Comment: `1 Bytes 范围（有符号）(-128，127) 范围（无符号）(0，255) 小整数值`},
-	{Name: `SMALLINT`, Format: `SMALLINT($l)`, Matches: []string{`NUMBER&&columnLength<6&&columnScale==0`, `INT2`}, IsNumber: true, IsInteger: true, Comment: `2 Bytes 范围（有符号）(-32 768，32 767) 范围（无符号）(0，65 535)  大整数值`},
-	{Name: `MEDIUMINT`, Format: `MEDIUMINT($l)`, Matches: []string{`NUMBER&&columnLength<9&&columnScale==0`}, IsNumber: true, IsInteger: true, Comment: `3 Bytes 范围（有符号）(-8 388 608，8 388 607) 范围（无符号）(0，16 777 215)  大整数值`},
-	{Name: `INT`, Format: `INT($l)`, Matches: []string{`NUMBER&&columnLength<11&&columnScale==0`, `INT4`}, IsNumber: true, IsInteger: true, Comment: `4 Bytes 范围（有符号）(-2 147 483 648，2 147 483 647) 范围（无符号）(0，4 294 967 295)  大整数值`},
-	{Name: `INTEGER`, Format: `INTEGER($l)`, Matches: []string{`NUMBER&&columnLength<11&&columnScale==0`}, IsNumber: true, IsInteger: true, Comment: `同上`},
+	{Name: `TINYINT`, Format: `TINYINT($l)`, Matches: []string{`NUMBER&&columnScale==0&&((columnLength>0&&columnLength<3)||(columnPrecision>0&&columnPrecision<3))`, `INT1`, `BOOL`, `BOOLEAN`}, IsNumber: true, IsInteger: true, Comment: `1 Bytes 范围（有符号）(-128，127) 范围（无符号）(0，255) 小整数值`},
+	{Name: `SMALLINT`, Format: `SMALLINT($l)`, Matches: []string{`NUMBER&&columnScale==0&&((columnLength>0&&columnLength<6)||(columnPrecision>0&&columnPrecision<6))`, `INT2`}, IsNumber: true, IsInteger: true, Comment: `2 Bytes 范围（有符号）(-32 768，32 767) 范围（无符号）(0，65 535)  大整数值`},
+	{Name: `MEDIUMINT`, Format: `MEDIUMINT($l)`, Matches: []string{`NUMBER&&columnScale==0&&((columnLength>0&&columnLength<9)||(columnPrecision>0&&columnPrecision<9))`}, IsNumber: true, IsInteger: true, Comment: `3 Bytes 范围（有符号）(-8 388 608，8 388 607) 范围（无符号）(0，16 777 215)  大整数值`},
+	{Name: `INT`, Format: `INT($l)`, Matches: []string{`NUMBER&&columnScale==0&&((columnLength>0&&columnLength<11)||(columnPrecision>0&&columnPrecision<11))`, `INT4`}, IsNumber: true, IsInteger: true, Comment: `4 Bytes 范围（有符号）(-2 147 483 648，2 147 483 647) 范围（无符号）(0，4 294 967 295)  大整数值`},
+	{Name: `INTEGER`, Format: `INTEGER($l)`, IsNumber: true, IsInteger: true, Comment: `同上`},
 	{Name: `BIGINT`, Format: `BIGINT($l)`, Matches: []string{`NUMBER&&columnScale==0`, `INT8`}, IsNumber: true, IsInteger: true, Comment: `8 Bytes 范围（有符号）(-9,223,372,036,854,775,808，9 223 372 036 854 775 807) 范围（无符号）(0，18 446 744 073 709 551 615)  极大整数值`},
 	{Name: `FLOAT`, Format: `FLOAT`, Matches: []string{`FLOAT4`}, IsNumber: true, IsFloat: true, Comment: `4 Bytes 范围（有符号）(-3.402 823 466 E+38，-1.175 494 351 E-38)，0，(1.175 494 351 E-38，3.402 823 466 351 E+38) 范围（无符号）0，(1.175 494 351 E-38，3.402 823 466 E+38)  单精度 浮点数值`},
 	{Name: `DOUBLE`, Format: `DOUBLE`, Matches: []string{`FLOAT8`, `DOUBLE PRECISION`}, IsNumber: true, IsFloat: true, Comment: `8 Bytes 范围（有符号）(-1.797 693 134 862 315 7 E+308，-2.225 073 858 507 201 4 E-308)，0，(2.225 073 858 507 201 4 E-308，1.797 693 134 862 315 7 E+308)范围（无符号）0，(2.225 073 858 507 201 4 E-308，1.797 693 134 862 315 7 E+308)  双精度 浮点数值`},
@@ -87,7 +87,7 @@ var oracleColumnTypeList = []*ColumnTypeInfo{
 P 是Precison的英文缩写，即精度缩写，表示有效数字的位数，最多不能超过38个有效数字。
 
 S是Scale的英文缩写，可以使用的范围为-84~127。Scale为正数时，表示从小数点到最低有效数字的位数，它为负数时，表示从最大有效数字到小数点的位数。`},
-	{Name: `INTEGER`, Format: `INTEGER`, Matches: []string{`TINYINT`, `SMALLINT`, `MEDIUMINT`, `INT`, `BIGINT`, `BIT&&columnLength<=1&&columnPrecision<=1`, `INT1`, `INT2`, `INT4`, `BOOL`, `BOOLEAN`}, IsNumber: true, Comment: `INTEGER是NUMBER的子类型，它等同于NUMBER（38,0），用来存储整数。若插入、更新的数值有小数，则会被四舍五入`},
+	{Name: `INTEGER`, Format: `INTEGER`, Matches: []string{`TINYINT`, `SMALLINT`, `MEDIUMINT`, `INT`, `BIGINT`, `BIT&&columnLength==1||columnPrecision==1`, `INT1`, `INT2`, `INT4`, `BOOL`, `BOOLEAN`}, IsNumber: true, Comment: `INTEGER是NUMBER的子类型，它等同于NUMBER（38,0），用来存储整数。若插入、更新的数值有小数，则会被四舍五入`},
 	{Name: `FLOAT`, Format: `FLOAT`, Matches: []string{`DOUBLE`, `FLOAT4`, `FLOAT8`, `DOUBLE PRECISION`}, IsNumber: true, Comment: `FLOAT类型也是NUMBER的子类型。
 
 Float(n)，数n指示位的精度，可以存储的值的数目。n值的范围可以从 1 到 126。若要从二进制转换为十进制的精度，请将n乘以 0.30103。要从十进制转换为二进制的精度，请用3.32193乘小数精度。126位二进制精度的最大值是大约相当于38位小数精度`},
@@ -178,7 +178,7 @@ var dmColumnTypeList = []*ColumnTypeInfo{
 
 // 金仓 数据库 字段类型
 var kingBaseColumnTypeList = []*ColumnTypeInfo{
-	{Name: `TINYINT`, Format: `TINYINT`, Matches: []string{`BIT&&columnLength<=1&&columnPrecision<=1`}, IsNumber: true, Comment: `有符号整数，取值范围 -128 ~ +127`},
+	{Name: `TINYINT`, Format: `TINYINT`, Matches: []string{`BIT&&columnLength==1||columnPrecision==1`}, IsNumber: true, Comment: `有符号整数，取值范围 -128 ~ +127`},
 	{Name: `SMALLINT`, Format: `SMALLINT`, IsNumber: true, Comment: `有符号整数，取值范围 -32768 ~ +32767`},
 	{Name: `INTEGER`, Format: `INTEGER`, Matches: []string{`MEDIUMINT`}, IsNumber: true, Comment: `有符号整数，取值范围 -2147483648~ +2147483647`},
 	{Name: `INT`, Format: `INT`, Matches: []string{`INT1`, `INT2`, `INT4`}, IsNumber: true, Comment: `同上`},
@@ -228,8 +228,8 @@ precision表示精度，是整个数中有效位的总数，也就是小数点�
 
 // 神通 数据库 字段类型
 var shenTongColumnTypeList = []*ColumnTypeInfo{
-	{Name: `TINYINT`, Format: `TINYINT`, Matches: []string{`NUMBER&&columnLength<3&&columnScale==0`, `BIT&&columnLength<=1&&columnPrecision<=1`}, IsNumber: true},
-	{Name: `INT`, Format: `INT`, Matches: []string{`SMALLINT`, `MEDIUMINT`, `NUMBER&&columnLength<11&&columnScale==0`}, IsNumber: true},
+	{Name: `TINYINT`, Format: `TINYINT`, Matches: []string{`NUMBER&&columnScale==0&&((columnLength>0&&columnLength<3)||(columnPrecision>0&&columnPrecision<3))`, `BIT&&columnLength==1||columnPrecision==1`}, IsNumber: true},
+	{Name: `INT`, Format: `INT`, Matches: []string{`SMALLINT`, `MEDIUMINT`, `NUMBER&&columnScale==0&&((columnLength>0&&columnLength<11)||(columnPrecision>0&&columnPrecision<11))`}, IsNumber: true},
 	{Name: `INTEGER`, Format: `INTEGER`, IsNumber: true},
 	{Name: `INT1`, Format: `INT1`, IsNumber: true},
 	{Name: `INT2`, Format: `INT2`, IsNumber: true},
