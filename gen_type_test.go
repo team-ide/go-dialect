@@ -159,11 +159,12 @@ import "strings"
 			if dataType.Comment != "" {
 				code += "Comment: `" + dataType.Comment + "`, "
 			}
-
+			var hasOtherMethod bool
 			if dataType.Name == "DATETIME" || dataType.Name == "TIMESTAMP" {
 				if isShenTong {
-					code = code[0 : len(code)-2]
 				} else {
+					code = strings.TrimSuffix(code, " ")
+					hasOtherMethod = true
 					code += `
 		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
 			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
@@ -185,6 +186,8 @@ import "strings"
 				}
 			} else if dataType.IsEnum {
 				if isMysql {
+					hasOtherMethod = true
+					code = strings.TrimSuffix(code, " ")
 					code += `
 		FullColumnByColumnType: func(columnType string, column *ColumnModel) (err error) {
 			if strings.Contains(columnType, "(") {
@@ -196,13 +199,16 @@ import "strings"
 		},
 `
 				} else {
-					code = code[0 : len(code)-2]
 				}
 			} else {
 
-				code = code[0 : len(code)-2]
 			}
-			code += "}," + "\n"
+			if hasOtherMethod {
+				code += "\t" + "}," + "\n"
+			} else {
+				code = code[0 : len(code)-2]
+				code += "}," + "\n"
+			}
 		}
 		code += "}" + "\n\n"
 		fmt.Println(code)
