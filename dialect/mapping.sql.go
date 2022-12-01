@@ -78,17 +78,16 @@ PRIMARY KEY ({primaryKeysPack})
 
 	mapping.TableDelete = `
 
-ALTER TABLE [{ownerNamePack}.]{tableNamePack} COMMENT {sqlValuePack(tableComment)}
+DROP TABLE IF EXISTS [{ownerNamePack}.]{tableNamePack}
 `
 
 	mapping.TableComment = `
 
-ALTER TABLE [{ownerNamePack}.]{oldTableNamePack} RENAME AS {newTableNamePack}
-`
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} COMMENT {sqlValuePack(tableComment)}`
 
 	mapping.TableRename = `
 
-DROP TABLE IF EXISTS [{ownerNamePack}.]{tableNamePack}
+ALTER TABLE [{ownerNamePack}.]{oldTableNamePack} RENAME AS {tableNamePack}
 `
 
 	mapping.ColumnsSelect = `
