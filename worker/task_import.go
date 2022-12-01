@@ -515,12 +515,12 @@ func (this_ *taskImport) importDataList(workDb *sql.DB, dataList []map[string]in
 		}
 	}
 
-	_, sqlList, err := this_.dia.InsertDataListSql(this_.Param, ownerName, tableName, newColumnList, dataList)
+	_, _, batchSqlList, batchSqlValuesList, err := this_.dia.DataListInsertSql(this_.Param, ownerName, tableName, newColumnList, dataList)
 	if err != nil {
 		return
 	}
 	var errSql string
-	_, errSql, _, err = DoExecs(workDb, sqlList, nil)
+	_, errSql, _, err = DoExecs(workDb, batchSqlList, batchSqlValuesList)
 	if err != nil {
 		if errSql != "" {
 			err = errors.New("sql:" + errSql + " exec error," + err.Error())
