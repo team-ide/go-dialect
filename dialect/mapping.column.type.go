@@ -30,7 +30,7 @@ var mysqlColumnTypeList = []*ColumnTypeInfo{
 	{Name: `DATE`, Format: `DATE`, Comment: `3 bytes '-838:59:59'/'838:59:59' HH:MM:SS 时间值或持续时间`},
 	{Name: `TIME`, Format: `TIME`, Comment: `1 bytes 1901/2155 YYYY 年份值`},
 	{Name: `YEAR`, Format: `YEAR`, Comment: `8 bytes '1000-01-01 00:00:00' 到 '9999-12-31 23:59:59' YYYY-MM-DD hh:mm:ss 混合日期和时间值`},
-	{Name: `DATETIME`, Format: `DATETIME`, Matches: []string{`DATETIME WITH TIME ZONE`}, Comment: `4 bytes '1970-01-01 00:00:01' UTC 到 '2038-01-19 03:14:07' UTC 结束时间是第 2147483647 秒，北京时间 2038-1-19 11:14:07，格林尼治时间 2038年1月19日 凌晨 03:14:07 YYYY-MM-DD hh:mm:ss 混合日期和时间值，时间戳`, 
+	{Name: `DATETIME`, Format: `DATETIME`, Matches: []string{`DATETIME WITH TIME ZONE`}, Comment: `4 bytes '1970-01-01 00:00:01' UTC 到 '2038-01-19 03:14:07' UTC 结束时间是第 2147483647 秒，北京时间 2038-1-19 11:14:07，格林尼治时间 2038年1月19日 凌晨 03:14:07 YYYY-MM-DD hh:mm:ss 混合日期和时间值，时间戳`,
 		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
 			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
 				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
@@ -43,8 +43,8 @@ var mysqlColumnTypeList = []*ColumnTypeInfo{
 
 			return
 		},
-},
-	{Name: `TIMESTAMP`, Format: `TIMESTAMP`, Matches: []string{`TIMESTAMP WITH TIME ZONE`, `TIMESTAMP WITH LOCAL TIME ZONE`, `INTERVAL YEAR TO MONTH`, `INTERVAL DAY TO SECOND`, `TIME WITH TIME ZONE`, `TIMESTAMP WITHOUT TIME ZONE`}, 
+	},
+	{Name: `TIMESTAMP`, Format: `TIMESTAMP`, Matches: []string{`TIMESTAMP WITH TIME ZONE`, `TIMESTAMP WITH LOCAL TIME ZONE`, `INTERVAL YEAR TO MONTH`, `INTERVAL DAY TO SECOND`, `TIME WITH TIME ZONE`, `TIMESTAMP WITHOUT TIME ZONE`},
 		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
 			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
 				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
@@ -57,8 +57,8 @@ var mysqlColumnTypeList = []*ColumnTypeInfo{
 
 			return
 		},
-},
-	{Name: `ENUM`, Format: `ENUM`, IsEnum: true, Comment: `枚举类型，只能有一个枚举字符串值 1或2个字节，取决于枚举值的数目 (最大值为65535)`, 
+	},
+	{Name: `ENUM`, Format: `ENUM`, IsEnum: true, Comment: `枚举类型，只能有一个枚举字符串值 1或2个字节，取决于枚举值的数目 (最大值为65535)`,
 		FullColumnByColumnType: func(columnType string, column *ColumnModel) (err error) {
 			if strings.Contains(columnType, "(") {
 				setStr := columnType[strings.Index(columnType, "(")+1 : strings.Index(columnType, ")")]
@@ -67,8 +67,8 @@ var mysqlColumnTypeList = []*ColumnTypeInfo{
 			}
 			return
 		},
-},
-	{Name: `SET`, Format: `SET`, IsEnum: true, Comment: `一个设置，字符串对象可以有零个或 多个SET成员 1、2、3、4或8个字节，取决于集合 成员的数量（最多64个成员）`, 
+	},
+	{Name: `SET`, Format: `SET`, IsEnum: true, Comment: `一个设置，字符串对象可以有零个或 多个SET成员 1、2、3、4或8个字节，取决于集合 成员的数量（最多64个成员）`,
 		FullColumnByColumnType: func(columnType string, column *ColumnModel) (err error) {
 			if strings.Contains(columnType, "(") {
 				setStr := columnType[strings.Index(columnType, "(")+1 : strings.Index(columnType, ")")]
@@ -77,7 +77,7 @@ var mysqlColumnTypeList = []*ColumnTypeInfo{
 			}
 			return
 		},
-},
+	},
 }
 
 // Oracle 数据库 字段类型
@@ -102,7 +102,7 @@ Float(n)，数n指示位的精度，可以存储的值的数目。n值的范围�
 	{Name: `RAW`, Format: `RAW($l)`, IsBytes: true, Comment: `用于存储二进制或字符类型数据，变长二进制数据类型，这说明采用这种数据类型存储的数据不会发生字符集转换。这种类型最多可以存储2000字节的信息，建议使用 BLOB 来代替它`},
 	{Name: `LONG RAW`, Format: `LONG RAW`, IsBytes: true, Comment: `LONG RAW类型，能存储2GB的原始二进制数据（不用进行字符集转换的数据）。建议使用BLOB来代替它`},
 	{Name: `DATE`, Format: `DATE`, Comment: `DATE是最常用的数据类型，日期数据类型存储日期和时间信息。虽然可以用字符或数字类型表示日期和时间信息，但是日期数据类型具有特殊关联的属性。为每个日期值，Oracle 存储以下信息： 世纪、 年、 月、 日期、 小时、 分钟和秒。一般占用7个字节的存储空间`},
-	{Name: `TIMESTAMP`, Format: `TIMESTAMP`, Matches: []string{`TIME`, `YEAR`, `DATETIME`}, Comment: `TIMESTAMP是一个7字节或12字节的定宽日期/时间数据类型，是DATE类型的扩展类型。它与DATE数据类型不同，因为TIMESTAMP可以包含小数秒，带小数秒的TIMESTAMP在小数点右边最多可以保留9位`, 
+	{Name: `TIMESTAMP`, Format: `TIMESTAMP`, Matches: []string{`TIME`, `YEAR`, `DATETIME`}, Comment: `TIMESTAMP是一个7字节或12字节的定宽日期/时间数据类型，是DATE类型的扩展类型。它与DATE数据类型不同，因为TIMESTAMP可以包含小数秒，带小数秒的TIMESTAMP在小数点右边最多可以保留9位`,
 		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
 			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
 				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
@@ -111,7 +111,7 @@ Float(n)，数n指示位的精度，可以存储的值的数目。n值的范围�
 
 			return
 		},
-},
+	},
 	{Name: `TIMESTAMP WITH TIME ZONE`, Format: `TIMESTAMP WITH TIME ZONE`, Matches: []string{`DATETIME WITH TIME ZONE`, `TIME WITH TIME ZONE`, `TIMESTAMP WITHOUT TIME ZONE`}, Comment: `和TIMESTAMP一样，只不过可以在设置时候指定时区`},
 	{Name: `TIMESTAMP WITH LOCAL TIME ZONE`, Format: `TIMESTAMP WITH LOCAL TIME ZONE`},
 	{Name: `ROWID`, Format: `ROWID`, Comment: `ROWID是一种特殊的列类型，称之为伪列（pseudocolumn）。ROWID伪列在SQL SELECT语句中可以像普通列那样被访问。ROWID表示行的地址，ROWID伪列用ROWID数据类型定义。Oracle数据库中每行都有一个伪列。
@@ -150,7 +150,7 @@ var dmColumnTypeList = []*ColumnTypeInfo{
 	{Name: `BFILE`, Format: `BFILE`, IsBytes: true, Comment: `BFILE 用于指明存储在操作系统中的二进制文件，文件存储在操作系统而非数据库中，仅能进行只读访问`},
 	{Name: `DATE`, Format: `DATE`, Comment: `DATE 类型包括年、月、日信息，定义了'-4712-01-01'和'9999-12-31'之间任何一个有效的格里高利日期`},
 	{Name: `TIME`, Format: `TIME`, Comment: `IME 类型包括时、分、秒信息，定义了一个在'00:00:00.000000'和'23:59:59.999999'之间的有效时间。TIME 类型的小数秒精度规定了秒字段中小数点后面的位数，取值范围为 0～6，如果未定义，缺省精度为 0`},
-	{Name: `TIMESTAMP`, Format: `TIMESTAMP`, Matches: []string{`YEAR`}, Comment: `TIMESTAMP/DATETIME 类型包括年、月、日、时、分、秒信息，定义了一个在'-4712-01-0100:00:00.000000'和'9999-12-31 23:59:59.999999'之间的有效格里高利日期时间。小数秒精度规定了秒字段中小数点后面的位数，取值范围为 0～6，如果未定义，缺省精度为 6`, 
+	{Name: `TIMESTAMP`, Format: `TIMESTAMP`, Matches: []string{`YEAR`}, Comment: `TIMESTAMP/DATETIME 类型包括年、月、日、时、分、秒信息，定义了一个在'-4712-01-0100:00:00.000000'和'9999-12-31 23:59:59.999999'之间的有效格里高利日期时间。小数秒精度规定了秒字段中小数点后面的位数，取值范围为 0～6，如果未定义，缺省精度为 6`,
 		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
 			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
 				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
@@ -159,8 +159,8 @@ var dmColumnTypeList = []*ColumnTypeInfo{
 
 			return
 		},
-},
-	{Name: `DATETIME`, Format: `DATETIME`, Comment: `同上`, 
+	},
+	{Name: `DATETIME`, Format: `DATETIME`, Comment: `同上`,
 		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
 			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
 				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
@@ -169,7 +169,7 @@ var dmColumnTypeList = []*ColumnTypeInfo{
 
 			return
 		},
-},
+	},
 	{Name: `DATETIME WITH TIME ZONE`, Format: `DATETIME WITH TIME ZONE`},
 	{Name: `TIME WITH TIME ZONE`, Format: `TIME WITH TIME ZONE`, Matches: []string{`TIMESTAMP WITHOUT TIME ZONE`}, Comment: `描述一个带时区的 TIME 值，其定义是在 TIME 类型的后面加上时区信息。时区部分的实质是 INTERVAL HOUR TO MINUTE 类型，取值范围：-12:59 与 +14:00 之间。例如：TIME '09:10:21 +8:00'`},
 	{Name: `TIMESTAMP WITH TIME ZONE`, Format: `TIMESTAMP WITH TIME ZONE`, Comment: `描述一个带时区的 TIMESTAMP 值，其定义是在 TIMESTAMP 类型的后面加上时区信息。时区部分的实质是 INTERVAL HOUR TO MINUTE 类型，取值范围：-12:59 与 +14:00 之间。例如：’2009-10-11 19:03:05.0000 -02:10’`},
@@ -211,7 +211,7 @@ precision表示精度，是整个数中有效位的总数，也就是小数点�
 	{Name: `TEXT`, Format: `TEXT`, IsBytes: true},
 	{Name: `BYTEA`, Format: `BYTEA`, IsBytes: true},
 	{Name: `DATE`, Format: `DATE`},
-	{Name: `TIMESTAMP`, Format: `TIMESTAMP`, Matches: []string{`YEAR`, `DATETIME`, `TIME`}, 
+	{Name: `TIMESTAMP`, Format: `TIMESTAMP`, Matches: []string{`YEAR`, `DATETIME`, `TIME`},
 		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
 			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
 				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
@@ -220,7 +220,7 @@ precision表示精度，是整个数中有效位的总数，也就是小数点�
 
 			return
 		},
-},
+	},
 	{Name: `TIMESTAMP WITHOUT TIME ZONE`, Format: `TIMESTAMP WITHOUT TIME ZONE`, Matches: []string{`TIMESTAMP WITH TIME ZONE`, `TIMESTAMP WITH LOCAL TIME ZONE`, `DATETIME WITH TIME ZONE`, `TIME WITH TIME ZONE`}},
 	{Name: `BOOL`, Format: `BOOL`, IsBoolean: true, Comment: `布尔数据类型：TRUE 和 FALSE。DMSQL 程序的布尔类型和 INT 类型可以相互转化。如果变量或方法返回的类型是布尔类型，则返回值为 0 或 1。TRUE 和非 0 值的返回值为 1，FALSE 和 0 值返回为 0`},
 	{Name: `BOOLEAN`, Format: `BOOLEAN`, IsBoolean: true, Comment: `同上`},
@@ -299,7 +299,7 @@ var sqliteColumnTypeList = []*ColumnTypeInfo{
 	{Name: `DATE`, Format: `DATE`},
 	{Name: `TIME`, Format: `TIME`},
 	{Name: `YEAR`, Format: `YEAR`},
-	{Name: `DATETIME`, Format: `DATETIME`, 
+	{Name: `DATETIME`, Format: `DATETIME`,
 		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
 			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
 				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
@@ -308,8 +308,8 @@ var sqliteColumnTypeList = []*ColumnTypeInfo{
 
 			return
 		},
-},
-	{Name: `TIMESTAMP`, Format: `TIMESTAMP`, Matches: []string{`INTERVAL YEAR TO MONTH`, `INTERVAL DAY TO SECOND`}, 
+	},
+	{Name: `TIMESTAMP`, Format: `TIMESTAMP`, Matches: []string{`INTERVAL YEAR TO MONTH`, `INTERVAL DAY TO SECOND`},
 		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
 			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
 				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
@@ -318,7 +318,7 @@ var sqliteColumnTypeList = []*ColumnTypeInfo{
 
 			return
 		},
-},
+	},
 	{Name: `TIMESTAMP WITH TIME ZONE`, Format: `TIMESTAMP WITH TIME ZONE`, Matches: []string{`TIMESTAMP WITHOUT TIME ZONE`}},
 	{Name: `TIMESTAMP WITH LOCAL TIME ZONE`, Format: `TIMESTAMP WITH LOCAL TIME ZONE`},
 	{Name: `TIME WITH TIME ZONE`, Format: `TIME WITH TIME ZONE`},
@@ -344,7 +344,7 @@ var gBaseColumnTypeList = []*ColumnTypeInfo{
 	{Name: `BLOB`, Format: `BLOB`, IsBytes: true},
 	{Name: `BYTE`, Format: `BYTE`, IsBytes: true},
 	{Name: `DATE`, Format: `DATE`, Comment: `YYYY-MM-DD 1 年 1 月 1 日直至 9999 年 12 月 31 日`},
-	{Name: `DATETIME`, Format: `DATETIME`, Comment: `（年、月、日）和每日时间（小时、分、秒和几分之一秒） 1 年至 9999 年`, 
+	{Name: `DATETIME`, Format: `DATETIME`, Comment: `（年、月、日）和每日时间（小时、分、秒和几分之一秒） 1 年至 9999 年`,
 		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
 			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
 				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
@@ -353,7 +353,7 @@ var gBaseColumnTypeList = []*ColumnTypeInfo{
 
 			return
 		},
-},
+	},
 	{Name: `BOOLEAN`, Format: `BOOLEAN`, IsBoolean: true},
 }
 
