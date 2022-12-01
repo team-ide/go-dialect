@@ -103,7 +103,7 @@ func GetSqlValue(columnType *sql.ColumnType, data interface{}) (value interface{
 		if vs[1].Interface() == nil {
 			length := vs[0].Int()
 			method = typeV.MethodByName("ReadString")
-			vs = method.Call([]reflect.Value{reflect.ValueOf(0), reflect.ValueOf(length)})
+			vs = method.Call([]reflect.Value{reflect.ValueOf(0), reflect.ValueOf(int(length))})
 			value = vs[0].String()
 		}
 		return
