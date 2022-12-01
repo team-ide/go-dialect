@@ -21,9 +21,6 @@ func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName stri
 
 	var batchIndexCache = make(map[string]int)
 
-	var oracleBatchSql string
-	var oralgeBatchValues []interface{}
-
 	var columnCache = map[string]*ColumnModel{}
 	for _, column := range columnList {
 		columnCache[column.ColumnName] = column
@@ -65,11 +62,8 @@ func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName stri
 		// 批量 插入 SQL
 
 		if this_.dialectType == TypeOracle {
-			if len(oracleBatchSql) == 0 {
-				oracleBatchSql = "INSERT ALL"
-			}
-			oracleBatchSql += "\n" + insertSql
-			oralgeBatchValues = append(oralgeBatchValues, values...)
+			batchSqlList = append(batchSqlList, insertSql)
+			batchValuesList = append(batchValuesList, values)
 		} else {
 			index, ok := batchIndexCache[insertColumns]
 			if ok {
@@ -94,11 +88,6 @@ func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName stri
 			}
 		}
 
-	}
-	if len(oracleBatchSql) > 0 {
-		oracleBatchSql += "\n" + "SELECT 1 FROM dual"
-		batchSqlList = append(batchSqlList, oracleBatchSql)
-		batchValuesList = append(batchValuesList, oralgeBatchValues)
 	}
 	for index := range batchSqlList {
 		batchSqlList[index] = this_.ReplaceSqlVariable(batchSqlList[index], batchValuesList[index])
