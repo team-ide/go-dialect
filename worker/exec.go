@@ -105,18 +105,20 @@ func DoQueryStructs(db *sql.DB, sqlInfo string, args []interface{}, list interfa
 	if err != nil {
 		return
 	}
-	cache := GetSqlValueCache(columnTypes) //临时存储每行数据
 	listVOf := reflect.ValueOf(list).Elem()
 	listStrType := GetListStructType(list)
 	for rows.Next() {
-
-		err = rows.Scan(cache...)
+		var values []interface{}
+		for range columnTypes {
+			values = append(values, new(interface{}))
+		}
+		err = rows.Scan(values...)
 		if err != nil {
 			return
 		}
 
 		item := make(map[string]interface{})
-		for index, data := range cache {
+		for index, data := range values {
 			item[columnTypes[index].Name()] = GetSqlValue(columnTypes[index], data)
 		}
 		listStrValue := reflect.New(listStrType)
@@ -147,19 +149,21 @@ func DoQueryStruct(db *sql.DB, sqlInfo string, args []interface{}, str interface
 		isBase = true
 		break
 	}
-	var cache []interface{}
 	for rows.Next() {
 		if find {
 			err = errors.New("has more rows by query one")
 			return
 		}
 		find = true
+		var values []interface{}
 		if isBase {
-			cache = []interface{}{str}
+			values = []interface{}{str}
 		} else {
-			cache = GetSqlValueCache(columnTypes) //临时存储每行数据
+			for range columnTypes {
+				values = append(values, new(interface{}))
+			}
 		}
-		err = rows.Scan(cache...)
+		err = rows.Scan(values...)
 		if err != nil {
 			return
 		}
@@ -167,7 +171,7 @@ func DoQueryStruct(db *sql.DB, sqlInfo string, args []interface{}, str interface
 			continue
 		}
 		item := make(map[string]interface{})
-		for index, data := range cache {
+		for index, data := range values {
 			item[columnTypes[index].Name()] = GetSqlValue(columnTypes[index], data)
 		}
 		SetStructColumnValues(item, strVOf.Elem())
@@ -191,14 +195,16 @@ func DoQueryWithColumnTypes(db *sql.DB, sqlInfo string, args []interface{}) (col
 		return
 	}
 	for rows.Next() {
-
-		cache := GetSqlValueCache(columnTypes) //临时存储每行数据
-		err = rows.Scan(cache...)
+		var values []interface{}
+		for range columnTypes {
+			values = append(values, new(interface{}))
+		}
+		err = rows.Scan(values...)
 		if err != nil {
 			return
 		}
 		item := make(map[string]interface{})
-		for index, data := range cache {
+		for index, data := range values {
 			item[columns[index]] = GetSqlValue(columnTypes[index], data)
 		}
 		list = append(list, item)

@@ -136,6 +136,12 @@ func GetBaseTypeValue(data interface{}) (res interface{}, is bool) {
 	if data == nil {
 		return
 	}
+	switch v := data.(type) {
+	case string, int, int8, int16, int32, int64, float32, float64, bool, uint, uint8, uint16, uint32, uint64:
+		res = v
+		is = true
+		return
+	}
 	dataValue := reflect.ValueOf(data)
 	if dataValue.Kind() == reflect.Ptr {
 		if dataValue.IsNil() {
@@ -146,6 +152,7 @@ func GetBaseTypeValue(data interface{}) (res interface{}, is bool) {
 
 	is = true
 	kindName := reflect.TypeOf(data).Kind().String()
+	//fmt.Println("kindName:", kindName)
 	switch kindName {
 	case "string":
 		res = dataValue.String()

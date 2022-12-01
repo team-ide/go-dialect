@@ -2,6 +2,7 @@ package worker
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
 	"os"
 	"reflect"
@@ -27,17 +28,17 @@ func PathIsDir(path string) (bool, error) {
 	return fileInfo.IsDir(), nil
 }
 
-//NowTime 获取当前时间戳
+// NowTime 获取当前时间戳
 func NowTime() int64 {
 	return GetTime(Now())
 }
 
-//GetTime 获取当前时间戳
+// GetTime 获取当前时间戳
 func GetTime(time time.Time) int64 {
 	return time.UnixNano() / 1e6
 }
 
-//Now 获取当前时间
+// Now 获取当前时间
 func Now() time.Time {
 	return time.Now()
 }
@@ -45,52 +46,72 @@ func Now() time.Time {
 func GetSqlValueCache(columnTypes []*sql.ColumnType) (cache []interface{}) {
 	cache = make([]interface{}, len(columnTypes)) //临时存储每行数据
 	for index, _ := range cache {
-		columnType := columnTypes[index]
-		ct := columnType.ScanType()
-		if ct == nil {
-			cache[index] = new(sql.NullString)
-			continue
-		}
+		cache[index] = new(interface{})
+		//columnType := columnTypes[index]
+		//ct := columnType.ScanType()
+		//if ct == nil {
+		//	cache[index] = new(sql.NullString)
+		//	continue
+		//}
 		//println("GetSqlValueCache type [" + columnType.ScanType().String() + "] columnName [" + columnType.Name() + "] databaseType [" + columnType.DatabaseTypeName() + "]")
-		switch ct.String() {
-		case "sql.NullString":
-			cache[index] = new(sql.NullString)
-			break
-		case "sql.NullBool":
-			cache[index] = new(sql.NullBool)
-			break
-		case "sql.NullByte":
-			cache[index] = new(sql.NullByte)
-			break
-		case "sql.NullInt16":
-			cache[index] = new(sql.NullInt16)
-			break
-		case "sql.NullInt32":
-			cache[index] = new(sql.NullInt32)
-			break
-		case "sql.NullInt64":
-			cache[index] = new(sql.NullInt64)
-			break
-		case "sql.NullFloat64":
-			cache[index] = new(sql.NullFloat64)
-			break
-		case "sql.NullTime":
-			cache[index] = new(sql.NullTime)
-			break
-		case "sql.RawBytes":
-			cache[index] = new(sql.RawBytes)
-			break
-		default:
-			cache[index] = new(interface{})
-			//panic("GetSqlValueCache type [" + columnType.ScanType().String() + "] columnName [" + columnType.Name() + "] databaseType [" + columnType.DatabaseTypeName() + "] not support")
-			break
-		}
+		//switch ct.String() {
+		//case "sql.NullString":
+		//	cache[index] = new(sql.NullString)
+		//	break
+		//case "sql.NullBool":
+		//	cache[index] = new(sql.NullBool)
+		//	break
+		//case "sql.NullByte":
+		//	cache[index] = new(sql.NullByte)
+		//	break
+		//case "sql.NullInt16":
+		//	cache[index] = new(sql.NullInt16)
+		//	break
+		//case "sql.NullInt32":
+		//	cache[index] = new(sql.NullInt32)
+		//	break
+		//case "sql.NullInt64":
+		//	cache[index] = new(sql.NullInt64)
+		//	break
+		//case "sql.NullFloat64":
+		//	cache[index] = new(sql.NullFloat64)
+		//	break
+		//case "sql.NullTime":
+		//	cache[index] = new(sql.NullTime)
+		//	break
+		//case "sql.RawBytes":
+		//	cache[index] = new(sql.RawBytes)
+		//	break
+		//default:
+		//	cache[index] = new(interface{})
+		//	//panic("GetSqlValueCache type [" + columnType.ScanType().String() + "] columnName [" + columnType.Name() + "] databaseType [" + columnType.DatabaseTypeName() + "] not support")
+		//	break
+		//}
 	}
 	return
 }
 
 func GetSqlValue(columnType *sql.ColumnType, data interface{}) (value interface{}) {
 	if data == nil {
+		return
+	}
+	typeName := reflect.TypeOf(data).String()
+	if typeName == "*dm.DmClob" {
+		typeV := reflect.ValueOf(data)
+		method := typeV.MethodByName("Scan")
+		fmt.Println(typeV.String())
+		var str = new(string)
+
+		vs := method.Call([]reflect.Value{reflect.ValueOf(str)})
+		if len(vs) > 0 {
+			e, ok := vs[0].Interface().(error)
+			if ok {
+				if e != nil {
+					panic(e)
+				}
+			}
+		}
+		value = *str
 		return
 	}
 	vOf := reflect.ValueOf(data)
@@ -158,20 +179,23 @@ func GetSqlValue(columnType *sql.ColumnType, data interface{}) (value interface{
 	case []uint8:
 		value = string(v)
 		break
+	case string, int, int8, int16, int32, int64, float32, float64, bool, uint, uint8, uint16, uint32, uint64:
+		value = v
+		break
 	default:
 		baseValue, isBaseType := dialect.GetBaseTypeValue(value)
 		if isBaseType {
 			value = baseValue
-			break
+			return
 		}
 		value = v
-		//panic("GetSqlValue data [" + fmt.Sprint(data) + "] name [" + columnType.Name() + "] databaseType [" + columnType.DatabaseTypeName() + "] not support")
+		panic("GetSqlValue data [" + fmt.Sprint(data) + "] data type [" + reflect.TypeOf(data).String() + "] name [" + columnType.Name() + "] databaseType [" + columnType.DatabaseTypeName() + "] not support")
 		break
 	}
 	return
 }
 
-//SplitArrayMap 分割数组，根据传入的数组和分割大小，将数组分割为大小等于指定大小的多个数组，如果不够分，则最后一个数组元素小于其他数组
+// SplitArrayMap 分割数组，根据传入的数组和分割大小，将数组分割为大小等于指定大小的多个数组，如果不够分，则最后一个数组元素小于其他数组
 func SplitArrayMap(arr []map[string]interface{}, num int) [][]map[string]interface{} {
 	max := len(arr)
 	//判断数组大小是否小于等于指定分割大小的值，是则把原数组放入二维数组返回
