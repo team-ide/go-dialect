@@ -177,12 +177,12 @@ func (this_ *taskExec) execInsert(workDb *sql.DB, dataList []map[string]interfac
 
 	this_.addProgress(progress)
 
-	_, _, batchSqlList, batchSqlValuesList, err := this_.dia.DataListInsertSql(this_.Param, ownerName, tableName, columnList, dataList)
+	_, _, batchSqlList, batchValuesList, err := this_.dia.DataListInsertSql(this_.Param, ownerName, tableName, columnList, dataList)
 	if err != nil {
 		return
 	}
 	var errSql string
-	_, errSql, _, err = DoExecs(workDb, batchSqlList, batchSqlValuesList)
+	_, errSql, _, err = DoExecs(workDb, batchSqlList, batchValuesList)
 	if err != nil {
 		if errSql != "" {
 			err = errors.New("sql:" + errSql + " exec error," + err.Error())

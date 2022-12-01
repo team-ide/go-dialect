@@ -14,10 +14,15 @@ func (this_ *mappingDialect) AppendSqlValue(param *ParamModel, sqlInfo *string, 
 	}
 }
 
-func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, valuesList [][]interface{}, err error) {
+func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, valuesList [][]interface{}, batchSqlList []string, batchValuesList [][]interface{}, err error) {
 	if len(dataList) == 0 {
 		return
 	}
+
+	var batchIndexCache = make(map[string]int)
+
+	var oracleBatchSql string
+	var oralgeBatchValues []interface{}
 
 	var columnCache = map[string]*ColumnModel{}
 	for _, column := range columnList {
@@ -29,9 +34,12 @@ func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName stri
 		var values []interface{}
 		insertColumns := ""
 		insertValues := ""
-		for name, value := range data {
-			column := columnCache[name]
-
+		for _, column := range columnList {
+			name := column.ColumnName
+			value, ok := data[name]
+			if !ok {
+				continue
+			}
 			insertColumns += this_.ColumnNamePack(param, name) + ", "
 			this_.AppendSqlValue(param, &insertValues, column, value, &values)
 			insertValues += ", "
@@ -39,22 +47,61 @@ func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName stri
 		insertColumns = strings.TrimSuffix(insertColumns, ", ")
 		insertValues = strings.TrimSuffix(insertValues, ", ")
 
-		sql := "INSERT INTO "
-
+		var insertSql = "INSERT INTO "
 		if ownerName != "" {
-			sql += this_.OwnerNamePack(param, ownerName) + "."
+			insertSql += this_.OwnerNamePack(param, ownerName) + "."
 		}
-		sql += this_.TableNamePack(param, tableName)
+		insertSql += this_.TableNamePack(param, tableName)
 		if insertColumns != "" {
-			sql += "(" + insertColumns + ")"
+			insertSql += "(" + insertColumns + ")"
 		}
 		if insertValues != "" {
-			sql += " VALUES (" + insertValues + ")"
+			insertSql += " VALUES (" + insertValues + ")"
 		}
 
-		sql = this_.ReplaceSqlVariable(sql, values)
-		sqlList = append(sqlList, sql)
+		sqlList = append(sqlList, this_.ReplaceSqlVariable(insertSql, values))
 		valuesList = append(valuesList, values)
+
+		// 批量 插入 SQL
+
+		if this_.dialectType == TypeOracle {
+			if len(oracleBatchSql) == 0 {
+				oracleBatchSql = "INSERT ALL"
+			}
+			oracleBatchSql += "\n" + insertSql
+			oralgeBatchValues = append(oralgeBatchValues, values...)
+		} else {
+			index, ok := batchIndexCache[insertColumns]
+			if ok {
+				batchSqlList[index] += ",\n(" + insertValues + ")"
+				batchValuesList[index] = append(batchValuesList[index], values...)
+			} else {
+				var batchSql = "INSERT INTO "
+				if ownerName != "" {
+					batchSql += this_.OwnerNamePack(param, ownerName) + "."
+				}
+				batchSql += this_.TableNamePack(param, tableName)
+				if insertColumns != "" {
+					batchSql += "(" + insertColumns + ")"
+				}
+				if insertValues != "" {
+					batchSql += " VALUES (" + insertValues + ")"
+				}
+				index = len(batchSqlList)
+				batchIndexCache[insertColumns] = index
+				batchSqlList = append(batchSqlList, batchSql)
+				batchValuesList = append(batchValuesList, values)
+			}
+		}
+
+	}
+	if len(oracleBatchSql) > 0 {
+		oracleBatchSql += "\n" + "SELECT 1 FROM dual"
+		batchSqlList = append(batchSqlList, oracleBatchSql)
+		batchValuesList = append(batchValuesList, oralgeBatchValues)
+	}
+	for index := range batchSqlList {
+		batchSqlList[index] = this_.ReplaceSqlVariable(batchSqlList[index], batchValuesList[index])
 	}
 	return
 }
@@ -79,34 +126,34 @@ func (this_ *mappingDialect) DataListUpdateSql(param *ParamModel, ownerName stri
 			return
 		}
 
-		sql := "UPDATE "
+		var updateSql = "UPDATE "
 		var values []interface{}
 
 		if ownerName != "" {
-			sql += this_.OwnerNamePack(param, ownerName) + "."
+			updateSql += this_.OwnerNamePack(param, ownerName) + "."
 		}
-		sql += this_.TableNamePack(param, tableName)
-		sql += " SET "
+		updateSql += this_.TableNamePack(param, tableName)
+		updateSql += " SET "
 
 		for name, value := range data {
 			column := columnCache[name]
-			sql += "" + this_.ColumnNamePack(param, name) + "="
-			this_.AppendSqlValue(param, &sql, column, value, &values)
-			sql += ", "
+			updateSql += "" + this_.ColumnNamePack(param, name) + "="
+			this_.AppendSqlValue(param, &updateSql, column, value, &values)
+			updateSql += ", "
 		}
-		sql = strings.TrimSuffix(sql, ", ")
+		updateSql = strings.TrimSuffix(updateSql, ", ")
 
-		sql += " WHERE "
+		updateSql += " WHERE "
 		for name, value := range dataWhere {
 			column := columnCache[name]
-			sql += "" + this_.ColumnNamePack(param, name) + "="
-			this_.AppendSqlValue(param, &sql, column, value, &values)
-			sql += " AND "
+			updateSql += "" + this_.ColumnNamePack(param, name) + "="
+			this_.AppendSqlValue(param, &updateSql, column, value, &values)
+			updateSql += " AND "
 		}
-		sql = strings.TrimSuffix(sql, " AND ")
+		updateSql = strings.TrimSuffix(updateSql, " AND ")
 
-		sql = this_.ReplaceSqlVariable(sql, values)
-		sqlList = append(sqlList, sql)
+		updateSql = this_.ReplaceSqlVariable(updateSql, values)
+		sqlList = append(sqlList, updateSql)
 		valuesList = append(valuesList, values)
 	}
 	return
@@ -126,26 +173,26 @@ func (this_ *mappingDialect) DataListDeleteSql(param *ParamModel, ownerName stri
 			return
 		}
 
-		sql := "DELETE FROM "
+		var deleteSql = "DELETE FROM "
 		var values []interface{}
 
 		if ownerName != "" {
-			sql += this_.OwnerNamePack(param, ownerName) + "."
+			deleteSql += this_.OwnerNamePack(param, ownerName) + "."
 		}
-		sql += this_.TableNamePack(param, tableName)
+		deleteSql += this_.TableNamePack(param, tableName)
 
-		sql += " WHERE "
+		deleteSql += " WHERE "
 
 		for name, value := range dataWhere {
 			column := columnCache[name]
-			sql += "" + this_.ColumnNamePack(param, name) + "="
-			this_.AppendSqlValue(param, &sql, column, value, &values)
-			sql += " AND "
+			deleteSql += "" + this_.ColumnNamePack(param, name) + "="
+			this_.AppendSqlValue(param, &deleteSql, column, value, &values)
+			deleteSql += " AND "
 		}
-		sql = strings.TrimSuffix(sql, " AND ")
+		deleteSql = strings.TrimSuffix(deleteSql, " AND ")
 
-		sql = this_.ReplaceSqlVariable(sql, values)
-		sqlList = append(sqlList, sql)
+		deleteSql = this_.ReplaceSqlVariable(deleteSql, values)
+		sqlList = append(sqlList, deleteSql)
 		valuesList = append(valuesList, values)
 	}
 	return
