@@ -560,7 +560,7 @@ func (this_ *taskExport) exportDataList(ownerDataSource DataSource, tableDataSou
 	}
 	this_.Param.AppendSqlValue = new(bool)
 	*this_.Param.AppendSqlValue = true
-	sqlList, _, batchSqlList, _, err := this_.dia.DataListInsertSql(this_.Param, sqlOwner, targetTableName, newColumnList, dataList)
+	sqlList, _, batchSqlList, _, err := this_.targetDialect.DataListInsertSql(this_.Param, sqlOwner, targetTableName, newColumnList, dataList)
 	if err != nil {
 		return
 	}

@@ -426,7 +426,7 @@ func (this_ *taskSync) insertDataList(workDb *sql.DB, dataList []map[string]inte
 
 	this_.addProgress(progress)
 
-	_, _, batchSqlList, batchValuesList, err := this_.dia.DataListInsertSql(this_.Param, targetOwnerName, targetTableName, columnList, dataList)
+	_, _, batchSqlList, batchValuesList, err := this_.targetDialect.DataListInsertSql(this_.Param, targetOwnerName, targetTableName, columnList, dataList)
 	if err != nil {
 		return
 	}
