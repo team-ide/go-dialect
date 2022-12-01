@@ -182,6 +182,9 @@ func GetSqlValue(columnType *sql.ColumnType, data interface{}) (value interface{
 	case string, int, int8, int16, int32, int64, float32, float64, bool, uint, uint8, uint16, uint32, uint64:
 		value = v
 		break
+	case time.Time:
+		value = v
+		break
 	default:
 		baseValue, isBaseType := dialect.GetBaseTypeValue(value)
 		if isBaseType {
