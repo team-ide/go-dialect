@@ -258,12 +258,12 @@ var shenTongColumnTypeList = []*ColumnTypeInfo{
 
 // Sqlite 数据库 字段类型
 var sqliteColumnTypeList = []*ColumnTypeInfo{
-	{Name: `TINYINT`, Format: `TINYINT`, Matches: []string{`INT1`}, IsNumber: true, IsInteger: true},
-	{Name: `SMALLINT`, Format: `SMALLINT`, Matches: []string{`INT2`}, IsNumber: true, IsInteger: true},
-	{Name: `MEDIUMINT`, Format: `MEDIUMINT`, IsNumber: true, IsInteger: true},
-	{Name: `INT`, Format: `INT`, Matches: []string{`INT4`}, IsNumber: true, IsInteger: true},
-	{Name: `INTEGER`, Format: `INTEGER`, IsNumber: true, IsInteger: true},
-	{Name: `BIGINT`, Format: `BIGINT`, Matches: []string{`INT8`}, IsNumber: true, IsInteger: true},
+	{Name: `TINYINT`, Format: `TINYINT($l)`, Matches: []string{`INT1`}, IsNumber: true, IsInteger: true},
+	{Name: `SMALLINT`, Format: `SMALLINT($l)`, Matches: []string{`INT2`}, IsNumber: true, IsInteger: true},
+	{Name: `MEDIUMINT`, Format: `MEDIUMINT($l)`, IsNumber: true, IsInteger: true},
+	{Name: `INT`, Format: `INT($l)`, Matches: []string{`INT4`}, IsNumber: true, IsInteger: true},
+	{Name: `INTEGER`, Format: `INTEGER($l)`, IsNumber: true, IsInteger: true},
+	{Name: `BIGINT`, Format: `BIGINT($l)`, Matches: []string{`INT8`}, IsNumber: true, IsInteger: true},
 	{Name: `FLOAT`, Format: `FLOAT`, Matches: []string{`FLOAT4`}, IsNumber: true, IsFloat: true},
 	{Name: `DOUBLE`, Format: `DOUBLE`, Matches: []string{`FLOAT8`, `DOUBLE PRECISION`}, IsNumber: true, IsFloat: true},
 	{Name: `REAL`, Format: `REAL`, IsNumber: true, IsFloat: true},

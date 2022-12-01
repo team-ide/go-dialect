@@ -441,7 +441,6 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 						column.ColumnLength = v1
 					}
 					if strings.Contains(columnTypeInfo.Format, "$p") {
-						column.ColumnPrecision = v1
 						column.ColumnLength = v1
 					}
 					if strings.Contains(columnTypeInfo.Format, "$s") {
@@ -453,11 +452,17 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 						column.ColumnLength = v1
 					}
 					if strings.Contains(columnTypeInfo.Format, "$p") {
-						column.ColumnPrecision = v1
 						column.ColumnLength = v1
 					}
 					if strings.Contains(columnTypeInfo.Format, "$s") {
 						column.ColumnScale = v1
+					}
+				}
+				if columnTypeInfo.IsInteger {
+					if column.ColumnPrecision == 0 {
+						column.ColumnPrecision = column.ColumnLength
+					} else if column.ColumnLength == 0 {
+						column.ColumnLength = column.ColumnPrecision
 					}
 				}
 
