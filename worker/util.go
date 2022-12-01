@@ -98,20 +98,20 @@ func GetSqlValue(columnType *sql.ColumnType, data interface{}) (value interface{
 	typeName := reflect.TypeOf(data).String()
 	if typeName == "*dm.DmClob" {
 		typeV := reflect.ValueOf(data)
-		method := typeV.MethodByName("Scan")
-		fmt.Println(typeV.String())
-		var str = new(string)
-
-		vs := method.Call([]reflect.Value{reflect.ValueOf(str)})
-		if len(vs) > 0 {
-			e, ok := vs[0].Interface().(error)
-			if ok {
-				if e != nil {
-					panic(e)
-				}
-			}
+		method := typeV.MethodByName("GetLength")
+		vs := method.Call([]reflect.Value{})
+		if vs[1].Interface() == nil {
+			length := vs[0].Int()
+			method = typeV.MethodByName("ReadString")
+			vs = method.Call([]reflect.Value{reflect.ValueOf(0), reflect.ValueOf(length)})
+			value = vs[0].String()
 		}
-		value = *str
+		return
+	} else if typeName == "godror.Number" {
+		typeV := reflect.ValueOf(data)
+		method := typeV.MethodByName("String")
+		vs := method.Call([]reflect.Value{})
+		value = vs[0].String()
 		return
 	}
 	vOf := reflect.ValueOf(data)
