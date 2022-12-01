@@ -461,42 +461,92 @@ func TestAllSql(t *testing.T) {
 		if table == nil {
 			panic("dialect [" + from.dialect.DialectType().Name + "]  ownerName [" + from.owner.OwnerName + "] tableName [" + from.table.TableName + "] is null.")
 		}
+
+		var dataList []map[string]interface{}
+
+		//var a dm.DmBlob
+		var data = make(map[string]interface{})
+		for _, column := range from.table.ColumnList {
+			info, _ := from.dialect.GetColumnTypeInfo(column)
+
+			if info.IsNumber {
+				data[column.ColumnName] = 1
+			} else if info.IsString {
+				data[column.ColumnName] = "s"
+			} else if info.IsBytes {
+				data[column.ColumnName] = "bs"
+			} else if info.IsBoolean {
+				data[column.ColumnName] = true
+			}
+
+		}
+		dataList = append(dataList, data)
+
+		_, _, batchSqlList, batchValuesList, err := from.dialect.DataListInsertSql(nil, from.owner.OwnerName, from.table.TableName, from.table.ColumnList, dataList)
+		if err != nil {
+			panic(err)
+		}
+		_, errSql, errArgs, err := worker.DoExecs(dialectDb, batchSqlList, batchValuesList)
+		if err != nil {
+			fmt.Println("error sql :", errSql)
+			fmt.Println("error args:", errArgs)
+			panic(err)
+		}
+
+		selectSql := "select * from "
+		if from.owner.OwnerName != "" {
+			selectSql += from.dialect.OwnerNamePack(nil, from.owner.OwnerName) + "."
+		}
+		selectSql += from.dialect.OwnerNamePack(nil, from.table.TableName)
+		list, err := worker.DoQuery(dialectDb, selectSql, nil)
+		if err != nil {
+			panic(err)
+		}
+		for _, one := range dataList {
+			bs, _ := json.Marshal(one)
+			fmt.Println("insert data:", string(bs))
+		}
+		for _, one := range list {
+			bs, _ := json.Marshal(one)
+			fmt.Println(string(bs))
+			fmt.Println("select data:", string(bs))
+		}
 		_ = dialectDb.Close()
 		if from.killSession != nil {
 			from.killSession(from.owner, db)
 		}
 		_ = db.Close()
 
-		for columnIndex, fromColumn := range from.table.ColumnList {
-			savedColumn := table.ColumnList[columnIndex]
-			if fromColumn.ColumnName != savedColumn.ColumnName ||
-				//fromColumn.ColumnDataType != savedColumn.ColumnDataType ||
-				fromColumn.ColumnLength != savedColumn.ColumnLength ||
-				fromColumn.ColumnPrecision != savedColumn.ColumnPrecision ||
-				fromColumn.ColumnScale != savedColumn.ColumnScale {
-				fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] table column not eq---")
-				bs, err = json.Marshal(fromColumn)
-				if err != nil {
-					panic(err)
-				}
-				fmt.Println("fromColumn:", string(bs))
-				bs, err = json.Marshal(savedColumn)
-				if err != nil {
-					panic(err)
-				}
-				fmt.Println("savedColumn:", string(bs))
-				if fromColumn.ColumnLength == 0 &&
-					fromColumn.ColumnPrecision == 0 &&
-					fromColumn.ColumnScale == 0 {
-					continue
-				} else if fromColumn.ColumnLength != savedColumn.ColumnLength &&
-					fromColumn.ColumnPrecision == savedColumn.ColumnPrecision &&
-					fromColumn.ColumnScale == savedColumn.ColumnScale {
-					continue
-				}
-				//panic("字段不一致")
-			}
-		}
+		//for columnIndex, fromColumn := range from.table.ColumnList {
+		//	savedColumn := table.ColumnList[columnIndex]
+		//	if fromColumn.ColumnName != savedColumn.ColumnName ||
+		//		//fromColumn.ColumnDataType != savedColumn.ColumnDataType ||
+		//		fromColumn.ColumnLength != savedColumn.ColumnLength ||
+		//		fromColumn.ColumnPrecision != savedColumn.ColumnPrecision ||
+		//		fromColumn.ColumnScale != savedColumn.ColumnScale {
+		//		fmt.Println("-----dialect [" + from.dialect.DialectType().Name + "] table column not eq---")
+		//		bs, err = json.Marshal(fromColumn)
+		//		if err != nil {
+		//			panic(err)
+		//		}
+		//		fmt.Println("fromColumn:", string(bs))
+		//		bs, err = json.Marshal(savedColumn)
+		//		if err != nil {
+		//			panic(err)
+		//		}
+		//		fmt.Println("savedColumn:", string(bs))
+		//		if fromColumn.ColumnLength == 0 &&
+		//			fromColumn.ColumnPrecision == 0 &&
+		//			fromColumn.ColumnScale == 0 {
+		//			continue
+		//		} else if fromColumn.ColumnLength != savedColumn.ColumnLength &&
+		//			fromColumn.ColumnPrecision == savedColumn.ColumnPrecision &&
+		//			fromColumn.ColumnScale == savedColumn.ColumnScale {
+		//			continue
+		//		}
+		//		//panic("字段不一致")
+		//	}
+		//}
 
 		//bs, err = json.Marshal(table)
 		//if err != nil {

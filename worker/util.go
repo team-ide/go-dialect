@@ -2,7 +2,6 @@ package worker
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/team-ide/go-dialect/dialect"
 	"os"
 	"reflect"
@@ -107,6 +106,14 @@ func GetSqlValue(columnType *sql.ColumnType, data interface{}) (value interface{
 			value = vs[0].String()
 		}
 		return
+	} else if typeName == "*dm.DmBlob" {
+		typeV := reflect.ValueOf(data)
+		method := typeV.MethodByName("Read")
+		var bs = make([]byte, 1024*1024)
+		vs := method.Call([]reflect.Value{reflect.ValueOf(bs)})
+		bs = bs[0:vs[0].Int()]
+		value = string(bs)
+		return
 	} else if typeName == "godror.Number" {
 		typeV := reflect.ValueOf(data)
 		method := typeV.MethodByName("String")
@@ -192,7 +199,7 @@ func GetSqlValue(columnType *sql.ColumnType, data interface{}) (value interface{
 			return
 		}
 		value = v
-		panic("GetSqlValue data [" + fmt.Sprint(data) + "] data type [" + reflect.TypeOf(data).String() + "] name [" + columnType.Name() + "] databaseType [" + columnType.DatabaseTypeName() + "] not support")
+		//panic("GetSqlValue data [" + fmt.Sprint(data) + "] data type [" + reflect.TypeOf(data).String() + "] name [" + columnType.Name() + "] databaseType [" + columnType.DatabaseTypeName() + "] not support")
 		break
 	}
 	return
