@@ -156,6 +156,9 @@ import "strings"
 			if dataType.IsEnum {
 				code += "IsEnum: true, "
 			}
+			if dataType.IsDateTime {
+				code += "IsDateTime: true, "
+			}
 			if dataType.Comment != "" {
 				code += "Comment: `" + dataType.Comment + "`, "
 			}

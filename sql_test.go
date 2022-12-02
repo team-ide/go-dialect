@@ -41,7 +41,7 @@ func (this_ *testDialect) init() {
 func init() {
 	appendTestDialectMysql()
 	appendTestDialectSqlite()
-	appendTestDialectOracle()
+	//appendTestDialectOracle()
 	appendTestDialectShenTong()
 	appendTestDialectDM()
 	appendTestDialectKingBase()
@@ -466,17 +466,24 @@ func TestAllSql(t *testing.T) {
 
 		//var a dm.DmBlob
 		var data = make(map[string]interface{})
-		for _, column := range from.table.ColumnList {
+		for i, column := range from.table.ColumnList {
 			info, _ := from.dialect.GetColumnTypeInfo(column)
 
 			if info.IsNumber {
 				data[column.ColumnName] = 1
 			} else if info.IsString {
-				data[column.ColumnName] = "s"
+				data[column.ColumnName] = "s" + fmt.Sprint(i)
 			} else if info.IsBytes {
-				data[column.ColumnName] = "bs"
+				if info.Name != "BFILE" {
+					data[column.ColumnName] = []byte{1}
+				}
 			} else if info.IsBoolean {
 				data[column.ColumnName] = true
+			} else if info.IsDateTime {
+				//data[column.ColumnName] = time.Now().Local()
+				//if info.Name == "YEAR" {
+				//	data[column.ColumnName] = 22
+				//}
 			}
 
 		}
