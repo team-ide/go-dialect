@@ -251,7 +251,7 @@ SELECT
 	OWNER ownerName
 FROM ALL_TABLES
 WHERE OWNER={sqlValuePack(ownerName)}
-`
+ORDER BY TABLE_NAME `
 
 	mapping.TableSelect = `
 
@@ -455,6 +455,7 @@ SELECT
 	OWNER ownerName
 FROM ALL_TABLES
 WHERE OWNER={sqlValuePack(ownerName)}
+ORDER BY TABLE_NAME 
 `
 
 	mapping.TableSelect = `
@@ -876,6 +877,7 @@ SELECT
 	OWNER ownerName
 FROM ALL_TABLES
 WHERE OWNER={sqlValuePack(ownerName)}
+ORDER BY TABLE_NAME 
 `
 
 	mapping.TableSelect = `
