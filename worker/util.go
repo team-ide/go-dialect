@@ -102,16 +102,26 @@ func GetSqlValue(columnType *sql.ColumnType, data interface{}) (value interface{
 		if vs[1].Interface() == nil {
 			length := vs[0].Int()
 			method = typeV.MethodByName("ReadString")
-			vs = method.Call([]reflect.Value{reflect.ValueOf(0), reflect.ValueOf(int(length))})
+			vs = method.Call([]reflect.Value{reflect.ValueOf(1), reflect.ValueOf(int(length))})
 			value = vs[0].String()
 		}
 		return
 	} else if typeName == "*dm.DmBlob" {
 		typeV := reflect.ValueOf(data)
 		method := typeV.MethodByName("Read")
-		var bs = make([]byte, 1024*1024)
-		vs := method.Call([]reflect.Value{reflect.ValueOf(bs)})
-		bs = bs[0:vs[0].Int()]
+		var bs []byte
+		var readBs = make([]byte, 1024*1024)
+		for {
+			vs := method.Call([]reflect.Value{reflect.ValueOf(readBs)})
+			n := vs[0].Int()
+			if n > 0 {
+				bs = append(bs, readBs[0:0]...)
+			}
+			if vs[1].Interface() != nil {
+				break
+			}
+		}
+
 		value = string(bs)
 		return
 	} else if typeName == "godror.Number" {
