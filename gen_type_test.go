@@ -325,6 +325,10 @@ func formatDataType(dataType map[string]string) (info *dialect.ColumnTypeInfo) {
 		if match == "" {
 			continue
 		}
+		if strings.EqualFold(match, "if not found") {
+			info.IfNotFound = true
+			continue
+		}
 		info.Matches = append(info.Matches, match)
 	}
 	return

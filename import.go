@@ -77,12 +77,14 @@ func doImport() {
 				return tableName + "_" + index.IndexName
 			},
 			DataSourceType: dataSourceType,
+			ErrorContinue:  true,
 			OnProgress: func(progress *worker.TaskProgress) {
-				bs, err := json.Marshal(progress)
-				if err != nil {
-					panic(err)
+				progress.OnError = func(err error) {
+					dataBytes, _ := json.Marshal(progress)
+					println("progress:" + string(dataBytes))
+					println("progress error:" + err.Error())
 				}
-				println(string(bs))
+				//println(string(bs))
 			},
 		})
 	err = task.Start()

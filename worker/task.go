@@ -97,6 +97,9 @@ func ClearTask(taskId string) {
 
 func (this_ *Task) Start() (err error) {
 	this_.IsStop = false
+	if this_.Param == nil {
+		this_.Param = &dialect.ParamModel{}
+	}
 	addTask(this_)
 
 	defer func() {

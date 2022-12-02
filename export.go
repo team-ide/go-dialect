@@ -64,9 +64,9 @@ func doExport() {
 		BatchNumber:    1000,
 		ErrorContinue:  true,
 		OnProgress: func(progress *worker.TaskProgress) {
-			bs, _ := json.Marshal(progress)
 			progress.OnError = func(err error) {
-				println("progress:" + string(bs))
+				dataBytes, _ := json.Marshal(progress)
+				println("progress:" + string(dataBytes))
 				println("progress error:" + err.Error())
 			}
 			//println(string(bs))

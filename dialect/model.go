@@ -160,6 +160,7 @@ type ColumnTypeInfo struct {
 	IsExtend bool     `json:"isExtend,omitempty"`
 	Matches  []string `json:"matches"`
 
+	IfNotFound             bool                                                                               `json:"ifNotFound,omitempty"`
 	ColumnDefaultPack      func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) `json:"-"`
 	ColumnTypePack         func(column *ColumnModel) (columnTypePack string, err error)                       `json:"-"`
 	SqlValuePack           func(value string) (sqlValue string)                                               `json:"-"`

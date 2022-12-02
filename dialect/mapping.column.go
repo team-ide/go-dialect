@@ -166,8 +166,14 @@ func (this_ *SqlMapping) GetColumnTypeInfo(column *ColumnModel) (columnTypeInfo 
 	}
 
 	if columnTypeInfo == nil {
-		err = errors.New("dialect [" + this_.DialectType().Name + "] GetColumnTypeInfo not support column type name [" + column.ColumnDataType + "]")
-		return
+		columnTypeInfo = &ColumnTypeInfo{
+			Name:     column.ColumnDataType,
+			Format:   column.ColumnDataType,
+			IsExtend: true,
+		}
+		this_.columnTypeInfoCache[key] = columnTypeInfo
+		//err = errors.New("dialect [" + this_.DialectType().Name + "] GetColumnTypeInfo not support column type name [" + column.ColumnDataType + "]")
+		//return
 	}
 	return
 }

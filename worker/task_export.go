@@ -182,7 +182,6 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (success bool, err 
 		err = errors.New("source db owner [" + owner.SourceName + "] is not exist")
 		return
 	}
-
 	tables := owner.Tables
 
 	if len(tables) == 0 {
@@ -218,6 +217,9 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (success bool, err 
 		}
 		ownerDataSource = this_.DataSourceType.New(param)
 		err = ownerDataSource.WriteStart()
+		if err != nil {
+			return
+		}
 		defer func() {
 			_ = ownerDataSource.WriteEnd()
 		}()
