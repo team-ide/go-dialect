@@ -82,6 +82,7 @@ var (
 	TypeKingBase   = &Type{Name: "kingbase"}
 	TypeShenTong   = &Type{Name: "shentong"}
 	TypePostgresql = &Type{Name: "postgresql"}
+	TypeOdbc       = &Type{Name: "odbc"}
 )
 
 func NewDialect(dialectType string) (dia Dialect, err error) {
@@ -106,6 +107,9 @@ func NewDialect(dialectType string) (dia Dialect, err error) {
 		break
 	case "postgresql", "ps":
 		dia, err = NewMappingDialect(NewMappingPostgresql())
+		break
+	case "odbc":
+		dia, err = NewMappingDialect(NewMappingOdbc())
 		break
 	default:
 		err = errors.New("dialect type [" + dialectType + "] not support ")
