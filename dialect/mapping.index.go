@@ -1,8 +1,6 @@
 package dialect
 
 import (
-	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -57,8 +55,15 @@ func (this_ *SqlMapping) GetIndexTypeInfo(typeName string) (indexTypeInfo *Index
 	key := strings.ToLower(typeName)
 	indexTypeInfo = this_.indexTypeInfoCache[key]
 	if indexTypeInfo == nil {
-		err = errors.New("dialect [" + this_.DialectType().Name + "] GetIndexTypeInfo not support index type name [" + typeName + "]")
-		fmt.Println(err)
+
+		indexTypeInfo = &IndexTypeInfo{
+			Name:     typeName,
+			Format:   typeName,
+			IsExtend: true,
+		}
+		this_.indexTypeInfoCache[key] = indexTypeInfo
+		//err = errors.New("dialect [" + this_.DialectType().Name + "] GetIndexTypeInfo not support index type name [" + typeName + "]")
+		//fmt.Println(err)
 		return
 	}
 	return
