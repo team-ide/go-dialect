@@ -78,6 +78,10 @@ func (this_ *SqlMapping) IndexTypeFormat(index *IndexModel) (indexTypeFormat str
 }
 
 func (this_ *SqlMapping) IndexNameFormat(param *ParamModel, ownerName string, tableName string, index *IndexModel) (indexNameFormat string, err error) {
+	if index.IndexName != "" {
+		indexNameFormat = index.IndexName
+		return
+	}
 	indexTypeInfo, err := this_.GetIndexTypeInfo(index.IndexType)
 	if err != nil {
 		return
