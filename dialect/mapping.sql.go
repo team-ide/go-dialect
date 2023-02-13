@@ -1236,17 +1236,16 @@ DROP DATABASE {ownerName}
 
 	mapping.TablesSelect = `
 
-select  trim(dbsname) as "ownerName",trim(tabname) as "tableName"
- from sysmaster:systabnames 
-WHERE dbsname={sqlValuePack(ownerName)}
+select  trim(tabname) as "tableName"
+ from {ownerNamePack}:systables 
 ORDER BY tabname`
 
 	mapping.TableSelect = `
 
-select  trim(dbsname) as "ownerName",trim(tabname) as "tableName"
- from sysmaster:systabnames 
-WHERE dbsname={sqlValuePack(ownerName)}
-  AND tabname={sqlValuePack(tableName)}
+select  trim(tabname) as "tableName"
+ from {ownerNamePack}:systables 
+WHERE
+  tabname={sqlValuePack(tableName)}
 `
 
 	mapping.TableCreate = `
