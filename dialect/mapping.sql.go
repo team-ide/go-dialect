@@ -1291,11 +1291,9 @@ select
   get_colname(c.coltype ,c.collength ,c.extended_id ,1 ) as "columnType",
   cs_null.constrtype  as notNull,
   c.collength as "DATA_LENGTH",
-  trim(cc.comments) as "columnComment",
   c.colno as sortNo
  from {ownerNamePack}:systables t
  left join {ownerNamePack}:syscolumns c on c.tabid = t.tabid
- left join {ownerNamePack}:syscolcomms cc on (t.tabid = cc.tabid and c.colno = cc.colno)
  left join {ownerNamePack}:sysdefaults d on (t.tabid = d.tabid and c.colno = d.colno)
  left join {ownerNamePack}:syscoldepend cd on (c.tabid = cd.tabid and c.colno = cd.colno)
  left join {ownerNamePack}:sysxtdtypes xt on c.extended_id = xt.extended_id
@@ -1315,11 +1313,9 @@ select
   get_colname(c.coltype ,c.collength ,c.extended_id ,1 ) as "columnType",
   cs_null.constrtype  as notNull,
   c.collength as "DATA_LENGTH",
-  trim(cc.comments) as "columnComment",
   c.colno as sortNo
  from {ownerNamePack}:systables t
  left join {ownerNamePack}:syscolumns c on c.tabid = t.tabid
- left join {ownerNamePack}:syscolcomms cc on (t.tabid = cc.tabid and c.colno = cc.colno)
  left join {ownerNamePack}:sysdefaults d on (t.tabid = d.tabid and c.colno = d.colno)
  left join {ownerNamePack}:syscoldepend cd on (c.tabid = cd.tabid and c.colno = cd.colno)
  left join {ownerNamePack}:sysxtdtypes xt on c.extended_id = xt.extended_id
