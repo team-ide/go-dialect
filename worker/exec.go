@@ -49,7 +49,7 @@ func DoOwnerExecs(dia dialect.Dialect, db *sql.DB, ownerName string, sqlList []s
 			_ = tx.Rollback()
 		} else {
 			err = tx.Commit()
-			if strings.Contains(err.Error(), "Not in transaction") {
+			if err != nil && strings.Contains(err.Error(), "Not in transaction") {
 				err = nil
 			}
 		}
@@ -110,7 +110,7 @@ func DoExecs(db *sql.DB, sqlList []string, argsList [][]interface{}) (resultList
 			_ = tx.Rollback()
 		} else {
 			err = tx.Commit()
-			if strings.Contains(err.Error(), "Not in transaction") {
+			if err != nil && strings.Contains(err.Error(), "Not in transaction") {
 				err = nil
 			}
 		}
