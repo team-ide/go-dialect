@@ -7,7 +7,7 @@ import (
 
 func NewMappingGBase() (mapping *SqlMapping) {
 	mapping = &SqlMapping{
-		dialectType: TypeOracle,
+		dialectType: TypeGBase,
 
 		OwnerNamePackChar:  "\"",
 		TableNamePackChar:  "\"",

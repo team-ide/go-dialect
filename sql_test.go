@@ -7,12 +7,14 @@ import (
 	"github.com/team-ide/go-dialect/dialect"
 	"github.com/team-ide/go-dialect/worker"
 	"github.com/team-ide/go-driver/db_dm"
+	"github.com/team-ide/go-driver/db_gbase"
 	"github.com/team-ide/go-driver/db_kingbase_v8r3"
 	"github.com/team-ide/go-driver/db_kingbase_v8r6"
 	"github.com/team-ide/go-driver/db_mysql"
 	"github.com/team-ide/go-driver/db_oracle"
 	"github.com/team-ide/go-driver/db_shentong"
 	"github.com/team-ide/go-driver/db_sqlite3"
+	"strings"
 	"testing"
 )
 
@@ -374,6 +376,39 @@ func TestOracle(t *testing.T) {
 		bs, _ := json.Marshal(one)
 		fmt.Println(string(bs))
 	}
+}
+func TestGBase(t *testing.T) {
+
+	db, err := db_gbase.Open(db_gbase.GetDSN("gbase", "gbasedbt", "GBase123", ""))
+	if err != nil {
+		panic(err)
+	}
+
+	dia, err := dialect.NewDialect("GBase")
+	if err != nil {
+		panic(err)
+	}
+	owners, err := worker.OwnersSelect(db, dia, nil)
+	if err != nil {
+		panic(err)
+	}
+	for _, one := range owners {
+		if !strings.EqualFold(one.OwnerName, "im_dbconfig") {
+			continue
+		}
+		bs, _ := json.Marshal(one)
+		fmt.Println("owner:", string(bs))
+
+		tables, err := worker.TablesDetail(db, dia, nil, one.OwnerName, false)
+		if err != nil {
+			panic(err)
+		}
+		for _, one := range tables {
+			bs, _ := json.Marshal(one)
+			fmt.Println("table:", string(bs))
+		}
+	}
+
 }
 func TestAllTableSql(t *testing.T) {
 	for _, one := range testDialectList {

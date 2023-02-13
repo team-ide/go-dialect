@@ -1289,10 +1289,10 @@ select
   trim(t.tabname) as "tableName",
   trim(c.colname) as "columnName",
   trim(d.default) as "columnDefault",
-  get_colname(c.coltype ,c.collength ,c.extended_id ,1 ) as dataType,
+  get_colname(c.coltype ,c.collength ,c.extended_id ,1 ) as "columnType",
   cs_null.constrtype  as notNull,
-  c.collength as characterLength,
-  trim(cc.comments) as columnComment,
+  c.collength as "DATA_LENGTH",
+  trim(cc.comments) as "columnComment",
   c.colno as sortNo
  from {ownerNamePack}:systables t
  left join {ownerNamePack}:syscolumns c on c.tabid = t.tabid
@@ -1303,7 +1303,7 @@ select
  left join {ownerNamePack}:sysseclabels e on c.seclabelid = e.seclabelid
  left join {ownerNamePack}:sysconstraints cs_null on (cd.tabid = cs_null.tabid and cd.constrid = cs_null.constrid  and cs_null.constrtype = 'N')
 WHERE
-    AND t.tabname={sqlValuePack(tableName)}
+    t.tabname={sqlValuePack(tableName)}
 `
 
 	mapping.ColumnSelect = `
@@ -1313,10 +1313,10 @@ select
   trim(t.tabname) as "tableName",
   trim(c.colname) as "columnName",
   trim(d.default) as "columnDefault",
-  get_colname(c.coltype ,c.collength ,c.extended_id ,1 ) as dataType,
+  get_colname(c.coltype ,c.collength ,c.extended_id ,1 ) as "columnType",
   cs_null.constrtype  as notNull,
-  c.collength as characterLength,
-  trim(cc.comments) as columnComment,
+  c.collength as "DATA_LENGTH",
+  trim(cc.comments) as "columnComment",
   c.colno as sortNo
  from {ownerNamePack}:systables t
  left join {ownerNamePack}:syscolumns c on c.tabid = t.tabid
@@ -1327,7 +1327,7 @@ select
  left join {ownerNamePack}:sysseclabels e on c.seclabelid = e.seclabelid
  left join {ownerNamePack}:sysconstraints cs_null on (cd.tabid = cs_null.tabid and cd.constrid = cs_null.constrid  and cs_null.constrtype = 'N')
 WHERE
-    AND t.tabname={sqlValuePack(tableName)}
+    t.tabname={sqlValuePack(tableName)}
     AND t.colname={sqlValuePack(columnName)}
 `
 
@@ -1396,4 +1396,3 @@ func appendPostgresqlSql(mapping *SqlMapping) {
 // DB2 数据库 SQL
 func appendDb2Sql(mapping *SqlMapping) {
 }
-
