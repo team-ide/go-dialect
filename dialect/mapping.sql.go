@@ -1251,7 +1251,7 @@ WHERE dbsname={sqlValuePack(ownerName)}
 
 	mapping.TableCreate = `
 
-CREATE TABLE [{ownerNamePack}.]{tableNamePack}(
+CREATE TABLE [{ownerNamePack}:]{tableNamePack}(
 { tableCreateColumnContent }
 { tableCreatePrimaryKeyContent }
 )
@@ -1269,17 +1269,17 @@ PRIMARY KEY ({primaryKeysPack})
 
 	mapping.TableDelete = `
 
-DROP TABLE [{ownerNamePack}.]{tableNamePack}
+DROP TABLE [{ownerNamePack}:]{tableNamePack}
 `
 
 	mapping.TableComment = `
 
-COMMENT ON TABLE [{ownerNamePack}.]{tableNamePack} IS {sqlValuePack(tableComment)}
+COMMENT ON TABLE [{ownerNamePack}:]{tableNamePack} IS {sqlValuePack(tableComment)}
 `
 
 	mapping.TableRename = `
 
-ALTER TABLE [{ownerNamePack}.]{oldTableNamePack} RENAME TO {tableNamePack}
+ALTER TABLE [{ownerNamePack}:]{oldTableNamePack} RENAME TO {tableNamePack}
 `
 
 	mapping.ColumnsSelect = `
@@ -1333,27 +1333,27 @@ WHERE
 
 	mapping.ColumnAdd = `
 
-ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
+ALTER TABLE [{ownerNamePack}:]{tableNamePack} ADD {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
 `
 
 	mapping.ColumnDelete = `
 
-ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP COLUMN {columnNamePack}
+ALTER TABLE [{ownerNamePack}:]{tableNamePack} DROP COLUMN {columnNamePack}
 `
 
 	mapping.ColumnComment = `
 
-COMMENT ON COLUMN [{ownerNamePack}.]{tableNamePack}.{columnNamePack} IS {sqlValuePack(columnComment)}
+COMMENT ON COLUMN [{ownerNamePack}:]{tableNamePack}.{columnNamePack} IS {sqlValuePack(columnComment)}
 `
 
 	mapping.ColumnRename = `
 
-ALTER TABLE [{ownerNamePack}.]{tableNamePack} RENAME COLUMN {oldColumnNamePack} TO {columnNamePack}
+ALTER TABLE [{ownerNamePack}:]{tableNamePack} RENAME COLUMN {oldColumnNamePack} TO {columnNamePack}
 `
 
 	mapping.ColumnUpdate = `
 
-ALTER TABLE [{ownerNamePack}.]{tableNamePack} MODIFY {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
+ALTER TABLE [{ownerNamePack}:]{tableNamePack} MODIFY {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
 `
 
 	mapping.ColumnAfter = `
@@ -1364,12 +1364,12 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} MODIFY {columnNamePack} {columnTyp
 
 	mapping.PrimaryKeyAdd = `
 
-ALTER TABLE [{ownerName}.]{tableName} ADD PRIMARY KEY ({columnNamesPack})
+ALTER TABLE [{ownerName}:]{tableName} ADD PRIMARY KEY ({columnNamesPack})
 `
 
 	mapping.PrimaryKeyDelete = `
 
-ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
+ALTER TABLE [{ownerName}:]{tableName} DROP PRIMARY KEY
 `
 
 	mapping.IndexesSelect = `
@@ -1377,7 +1377,7 @@ ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
 
 	mapping.IndexAdd = `
 
-CREATE {indexType} [{indexNamePack}] ON [{ownerNamePack}.]{tableNamePack} ({columnNamesPack})
+CREATE {indexType} [{indexNamePack}] ON [{ownerNamePack}:]{tableNamePack} ({columnNamesPack})
 `
 
 	mapping.IndexDelete = `
@@ -1396,3 +1396,4 @@ func appendPostgresqlSql(mapping *SqlMapping) {
 // DB2 数据库 SQL
 func appendDb2Sql(mapping *SqlMapping) {
 }
+
