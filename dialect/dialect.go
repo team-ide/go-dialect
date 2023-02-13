@@ -82,6 +82,7 @@ var (
 	TypeKingBase   = &Type{Name: "kingbase"}
 	TypeShenTong   = &Type{Name: "shentong"}
 	TypePostgresql = &Type{Name: "postgresql"}
+	TypeGBase      = &Type{Name: "gbase"}
 	TypeOdbc       = &Type{Name: "odbc"}
 )
 
@@ -107,6 +108,9 @@ func NewDialect(dialectType string) (dia Dialect, err error) {
 		break
 	case "postgresql", "ps":
 		dia, err = NewMappingDialect(NewMappingPostgresql())
+		break
+	case "gbase":
+		dia, err = NewMappingDialect(NewMappingGBase())
 		break
 	case "odbc":
 		dia, err = NewMappingDialect(NewMappingOdbc())

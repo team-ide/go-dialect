@@ -1211,6 +1211,182 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP INDEX {indexNamePack}
 
 // GBase 数据库 SQL
 func appendGBaseSql(mapping *SqlMapping) {
+
+	mapping.OwnersSelect = `
+
+select  trim(name) as "ownerName" 
+from sysmaster:sysdatabases
+ORDER BY name
+`
+
+	mapping.OwnerSelect = `
+
+select  trim(name) as "ownerName" 
+from sysmaster:sysdatabases
+WHERE name={sqlValuePack(ownerName)}
+`
+
+	mapping.OwnerCreate = `
+`
+
+	mapping.OwnerDelete = `
+
+DROP DATABASE {ownerName}
+`
+
+	mapping.TablesSelect = `
+
+select  trim(dbsname) as "ownerName",trim(tabname) as "tableName"
+ from sysmaster:systabnames 
+WHERE dbsname={sqlValuePack(ownerName)}
+ORDER BY tabname`
+
+	mapping.TableSelect = `
+
+select  trim(dbsname) as "ownerName",trim(tabname) as "tableName"
+ from sysmaster:systabnames 
+WHERE dbsname={sqlValuePack(ownerName)}
+  AND tabname={sqlValuePack(tableName)}
+`
+
+	mapping.TableCreate = `
+
+CREATE TABLE [{ownerNamePack}.]{tableNamePack}(
+{ tableCreateColumnContent }
+{ tableCreatePrimaryKeyContent }
+)
+`
+
+	mapping.TableCreateColumn = `
+
+	{columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
+`
+
+	mapping.TableCreatePrimaryKey = `
+
+PRIMARY KEY ({primaryKeysPack})
+`
+
+	mapping.TableDelete = `
+
+DROP TABLE [{ownerNamePack}.]{tableNamePack}
+`
+
+	mapping.TableComment = `
+
+COMMENT ON TABLE [{ownerNamePack}.]{tableNamePack} IS {sqlValuePack(tableComment)}
+`
+
+	mapping.TableRename = `
+
+ALTER TABLE [{ownerNamePack}.]{oldTableNamePack} RENAME TO {tableNamePack}
+`
+
+	mapping.ColumnsSelect = `
+
+
+select 
+  trim(t.tabname) as "tableName",
+  trim(c.colname) as "columnName",
+  trim(d.default) as "columnDefault",
+  get_colname(c.coltype ,c.collength ,c.extended_id ,1 ) as dataType,
+  cs_null.constrtype  as notNull,
+  c.collength as characterLength,
+  trim(cc.comments) as columnComment,
+  c.colno as sortNo
+ from {ownerNamePack}:systables t
+ left join {ownerNamePack}:syscolumns c on c.tabid = t.tabid
+ left join {ownerNamePack}:syscolcomms cc on (t.tabid = cc.tabid and c.colno = cc.colno)
+ left join {ownerNamePack}:sysdefaults d on (t.tabid = d.tabid and c.colno = d.colno)
+ left join {ownerNamePack}:syscoldepend cd on (c.tabid = cd.tabid and c.colno = cd.colno)
+ left join {ownerNamePack}:sysxtdtypes xt on c.extended_id = xt.extended_id
+ left join {ownerNamePack}:sysseclabels e on c.seclabelid = e.seclabelid
+ left join {ownerNamePack}:sysconstraints cs_null on (cd.tabid = cs_null.tabid and cd.constrid = cs_null.constrid  and cs_null.constrtype = 'N')
+WHERE
+    AND t.tabname={sqlValuePack(tableName)}
+`
+
+	mapping.ColumnSelect = `
+
+
+select 
+  trim(t.tabname) as "tableName",
+  trim(c.colname) as "columnName",
+  trim(d.default) as "columnDefault",
+  get_colname(c.coltype ,c.collength ,c.extended_id ,1 ) as dataType,
+  cs_null.constrtype  as notNull,
+  c.collength as characterLength,
+  trim(cc.comments) as columnComment,
+  c.colno as sortNo
+ from {ownerNamePack}:systables t
+ left join {ownerNamePack}:syscolumns c on c.tabid = t.tabid
+ left join {ownerNamePack}:syscolcomms cc on (t.tabid = cc.tabid and c.colno = cc.colno)
+ left join {ownerNamePack}:sysdefaults d on (t.tabid = d.tabid and c.colno = d.colno)
+ left join {ownerNamePack}:syscoldepend cd on (c.tabid = cd.tabid and c.colno = cd.colno)
+ left join {ownerNamePack}:sysxtdtypes xt on c.extended_id = xt.extended_id
+ left join {ownerNamePack}:sysseclabels e on c.seclabelid = e.seclabelid
+ left join {ownerNamePack}:sysconstraints cs_null on (cd.tabid = cs_null.tabid and cd.constrid = cs_null.constrid  and cs_null.constrtype = 'N')
+WHERE
+    AND t.tabname={sqlValuePack(tableName)}
+    AND t.colname={sqlValuePack(columnName)}
+`
+
+	mapping.ColumnAdd = `
+
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
+`
+
+	mapping.ColumnDelete = `
+
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP COLUMN {columnNamePack}
+`
+
+	mapping.ColumnComment = `
+
+COMMENT ON COLUMN [{ownerNamePack}.]{tableNamePack}.{columnNamePack} IS {sqlValuePack(columnComment)}
+`
+
+	mapping.ColumnRename = `
+
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} RENAME COLUMN {oldColumnNamePack} TO {columnNamePack}
+`
+
+	mapping.ColumnUpdate = `
+
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} MODIFY {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
+`
+
+	mapping.ColumnAfter = `
+`
+
+	mapping.PrimaryKeysSelect = `
+`
+
+	mapping.PrimaryKeyAdd = `
+
+ALTER TABLE [{ownerName}.]{tableName} ADD PRIMARY KEY ({columnNamesPack})
+`
+
+	mapping.PrimaryKeyDelete = `
+
+ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
+`
+
+	mapping.IndexesSelect = `
+`
+
+	mapping.IndexAdd = `
+
+CREATE {indexType} [{indexNamePack}] ON [{ownerNamePack}.]{tableNamePack} ({columnNamesPack})
+`
+
+	mapping.IndexDelete = `
+
+DROP INDEX {indexNamePack}
+`
+
+	mapping.IndexNamePack = `
+`
 }
 
 // Postgresql 数据库 SQL
