@@ -169,7 +169,7 @@ func TableCreate(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	if len(sqlList) == 0 {
 		return
 	}
-	_, errorSql, _, err := DoExecs(db, sqlList, nil)
+	_, errorSql, _, err := DoOwnerExecs(dia, db, ownerName, sqlList, nil)
 	if err != nil {
 		err = errors.New("TableCreate error sql:" + errorSql + ",error:" + err.Error())
 		return
@@ -190,7 +190,7 @@ func TableDelete(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 	if len(sqlList) == 0 {
 		return
 	}
-	_, errorSql, _, err := DoExecs(db, sqlList, nil)
+	_, errorSql, _, err := DoOwnerExecs(dia, db, ownerName, sqlList, nil)
 	if err != nil {
 		err = errors.New("TableDelete error sql:" + errorSql + ",error:" + err.Error())
 		return

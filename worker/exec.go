@@ -26,6 +26,64 @@ func DoExec(db *sql.DB, sqlInfo string, args []interface{}) (result sql.Result, 
 	return
 }
 
+func DoOwnerExecs(dia dialect.Dialect, db *sql.DB, ownerName string, sqlList []string, argsList [][]interface{}) (resultList []sql.Result, errSql string, errArgs []interface{}, err error) {
+	sqlListSize := len(sqlList)
+	if sqlListSize == 0 {
+		return
+	}
+	if len(argsList) == 0 {
+		argsList = make([][]interface{}, sqlListSize)
+	}
+	argsListSize := len(argsList)
+	if sqlListSize != argsListSize {
+		err = errors.New(fmt.Sprintf("sqlList size is [%d] but argsList size is [%d]", sqlListSize, argsListSize))
+		return
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		} else {
+			err = tx.Commit()
+		}
+	}()
+
+	if ownerName != "" {
+		switch dia.DialectType() {
+		case dialect.TypeMysql:
+			_, _ = tx.Exec(" USE " + ownerName)
+			break
+		case dialect.TypeOracle:
+			_, _ = tx.Exec("ALTER SESSION SET CURRENT_SCHEMA=" + ownerName)
+			break
+		case dialect.TypeGBase:
+			_, _ = tx.Exec("database " + ownerName)
+			break
+		}
+	}
+	var result sql.Result
+	for i := 0; i < sqlListSize; i++ {
+		sqlInfo := sqlList[i]
+		args := argsList[i]
+		if strings.TrimSpace(sqlInfo) == "" {
+			continue
+		}
+		result, err = tx.Exec(sqlInfo, args...)
+		if err != nil {
+			errSql = sqlInfo
+			errArgs = args
+			return
+		}
+		resultList = append(resultList, result)
+	}
+
+	return
+}
+
 func DoExecs(db *sql.DB, sqlList []string, argsList [][]interface{}) (resultList []sql.Result, errSql string, errArgs []interface{}, err error) {
 	sqlListSize := len(sqlList)
 	if sqlListSize == 0 {
