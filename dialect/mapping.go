@@ -65,7 +65,9 @@ type SqlMapping struct {
 	PackPageSql        func(selectSql string, pageSize int, pageNo int) (pageSql string)
 	ReplaceSqlVariable func(sqlInfo string, args []interface{}) (variableSql string)
 
-	MethodCache map[string]interface{}
+	OwnerTablePack func(param *ParamModel, ownerName string, tableName string) string
+	MethodCache    map[string]interface{}
+	dialect        Dialect
 }
 
 func (this_ *SqlMapping) DialectType() (dialectType *Type) {

@@ -536,10 +536,7 @@ func TestAllSql(t *testing.T) {
 		}
 
 		selectSql := "select * from "
-		if from.owner.OwnerName != "" {
-			selectSql += from.dialect.OwnerNamePack(nil, from.owner.OwnerName) + "."
-		}
-		selectSql += from.dialect.OwnerNamePack(nil, from.table.TableName)
+		selectSql += from.dialect.OwnerTablePack(nil, from.owner.OwnerName, from.table.TableName)
 		list, err := worker.DoQuery(dialectDb, selectSql, nil)
 		if err != nil {
 			panic(err)

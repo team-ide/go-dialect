@@ -342,10 +342,7 @@ func (this_ *taskSync) syncTableSyncData(workDb *sql.DB, newTableDetail *dialect
 	}
 	selectSqlInfo += this_.dia.ColumnNamesPack(this_.Param, columnNames)
 	selectSqlInfo += " FROM "
-	if newTableDetail.OwnerName != "" {
-		selectSqlInfo += this_.dia.OwnerNamePack(this_.Param, newTableDetail.OwnerName) + "."
-	}
-	selectSqlInfo += this_.dia.TableNamePack(this_.Param, newTableDetail.TableName)
+	selectSqlInfo += this_.dia.OwnerTablePack(this_.Param, newTableDetail.OwnerName, newTableDetail.TableName)
 
 	countSql, err := dialect.FormatCountSql(selectSqlInfo)
 	if err != nil {

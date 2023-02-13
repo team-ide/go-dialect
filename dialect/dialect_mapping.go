@@ -55,6 +55,7 @@ type mappingDialect struct {
 }
 
 func (this_ *mappingDialect) init() (err error) {
+	this_.SqlMapping.dialect = this_
 	rootStatementType := reflect.TypeOf(&RootStatement{})
 
 	mappingValue := reflect.ValueOf(this_.SqlMapping).Elem()

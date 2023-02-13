@@ -23,6 +23,7 @@ type Dialect interface {
 
 	OwnerNamePack(param *ParamModel, ownerName string) string
 	TableNamePack(param *ParamModel, tableName string) string
+	OwnerTablePack(param *ParamModel, ownerName string, tableName string) string
 	ColumnNamePack(param *ParamModel, columnName string) string
 	ColumnNamesPack(param *ParamModel, columnNames []string) string
 	SqlValuePack(param *ParamModel, column *ColumnModel, value interface{}) string

@@ -435,10 +435,8 @@ func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSo
 	}
 	selectSqlInfo += this_.dia.ColumnNamesPack(this_.Param, columnNames)
 	selectSqlInfo += " FROM "
-	if tableDetail.OwnerName != "" {
-		selectSqlInfo += this_.dia.OwnerNamePack(this_.Param, tableDetail.OwnerName) + "."
-	}
-	selectSqlInfo += this_.dia.TableNamePack(this_.Param, tableDetail.TableName)
+
+	selectSqlInfo += this_.dia.OwnerTablePack(this_.Param, tableDetail.OwnerName, tableDetail.TableName)
 
 	countSql, err := dialect.FormatCountSql(selectSqlInfo)
 	if err != nil {

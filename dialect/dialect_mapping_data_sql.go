@@ -45,10 +45,7 @@ func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName stri
 		insertValues = strings.TrimSuffix(insertValues, ", ")
 
 		var insertSql = "INSERT INTO "
-		if ownerName != "" {
-			insertSql += this_.OwnerNamePack(param, ownerName) + "."
-		}
-		insertSql += this_.TableNamePack(param, tableName)
+		insertSql += this_.OwnerTablePack(param, ownerName, tableName)
 		if insertColumns != "" {
 			insertSql += "(" + insertColumns + ")"
 		}
@@ -71,10 +68,7 @@ func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName stri
 				batchValuesList[index] = append(batchValuesList[index], values...)
 			} else {
 				var batchSql = "INSERT INTO "
-				if ownerName != "" {
-					batchSql += this_.OwnerNamePack(param, ownerName) + "."
-				}
-				batchSql += this_.TableNamePack(param, tableName)
+				batchSql += this_.OwnerTablePack(param, ownerName, tableName)
 				if insertColumns != "" {
 					batchSql += "(" + insertColumns + ")"
 				}
@@ -118,10 +112,7 @@ func (this_ *mappingDialect) DataListUpdateSql(param *ParamModel, ownerName stri
 		var updateSql = "UPDATE "
 		var values []interface{}
 
-		if ownerName != "" {
-			updateSql += this_.OwnerNamePack(param, ownerName) + "."
-		}
-		updateSql += this_.TableNamePack(param, tableName)
+		updateSql += this_.OwnerTablePack(param, ownerName, tableName)
 		updateSql += " SET "
 
 		for name, value := range data {
@@ -165,10 +156,7 @@ func (this_ *mappingDialect) DataListDeleteSql(param *ParamModel, ownerName stri
 		var deleteSql = "DELETE FROM "
 		var values []interface{}
 
-		if ownerName != "" {
-			deleteSql += this_.OwnerNamePack(param, ownerName) + "."
-		}
-		deleteSql += this_.TableNamePack(param, tableName)
+		deleteSql += this_.OwnerTablePack(param, ownerName, tableName)
 
 		deleteSql += " WHERE "
 
@@ -215,10 +203,7 @@ func (this_ *mappingDialect) DataListSelectSql(param *ParamModel, ownerName stri
 	}
 	sql = "SELECT " + selectColumns + " FROM "
 
-	if ownerName != "" {
-		sql += this_.OwnerNamePack(param, ownerName) + "."
-	}
-	sql += this_.TableNamePack(param, tableName)
+	sql += this_.OwnerTablePack(param, ownerName, tableName)
 
 	//构造查询用的finder
 	if len(whereList) > 0 {

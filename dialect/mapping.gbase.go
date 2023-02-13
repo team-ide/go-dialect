@@ -45,6 +45,18 @@ func NewMappingGBase() (mapping *SqlMapping) {
 		mapping.AddIndexTypeInfo(one)
 	}
 
+	mapping.OwnerTablePack = func(param *ParamModel, ownerName string, tableName string) string {
+
+		var res string
+		if ownerName != "" {
+			res += mapping.dialect.OwnerNamePack(param, ownerName) + ":"
+		}
+		if tableName != "" {
+			res += mapping.dialect.TableNamePack(param, tableName)
+		}
+		return res
+	}
+
 	return
 }
 

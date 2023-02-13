@@ -31,6 +31,20 @@ func (this_ *mappingDialect) TableNamePack(param *ParamModel, tableName string) 
 	return packingName(char, tableName)
 }
 
+func (this_ *mappingDialect) OwnerTablePack(param *ParamModel, ownerName string, tableName string) string {
+	if this_.SqlMapping.OwnerTablePack != nil {
+		return this_.SqlMapping.OwnerTablePack(param, ownerName, tableName)
+	}
+	var res string
+	if ownerName != "" {
+		res += this_.OwnerNamePack(param, ownerName) + "."
+	}
+	if tableName != "" {
+		res += this_.TableNamePack(param, tableName)
+	}
+	return res
+}
+
 func (this_ *mappingDialect) ColumnNamePack(param *ParamModel, columnName string) string {
 	char := this_.ColumnNamePackChar
 	if param != nil {
@@ -206,10 +220,7 @@ func (this_ *mappingDialect) SqlSplit(sqlStr string) (sqlList []string) {
 func (this_ *mappingDialect) InsertSql(param *ParamModel, insert *InsertModel) (sqlList []string, err error) {
 
 	sql := "INSERT INTO "
-	if insert.OwnerName != "" {
-		sql += this_.OwnerNamePack(param, insert.OwnerName) + "."
-	}
-	sql += "" + this_.TableNamePack(param, insert.TableName)
+	sql += this_.OwnerTablePack(param, insert.OwnerName, insert.TableName)
 
 	sql += "(" + this_.ColumnNamesPack(param, insert.Columns) + ")"
 	sql += ` VALUES `
@@ -271,10 +282,7 @@ func (this_ *mappingDialect) InsertDataListSql(param *ParamModel, ownerName stri
 		values += ")"
 
 		insertSqlInfo := "INSERT INTO "
-		if ownerName != "" {
-			insertSqlInfo += this_.OwnerNamePack(param, ownerName) + "."
-		}
-		insertSqlInfo += this_.TableNamePack(param, tableName)
+		insertSqlInfo += this_.OwnerTablePack(param, ownerName, tableName)
 		insertSqlInfo += " ("
 		insertSqlInfo += this_.ColumnNamesPack(param, columnList_)
 		insertSqlInfo += ") VALUES "
