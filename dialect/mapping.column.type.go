@@ -328,9 +328,14 @@ var sqliteColumnTypeList = []*ColumnTypeInfo{
 // GBase 数据库 字段类型
 var gBaseColumnTypeList = []*ColumnTypeInfo{
 	{Name: `INT`, Format: `INT`, IsNumber: true, IsInteger: true, Comment: `整数 -2,147,483,647 至 2,147,483,647`},
-	{Name: `INTEGER`, Format: `INTEGER`, Matches: []string{`TINYINT`, `SMALLINT`, `MEDIUMINT`, `INT&&columnScale==0&&((columnLength>0&&columnLength<11)||(columnPrecision>0&&columnPrecision<11))`, `BIT&&columnLength==1||columnPrecision==1`, `INT1`, `INT2`, `INT4`, `BOOL`, `BOOLEAN`}, IsNumber: true, IsInteger: true},
+	{Name: `INTEGER`, Format: `INTEGER`, Matches: []string{`TINYINT`, `MEDIUMINT`, `INT&&columnScale==0&&((columnLength>0&&columnLength<11)||(columnPrecision>0&&columnPrecision<11))`, `BIT&&columnLength==1||columnPrecision==1`, `INT1`, `INT2`, `INT4`, `BOOL`, `BOOLEAN`}, IsNumber: true, IsInteger: true},
 	{Name: `BIGINT`, Format: `BIGINT`, Matches: []string{`INT8`, `INT&&columnScale==0&&((columnLength>=11)||(columnPrecision<=11))`}, IsNumber: true, IsInteger: true},
+	{Name: `SERIAL`, Format: `SERIAL`, IsNumber: true, IsInteger: true, Comment: `自增类型，默认从1开始。可以设置初始值，如：serial(n)`},
+	{Name: `SERIAL8`, Format: `SERIAL8`, IsNumber: true, IsInteger: true, Comment: `自增类型，默认从1开始。可以设置初始值，如：serial(n)`},
+	{Name: `SMALLINT`, Format: `SMALLINT`, IsNumber: true, IsInteger: true},
 	{Name: `FLOAT`, Format: `FLOAT`, Matches: []string{`DOUBLE`, `FLOAT4`, `FLOAT8`, `DOUBLE PRECISION`}, IsNumber: true, IsFloat: true, Comment: `双精度浮点数值 存储最多带有 16 位有效数字的双精度浮点数值`},
+	{Name: `SMALLFLOAT`, Format: `SMALLFLOAT`, IsNumber: true, IsFloat: true},
+	{Name: `REAL`, Format: `REAL`, IsNumber: true, IsFloat: true},
 	{Name: `DECIMAL`, Format: `DECIMAL($p, $s)`, Matches: []string{`DECIMAL`, `DEC`, `REAL`, `NUMERIC`}, IsNumber: true, IsFloat: true, Comment: `存储实数的定点小数值 在小数部分中最多 20 位有效数字，或在小数点的左边最多 32 位有效数字。`},
 	{Name: `NUMERIC`, Format: `NUMERIC($p, $s)`, IsNumber: true, IsFloat: true, Comment: `DECIMAL(p,s) 的符合 ANSI 的同义词 p最大精度是38位(十进制)`},
 	{Name: `CHAR`, Format: `CHAR($l)`, Matches: []string{`CHARACTER`}, IsString: true},
@@ -353,6 +358,7 @@ var gBaseColumnTypeList = []*ColumnTypeInfo{
 			return
 		},
 	},
+	{Name: `INTERVAL`, Format: `INTERVAL`, IsDateTime: true},
 	{Name: `BOOLEAN`, Format: `BOOLEAN`, IsBoolean: true},
 }
 
