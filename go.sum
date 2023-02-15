@@ -1,5 +1,5 @@
-gitee.com/chunanyong/dm v1.8.11 h1:JPwiS1PqHObo4QFodruLR8WOhLP+7Y/EKGGu2BJ5SJI=
-gitee.com/chunanyong/dm v1.8.11/go.mod h1:EPRJnuPFgbyOFgJ0TRYCTGzhq+ZT4wdyaj/GW/LLcNg=
+gitee.com/chunanyong/dm v1.8.10 h1:9S1CKUggWHIea/GI7nr7S/DNMaxIilNFgfzdzKDx2+I=
+gitee.com/chunanyong/dm v1.8.10/go.mod h1:EPRJnuPFgbyOFgJ0TRYCTGzhq+ZT4wdyaj/GW/LLcNg=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/dlclark/regexp2 v1.4.1-0.20201116162257-a2a8dda75c91/go.mod h1:2pZnwuY/m+8K6iRw6wQdMtk+rH5tNGR1i55kozfMjCc=
 github.com/dlclark/regexp2 v1.7.0 h1:7lJfhqlPssTb1WQx4yvTHN0uElPEv52sbaECrAQxjAo=

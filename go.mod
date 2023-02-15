@@ -11,7 +11,7 @@ require (
 )
 
 require (
-	gitee.com/chunanyong/dm v1.8.11 // indirect
+	gitee.com/chunanyong/dm v1.8.10 // indirect
 	github.com/dlclark/regexp2 v1.7.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
