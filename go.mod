@@ -6,7 +6,7 @@ require (
 	github.com/dop251/goja v0.0.0-20230203172422-5460598cfa32
 	github.com/google/uuid v1.3.0
 	github.com/tealeg/xlsx v1.0.5
-	github.com/team-ide/go-driver v1.1.7
+	github.com/team-ide/go-driver v1.1.8
 	google.golang.org/protobuf v1.28.1
 )
 
