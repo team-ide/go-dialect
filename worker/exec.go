@@ -63,9 +63,9 @@ func DoOwnerExecs(dia dialect.Dialect, db *sql.DB, ownerName string, sqlList []s
 		case dialect.TypeOracle:
 			_, _ = tx.Exec("ALTER SESSION SET CURRENT_SCHEMA=" + ownerName)
 			break
-		case dialect.TypeGBase:
-			_, _ = tx.Exec("database " + ownerName)
-			break
+			//case dialect.TypeGBase:  // GBase 在 linux使用 database语句将会导致程序奔溃  属于 GBase驱动 so 库 问题
+			//	_, _ = tx.Exec("database " + ownerName)
+			//	break
 		}
 	}
 	var result sql.Result
