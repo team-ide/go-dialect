@@ -1391,7 +1391,7 @@ func appendOpenGaussSql(mapping *SqlMapping) {
 
 select schema_name ownerName
 from information_schema.schemata
-ORDER BY datname
+ORDER BY schema_name
 `
 
 	mapping.OwnerSelect = `
@@ -1600,7 +1600,7 @@ func appendPostgresqlSql(mapping *SqlMapping) {
 
 select schema_name ownerName
 from information_schema.schemata
-ORDER BY datname
+ORDER BY schema_name
 `
 
 	mapping.OwnerSelect = `
