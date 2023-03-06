@@ -1415,7 +1415,7 @@ DROP SCHEMA IF EXISTS {ownerName} CASCADE
 
 SELECT 
 table_schema ownerName,
-table_name tableName,
+table_name tableName
 FROM information_schema.tables
 WHERE ownerName={sqlValuePack(ownerName)}
 ORDER BY table_name `
@@ -1424,7 +1424,7 @@ ORDER BY table_name `
 
 SELECT 
 table_schema ownerName,
-table_name tableName,
+table_name tableName
 FROM information_schema.tables
 WHERE ownerName={sqlValuePack(ownerName)}
   AND table_name={sqlValuePack(tableName)}
@@ -1624,7 +1624,7 @@ DROP SCHEMA IF EXISTS {ownerName} CASCADE
 
 SELECT 
 table_schema ownerName,
-table_name tableName,
+table_name tableName
 FROM information_schema.tables
 WHERE ownerName={sqlValuePack(ownerName)}
 ORDER BY table_name `
@@ -1633,11 +1633,10 @@ ORDER BY table_name `
 
 SELECT 
 table_schema ownerName,
-table_name tableName,
+table_name tableName
 FROM information_schema.tables
 WHERE ownerName={sqlValuePack(ownerName)}
-  AND table_name={sqlValuePack(tableName)}
-`
+ORDER BY table_name `
 
 	mapping.TableCreate = `
 
