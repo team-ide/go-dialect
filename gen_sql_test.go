@@ -132,6 +132,8 @@ func sqlParse(path string, outPath string) (err error) {
 			funcName = "appendPostgresqlSql"
 		} else if strings.EqualFold(one.Name, "DB2") {
 			funcName = "appendDb2Sql"
+		} else if strings.EqualFold(one.Name, "OpenGauss") {
+			funcName = "appendOpenGaussSql"
 		}
 		code += "func " + funcName + "(mapping *SqlMapping) {" + "\n"
 		for _, sqlModel := range one.sqlList {

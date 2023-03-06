@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-func NewMappingPostgresql() (mapping *SqlMapping) {
+func NewMappingOpenGauss() (mapping *SqlMapping) {
 	mapping = &SqlMapping{
-		dialectType: TypePostgresql,
+		dialectType: TypeOpenGauss,
 
 		OwnerNamePackChar:  "\"",
 		TableNamePackChar:  "\"",
@@ -17,7 +17,7 @@ func NewMappingPostgresql() (mapping *SqlMapping) {
 		SqlValueEscapeChar: "'",
 	}
 
-	appendPostgresqlSql(mapping)
+	appendOpenGaussSql(mapping)
 
 	mapping.PackPageSql = func(selectSql string, pageSize int, pageNo int) (pageSql string) {
 		pageSql = selectSql + fmt.Sprintf(" LIMIT %d OFFSET %d", pageSize, pageSize*(pageNo-1))
@@ -37,11 +37,11 @@ func NewMappingPostgresql() (mapping *SqlMapping) {
 		return
 	}
 
-	for _, one := range postgresqlColumnTypeList {
+	for _, one := range openGaussColumnTypeList {
 		mapping.AddColumnTypeInfo(one)
 	}
 
-	for _, one := range postgresqlIndexTypeList {
+	for _, one := range openGaussIndexTypeList {
 		mapping.AddIndexTypeInfo(one)
 	}
 
@@ -49,11 +49,11 @@ func NewMappingPostgresql() (mapping *SqlMapping) {
 }
 
 var (
-	postgresqlIndexTypeList []*IndexTypeInfo
+	openGaussIndexTypeList []*IndexTypeInfo
 )
 
-func appendPostgresqlIndexType(indexType *IndexTypeInfo) {
-	postgresqlIndexTypeList = append(postgresqlIndexTypeList, indexType)
+func appendOpenGaussIndexType(indexType *IndexTypeInfo) {
+	openGaussIndexTypeList = append(openGaussIndexTypeList, indexType)
 }
 
 func init() {
@@ -83,5 +83,4 @@ func init() {
 			return
 		},
 	})
-
 }

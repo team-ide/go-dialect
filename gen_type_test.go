@@ -126,6 +126,8 @@ import "strings"
 			columnTypeListName = "postgresqlColumnTypeList"
 		} else if strings.EqualFold(one.Name, "DB2") {
 			columnTypeListName = "db2ColumnTypeList"
+		} else if strings.EqualFold(one.Name, "OpenGauss") {
+			columnTypeListName = "openGaussColumnTypeList"
 		}
 		code += "var " + columnTypeListName + " = []*ColumnTypeInfo{" + "\n"
 		for _, dataType := range one.DataTypes {

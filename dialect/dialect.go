@@ -85,6 +85,7 @@ var (
 	TypePostgresql = &Type{Name: "postgresql"}
 	TypeGBase      = &Type{Name: "gbase"}
 	TypeOdbc       = &Type{Name: "odbc"}
+	TypeOpenGauss  = &Type{Name: "opengauss"}
 )
 
 func NewDialect(dialectType string) (dia Dialect, err error) {
@@ -109,6 +110,9 @@ func NewDialect(dialectType string) (dia Dialect, err error) {
 		break
 	case "postgresql", "ps":
 		dia, err = NewMappingDialect(NewMappingPostgresql())
+		break
+	case "opengauss":
+		dia, err = NewMappingDialect(NewMappingOpenGauss())
 		break
 	case "gbase":
 		dia, err = NewMappingDialect(NewMappingGBase())

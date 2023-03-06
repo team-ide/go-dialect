@@ -362,8 +362,108 @@ var gBaseColumnTypeList = []*ColumnTypeInfo{
 	{Name: `BOOLEAN`, Format: `BOOLEAN`, IsBoolean: true},
 }
 
+// OpenGauss 数据库 字段类型
+var openGaussColumnTypeList = []*ColumnTypeInfo{
+	{Name: `TINYINT`, Format: `TINYINT($l)`, Matches: []string{`NUMBER&&columnScale==0&&((columnLength>0&&columnLength<3)||(columnPrecision>0&&columnPrecision<3))`, `INT1`, `BOOL`, `BOOLEAN`}, IsNumber: true, IsInteger: true, Comment: `1 Bytes 范围（有符号）(-128，127) 范围（无符号）(0，255) 小整数值`},
+	{Name: `SMALLINT`, Format: `SMALLINT($l)`, Matches: []string{`NUMBER&&columnScale==0&&((columnLength>0&&columnLength<6)||(columnPrecision>0&&columnPrecision<6))`, `INT2`}, IsNumber: true, IsInteger: true, Comment: `2 Bytes 范围（有符号）(-32 768，32 767) 范围（无符号）(0，65 535)  大整数值`},
+	{Name: `MEDIUMINT`, Format: `MEDIUMINT($l)`, Matches: []string{`NUMBER&&columnScale==0&&((columnLength>0&&columnLength<9)||(columnPrecision>0&&columnPrecision<9))`}, IsNumber: true, IsInteger: true, Comment: `3 Bytes 范围（有符号）(-8 388 608，8 388 607) 范围（无符号）(0，16 777 215)  大整数值`},
+	{Name: `INT`, Format: `INT($l)`, Matches: []string{`NUMBER&&columnScale==0&&((columnLength>0&&columnLength<11)||(columnPrecision>0&&columnPrecision<11))`, `INT4`}, IsNumber: true, IsInteger: true, Comment: `4 Bytes 范围（有符号）(-2 147 483 648，2 147 483 647) 范围（无符号）(0，4 294 967 295)  大整数值`},
+	{Name: `INTEGER`, Format: `INTEGER($l)`, IsNumber: true, IsInteger: true, Comment: `同上`},
+	{Name: `BIGINT`, Format: `BIGINT($l)`, Matches: []string{`NUMBER&&columnScale==0`, `INT8`}, IsNumber: true, IsInteger: true, Comment: `8 Bytes 范围（有符号）(-9,223,372,036,854,775,808，9 223 372 036 854 775 807) 范围（无符号）(0，18 446 744 073 709 551 615)  极大整数值`},
+	{Name: `FLOAT`, Format: `FLOAT`, Matches: []string{`FLOAT4`}, IsNumber: true, IsFloat: true, Comment: `4 Bytes 范围（有符号）(-3.402 823 466 E+38，-1.175 494 351 E-38)，0，(1.175 494 351 E-38，3.402 823 466 351 E+38) 范围（无符号）0，(1.175 494 351 E-38，3.402 823 466 E+38)  单精度 浮点数值`},
+	{Name: `DOUBLE`, Format: `DOUBLE`, Matches: []string{`FLOAT8`, `DOUBLE PRECISION`}, IsNumber: true, IsFloat: true, Comment: `8 Bytes 范围（有符号）(-1.797 693 134 862 315 7 E+308，-2.225 073 858 507 201 4 E-308)，0，(2.225 073 858 507 201 4 E-308，1.797 693 134 862 315 7 E+308)范围（无符号）0，(2.225 073 858 507 201 4 E-308，1.797 693 134 862 315 7 E+308)  双精度 浮点数值`},
+	{Name: `DECIMAL`, Format: `DECIMAL($p, $s)`, Matches: []string{`NUMBER`, `REAL`, `NUMERIC`}, IsNumber: true, IsFloat: true, Comment: `对DECIMAL(M,D) ，如果M>D，为M+2 否则为D+2 小数值`},
+	{Name: `DEC`, Format: `DEC($p, $s)`, IsNumber: true, IsFloat: true, Comment: `同上`},
+	{Name: `BIT`, Format: `BIT($p)`, Comment: `位字段类型。M 表示每个值的位数，范围为 1～64。如果 M 被省略，默认值为 1。如果为 BIT(M) 列分配的值的长度小于 M 位，在值的左边用 0 填充。例如，为 BIT(6) 列分配一个值 b'101'，其效果与分配 b'000101' 相同`},
+	{Name: `CHAR`, Format: `CHAR($l)`, Matches: []string{`NCHAR`, `CHARACTER`}, IsString: true, Comment: `0-255 bytes 定长字符串 固定长度非二进制字符串 M 字节，1<=M<=255`},
+	{Name: `VARCHAR`, Format: `VARCHAR($l)`, Matches: []string{`VARCHAR2`, `NVARCHAR2`, `BPCHAR`}, IsString: true, Comment: `0-65535 bytes	变长字符串 变长非二进制字符串 L+1字节，在此，L< = M和 1<=M<=255`},
+	{Name: `TINYTEXT`, Format: `TINYTEXT`, IsString: true, Comment: `0-255 bytes 短文本字符串`},
+	{Name: `TEXT`, Format: `TEXT`, Matches: []string{`CLOB`, `NCLOB`, `ROWID`, `UROWID`}, IsString: true, Comment: `0-65 535 bytes 长文本数据`},
+	{Name: `MEDIUMTEXT`, Format: `MEDIUMTEXT`, Matches: []string{`LONGVARCHAR`}, IsString: true, Comment: `0-16 777 215 bytes	中等长度文本数据`},
+	{Name: `LONGTEXT`, Format: `LONGTEXT`, IsString: true, Comment: `0-4 294 967 295 bytes	极大文本数据`},
+	{Name: `BINARY`, Format: `BINARY($l)`, IsBytes: true, Comment: `0-255 bytes 不超过 255 个字符的二进制字符串 固定长度二进制字符串 M 字节`},
+	{Name: `VARBINARY`, Format: `VARBINARY($l)`, IsBytes: true, Comment: `可变长度二进制字符串 M+1 字节`},
+	{Name: `TINYBLOB`, Format: `TINYBLOB`, IsBytes: true, Comment: `非常小的BLOB L+1 字节，在此，L<2^8`},
+	{Name: `BLOB`, Format: `BLOB`, Matches: []string{`BFILE`, `RAW`, `BYTEA`}, IsBytes: true, Comment: `0-65 535 bytes 二进制形式的长文本数据 小 BLOB L+2 字节，在此，L<2^16`},
+	{Name: `MEDIUMBLOB`, Format: `MEDIUMBLOB`, IsBytes: true, Comment: `0-16 777 215 bytes	二进制形式的中等长度文本数据 中等大小的BLOB	L+3 字节，在此，L<2^24`},
+	{Name: `LONGBLOB`, Format: `LONGBLOB`, Matches: []string{`LONG RAW`}, IsBytes: true, Comment: `0-4 294 967 295 bytes	二进制形式的极大文本数据 非常大的BLOB	L+4 字节，在此，L<2^32`},
+	{Name: `DATE`, Format: `DATE`, IsDateTime: true, Comment: `3 bytes '-838:59:59'/'838:59:59' HH:MM:SS 时间值或持续时间`},
+	{Name: `TIME`, Format: `TIME`, IsDateTime: true, Comment: `1 bytes 1901/2155 YYYY 年份值`},
+	{Name: `YEAR`, Format: `YEAR`, IsDateTime: true, Comment: `8 bytes '1000-01-01 00:00:00' 到 '9999-12-31 23:59:59' YYYY-MM-DD hh:mm:ss 混合日期和时间值`},
+	{Name: `DATETIME`, Format: `DATETIME`, Matches: []string{`DATETIME WITH TIME ZONE`}, IsDateTime: true, Comment: `4 bytes '1970-01-01 00:00:01' UTC 到 '2038-01-19 03:14:07' UTC 结束时间是第 2147483647 秒，北京时间 2038-1-19 11:14:07，格林尼治时间 2038年1月19日 凌晨 03:14:07 YYYY-MM-DD hh:mm:ss 混合日期和时间值，时间戳`,
+		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
+			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
+				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
+				columnDefaultPack = "CURRENT_TIMESTAMP"
+			}
+
+			return
+		},
+	},
+	{Name: `TIMESTAMP`, Format: `TIMESTAMP`, Matches: []string{`TIMESTAMP WITH TIME ZONE`, `TIMESTAMP WITH LOCAL TIME ZONE`, `INTERVAL YEAR TO MONTH`, `INTERVAL DAY TO SECOND`, `TIME WITH TIME ZONE`, `TIMESTAMP WITHOUT TIME ZONE`}, IsDateTime: true,
+		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
+			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
+				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
+				columnDefaultPack = "CURRENT_TIMESTAMP"
+			}
+
+			return
+		},
+	},
+	{Name: `ENUM`, Format: `ENUM`, IsEnum: true, Comment: `枚举类型，只能有一个枚举字符串值 1或2个字节，取决于枚举值的数目 (最大值为65535)`},
+	{Name: `SET`, Format: `SET`, IsEnum: true, Comment: `一个设置，字符串对象可以有零个或 多个SET成员 1、2、3、4或8个字节，取决于集合 成员的数量（最多64个成员）`},
+}
+
 // Postgresql 数据库 字段类型
 var postgresqlColumnTypeList = []*ColumnTypeInfo{
+	{Name: `TINYINT`, Format: `TINYINT($l)`, Matches: []string{`NUMBER&&columnScale==0&&((columnLength>0&&columnLength<3)||(columnPrecision>0&&columnPrecision<3))`, `INT1`, `BOOL`, `BOOLEAN`}, IsNumber: true, IsInteger: true, Comment: `1 Bytes 范围（有符号）(-128，127) 范围（无符号）(0，255) 小整数值`},
+	{Name: `SMALLINT`, Format: `SMALLINT($l)`, Matches: []string{`NUMBER&&columnScale==0&&((columnLength>0&&columnLength<6)||(columnPrecision>0&&columnPrecision<6))`, `INT2`}, IsNumber: true, IsInteger: true, Comment: `2 Bytes 范围（有符号）(-32 768，32 767) 范围（无符号）(0，65 535)  大整数值`},
+	{Name: `MEDIUMINT`, Format: `MEDIUMINT($l)`, Matches: []string{`NUMBER&&columnScale==0&&((columnLength>0&&columnLength<9)||(columnPrecision>0&&columnPrecision<9))`}, IsNumber: true, IsInteger: true, Comment: `3 Bytes 范围（有符号）(-8 388 608，8 388 607) 范围（无符号）(0，16 777 215)  大整数值`},
+	{Name: `INT`, Format: `INT($l)`, Matches: []string{`NUMBER&&columnScale==0&&((columnLength>0&&columnLength<11)||(columnPrecision>0&&columnPrecision<11))`, `INT4`}, IsNumber: true, IsInteger: true, Comment: `4 Bytes 范围（有符号）(-2 147 483 648，2 147 483 647) 范围（无符号）(0，4 294 967 295)  大整数值`},
+	{Name: `INTEGER`, Format: `INTEGER($l)`, IsNumber: true, IsInteger: true, Comment: `同上`},
+	{Name: `BIGINT`, Format: `BIGINT($l)`, Matches: []string{`NUMBER&&columnScale==0`, `INT8`}, IsNumber: true, IsInteger: true, Comment: `8 Bytes 范围（有符号）(-9,223,372,036,854,775,808，9 223 372 036 854 775 807) 范围（无符号）(0，18 446 744 073 709 551 615)  极大整数值`},
+	{Name: `FLOAT`, Format: `FLOAT`, Matches: []string{`FLOAT4`}, IsNumber: true, IsFloat: true, Comment: `4 Bytes 范围（有符号）(-3.402 823 466 E+38，-1.175 494 351 E-38)，0，(1.175 494 351 E-38，3.402 823 466 351 E+38) 范围（无符号）0，(1.175 494 351 E-38，3.402 823 466 E+38)  单精度 浮点数值`},
+	{Name: `DOUBLE`, Format: `DOUBLE`, Matches: []string{`FLOAT8`, `DOUBLE PRECISION`}, IsNumber: true, IsFloat: true, Comment: `8 Bytes 范围（有符号）(-1.797 693 134 862 315 7 E+308，-2.225 073 858 507 201 4 E-308)，0，(2.225 073 858 507 201 4 E-308，1.797 693 134 862 315 7 E+308)范围（无符号）0，(2.225 073 858 507 201 4 E-308，1.797 693 134 862 315 7 E+308)  双精度 浮点数值`},
+	{Name: `DECIMAL`, Format: `DECIMAL($p, $s)`, Matches: []string{`NUMBER`, `REAL`, `NUMERIC`}, IsNumber: true, IsFloat: true, Comment: `对DECIMAL(M,D) ，如果M>D，为M+2 否则为D+2 小数值`},
+	{Name: `DEC`, Format: `DEC($p, $s)`, IsNumber: true, IsFloat: true, Comment: `同上`},
+	{Name: `BIT`, Format: `BIT($p)`, Comment: `位字段类型。M 表示每个值的位数，范围为 1～64。如果 M 被省略，默认值为 1。如果为 BIT(M) 列分配的值的长度小于 M 位，在值的左边用 0 填充。例如，为 BIT(6) 列分配一个值 b'101'，其效果与分配 b'000101' 相同`},
+	{Name: `CHAR`, Format: `CHAR($l)`, Matches: []string{`NCHAR`, `CHARACTER`}, IsString: true, Comment: `0-255 bytes 定长字符串 固定长度非二进制字符串 M 字节，1<=M<=255`},
+	{Name: `VARCHAR`, Format: `VARCHAR($l)`, Matches: []string{`VARCHAR2`, `NVARCHAR2`, `BPCHAR`}, IsString: true, Comment: `0-65535 bytes	变长字符串 变长非二进制字符串 L+1字节，在此，L< = M和 1<=M<=255`},
+	{Name: `TINYTEXT`, Format: `TINYTEXT`, IsString: true, Comment: `0-255 bytes 短文本字符串`},
+	{Name: `TEXT`, Format: `TEXT`, Matches: []string{`CLOB`, `NCLOB`, `ROWID`, `UROWID`}, IsString: true, Comment: `0-65 535 bytes 长文本数据`},
+	{Name: `MEDIUMTEXT`, Format: `MEDIUMTEXT`, Matches: []string{`LONGVARCHAR`}, IsString: true, Comment: `0-16 777 215 bytes	中等长度文本数据`},
+	{Name: `LONGTEXT`, Format: `LONGTEXT`, IsString: true, Comment: `0-4 294 967 295 bytes	极大文本数据`},
+	{Name: `BINARY`, Format: `BINARY($l)`, IsBytes: true, Comment: `0-255 bytes 不超过 255 个字符的二进制字符串 固定长度二进制字符串 M 字节`},
+	{Name: `VARBINARY`, Format: `VARBINARY($l)`, IsBytes: true, Comment: `可变长度二进制字符串 M+1 字节`},
+	{Name: `TINYBLOB`, Format: `TINYBLOB`, IsBytes: true, Comment: `非常小的BLOB L+1 字节，在此，L<2^8`},
+	{Name: `BLOB`, Format: `BLOB`, Matches: []string{`BFILE`, `RAW`, `BYTEA`}, IsBytes: true, Comment: `0-65 535 bytes 二进制形式的长文本数据 小 BLOB L+2 字节，在此，L<2^16`},
+	{Name: `MEDIUMBLOB`, Format: `MEDIUMBLOB`, IsBytes: true, Comment: `0-16 777 215 bytes	二进制形式的中等长度文本数据 中等大小的BLOB	L+3 字节，在此，L<2^24`},
+	{Name: `LONGBLOB`, Format: `LONGBLOB`, Matches: []string{`LONG RAW`}, IsBytes: true, Comment: `0-4 294 967 295 bytes	二进制形式的极大文本数据 非常大的BLOB	L+4 字节，在此，L<2^32`},
+	{Name: `DATE`, Format: `DATE`, IsDateTime: true, Comment: `3 bytes '-838:59:59'/'838:59:59' HH:MM:SS 时间值或持续时间`},
+	{Name: `TIME`, Format: `TIME`, IsDateTime: true, Comment: `1 bytes 1901/2155 YYYY 年份值`},
+	{Name: `YEAR`, Format: `YEAR`, IsDateTime: true, Comment: `8 bytes '1000-01-01 00:00:00' 到 '9999-12-31 23:59:59' YYYY-MM-DD hh:mm:ss 混合日期和时间值`},
+	{Name: `DATETIME`, Format: `DATETIME`, Matches: []string{`DATETIME WITH TIME ZONE`}, IsDateTime: true, Comment: `4 bytes '1970-01-01 00:00:01' UTC 到 '2038-01-19 03:14:07' UTC 结束时间是第 2147483647 秒，北京时间 2038-1-19 11:14:07，格林尼治时间 2038年1月19日 凌晨 03:14:07 YYYY-MM-DD hh:mm:ss 混合日期和时间值，时间戳`,
+		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
+			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
+				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
+				columnDefaultPack = "CURRENT_TIMESTAMP"
+			}
+
+			return
+		},
+	},
+	{Name: `TIMESTAMP`, Format: `TIMESTAMP`, Matches: []string{`TIMESTAMP WITH TIME ZONE`, `TIMESTAMP WITH LOCAL TIME ZONE`, `INTERVAL YEAR TO MONTH`, `INTERVAL DAY TO SECOND`, `TIME WITH TIME ZONE`, `TIMESTAMP WITHOUT TIME ZONE`}, IsDateTime: true,
+		ColumnDefaultPack: func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) {
+			if strings.Contains(strings.ToLower(column.ColumnDefault), "current_timestamp") ||
+				strings.Contains(strings.ToLower(column.ColumnDefault), "0000-00-00 00:00:00") {
+				columnDefaultPack = "CURRENT_TIMESTAMP"
+			}
+
+			return
+		},
+	},
+	{Name: `ENUM`, Format: `ENUM`, IsEnum: true, Comment: `枚举类型，只能有一个枚举字符串值 1或2个字节，取决于枚举值的数目 (最大值为65535)`},
+	{Name: `SET`, Format: `SET`, IsEnum: true, Comment: `一个设置，字符串对象可以有零个或 多个SET成员 1、2、3、4或8个字节，取决于集合 成员的数量（最多64个成员）`},
 }
 
 // DB2 数据库 字段类型

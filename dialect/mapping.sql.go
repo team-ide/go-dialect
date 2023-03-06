@@ -1384,8 +1384,422 @@ DROP INDEX {indexNamePack}
 `
 }
 
+// OpenGauss 数据库 SQL
+func appendOpenGaussSql(mapping *SqlMapping) {
+
+	mapping.OwnersSelect = `
+
+select schema_name ownerName
+from information_schema.schemata
+ORDER BY datname
+`
+
+	mapping.OwnerSelect = `
+
+select schema_name ownerName
+from information_schema.schemata
+WHERE schema_name={sqlValuePack(ownerName)}
+`
+
+	mapping.OwnerCreate = `
+
+CREATE SCHEMA {ownerName}
+`
+
+	mapping.OwnerDelete = `
+
+DROP SCHEMA IF EXISTS {ownerName} CASCADE
+`
+
+	mapping.TablesSelect = `
+
+SELECT 
+table_schema ownerName,
+table_name tableName,
+FROM information_schema.tables
+WHERE ownerName={sqlValuePack(ownerName)}
+ORDER BY table_name `
+
+	mapping.TableSelect = `
+
+SELECT 
+table_schema ownerName,
+table_name tableName,
+FROM information_schema.tables
+WHERE ownerName={sqlValuePack(ownerName)}
+  AND table_name={sqlValuePack(tableName)}
+`
+
+	mapping.TableCreate = `
+
+CREATE TABLE [{ownerNamePack}.]{tableNamePack}(
+{ tableCreateColumnContent }
+{ tableCreatePrimaryKeyContent }
+)
+`
+
+	mapping.TableCreateColumn = `
+
+	{columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
+`
+
+	mapping.TableCreatePrimaryKey = `
+
+PRIMARY KEY ({primaryKeysPack})
+`
+
+	mapping.TableDelete = `
+
+DROP TABLE [{ownerNamePack}.]{tableNamePack}
+`
+
+	mapping.TableComment = `
+
+COMMENT ON TABLE [{ownerNamePack}.]{tableNamePack} IS {sqlValuePack(tableComment)}
+`
+
+	mapping.TableRename = `
+
+ALTER TABLE [{ownerNamePack}.]{oldTableNamePack} RENAME TO {tableNamePack}
+`
+
+	mapping.ColumnsSelect = `
+
+SELECT
+   table_schema ownerName,
+   table_name tableName,
+   column_name columnName,
+   column_default columnDefault,
+    is_nullable isNullable,
+    data_type columnDataType,
+    numeric_precision NUMERIC_PRECISION,
+    numeric_scale NUMERIC_SCALE,
+    character_maximum_length CHARACTER_MAXIMUM_LENGTH
+FROM information_schema.columns
+WHERE table_schema={sqlValuePack(ownerName)}
+  AND table_name={sqlValuePack(tableName)}
+`
+
+	mapping.ColumnSelect = `
+
+SELECT
+   table_schema ownerName,
+   table_name tableName,
+   column_name columnName,
+   column_default columnDefault,
+    is_nullable isNullable,
+    data_type columnDataType,
+    numeric_precision NUMERIC_PRECISION,
+    numeric_scale NUMERIC_SCALE,
+    character_maximum_length CHARACTER_MAXIMUM_LENGTH
+FROM information_schema.columns
+WHERE table_schema={sqlValuePack(ownerName)}
+  AND table_name={sqlValuePack(tableName)}
+    AND column_name={sqlValuePack(columnName)}
+`
+
+	mapping.ColumnAdd = `
+
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
+`
+
+	mapping.ColumnDelete = `
+
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP COLUMN {columnNamePack}
+`
+
+	mapping.ColumnComment = `
+
+COMMENT ON COLUMN [{ownerNamePack}.]{tableNamePack}.{columnNamePack} IS {sqlValuePack(columnComment)}
+`
+
+	mapping.ColumnRename = `
+
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} RENAME COLUMN {oldColumnNamePack} TO {columnNamePack}
+`
+
+	mapping.ColumnUpdate = `
+
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} MODIFY {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
+`
+
+	mapping.ColumnAfter = `
+`
+
+	mapping.PrimaryKeysSelect = `
+
+select
+	pg_attribute.attname as columnName,
+	pg_namespace.nspname  as ownerName,
+	pg_class.relname as tableName
+from
+	pg_constraint
+inner join pg_class on
+	pg_constraint.conrelid = pg_class.oid
+inner join pg_attribute on
+	pg_attribute.attrelid = pg_class.oid
+	and pg_attribute.attnum = any(pg_constraint.conkey)
+inner join pg_type on
+	pg_type.oid = pg_attribute.atttypid
+inner join pg_namespace on
+	pg_namespace.oid = pg_class.relnamespace
+where
+	pg_constraint.contype = 'p'
+    AND pg_namespace.nspname={sqlValuePack(ownerName)}
+    AND pg_class.relname={sqlValuePack(tableName)}
+`
+
+	mapping.PrimaryKeyAdd = `
+
+ALTER TABLE [{ownerName}.]{tableName} ADD PRIMARY KEY ({columnNamesPack})
+`
+
+	mapping.PrimaryKeyDelete = `
+
+ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
+`
+
+	mapping.IndexesSelect = `
+
+SELECT
+    na.nspname ownerName,
+    cl.relname tableName,
+    co.conname indexName,
+    co.contype,
+    pg_indexes.indexdef,
+    co.conkey,  --主键字段排序码（pg_attribute.attnum）
+    co.confkey  --外键字段排序码（pg_attribute.attnum）
+FROM pg_catalog.pg_class cl
+     join pg_catalog.pg_namespace na on cl.relnamespace = na.oid
+     join pg_constraint co on co.conrelid = cl.oid
+     join pg_indexes on pg_indexes.indexname = co.conname
+
+WHERE co.contype!='p'
+    AND na.nspname={sqlValuePack(ownerName)}
+    AND cl.relname={sqlValuePack(tableName)}
+`
+
+	mapping.IndexAdd = `
+
+CREATE {indexType} [{indexNamePack}] ON [{ownerNamePack}.]{tableNamePack} ({columnNamesPack})
+`
+
+	mapping.IndexDelete = `
+
+DROP INDEX {indexNamePack}
+`
+
+	mapping.IndexNamePack = `
+`
+}
+
 // Postgresql 数据库 SQL
 func appendPostgresqlSql(mapping *SqlMapping) {
+
+	mapping.OwnersSelect = `
+
+select schema_name ownerName
+from information_schema.schemata
+ORDER BY datname
+`
+
+	mapping.OwnerSelect = `
+
+select schema_name ownerName
+from information_schema.schemata
+WHERE schema_name={sqlValuePack(ownerName)}
+`
+
+	mapping.OwnerCreate = `
+
+CREATE SCHEMA {ownerName}
+`
+
+	mapping.OwnerDelete = `
+
+DROP SCHEMA IF EXISTS {ownerName} CASCADE
+`
+
+	mapping.TablesSelect = `
+
+SELECT 
+table_schema ownerName,
+table_name tableName,
+FROM information_schema.tables
+WHERE ownerName={sqlValuePack(ownerName)}
+ORDER BY table_name `
+
+	mapping.TableSelect = `
+
+SELECT 
+table_schema ownerName,
+table_name tableName,
+FROM information_schema.tables
+WHERE ownerName={sqlValuePack(ownerName)}
+  AND table_name={sqlValuePack(tableName)}
+`
+
+	mapping.TableCreate = `
+
+CREATE TABLE [{ownerNamePack}.]{tableNamePack}(
+{ tableCreateColumnContent }
+{ tableCreatePrimaryKeyContent }
+)
+`
+
+	mapping.TableCreateColumn = `
+
+	{columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
+`
+
+	mapping.TableCreatePrimaryKey = `
+
+PRIMARY KEY ({primaryKeysPack})
+`
+
+	mapping.TableDelete = `
+
+DROP TABLE [{ownerNamePack}.]{tableNamePack}
+`
+
+	mapping.TableComment = `
+
+COMMENT ON TABLE [{ownerNamePack}.]{tableNamePack} IS {sqlValuePack(tableComment)}
+`
+
+	mapping.TableRename = `
+
+ALTER TABLE [{ownerNamePack}.]{oldTableNamePack} RENAME TO {tableNamePack}
+`
+
+	mapping.ColumnsSelect = `
+
+SELECT
+   table_schema ownerName,
+   table_name tableName,
+   column_name columnName,
+   column_default columnDefault,
+    is_nullable isNullable,
+    data_type columnDataType,
+    numeric_precision NUMERIC_PRECISION,
+    numeric_scale NUMERIC_SCALE,
+    character_maximum_length CHARACTER_MAXIMUM_LENGTH
+FROM information_schema.columns
+WHERE table_schema={sqlValuePack(ownerName)}
+  AND table_name={sqlValuePack(tableName)}
+`
+
+	mapping.ColumnSelect = `
+
+SELECT
+   table_schema ownerName,
+   table_name tableName,
+   column_name columnName,
+   column_default columnDefault,
+    is_nullable isNullable,
+    data_type columnDataType,
+    numeric_precision NUMERIC_PRECISION,
+    numeric_scale NUMERIC_SCALE,
+    character_maximum_length CHARACTER_MAXIMUM_LENGTH
+FROM information_schema.columns
+WHERE table_schema={sqlValuePack(ownerName)}
+  AND table_name={sqlValuePack(tableName)}
+    AND column_name={sqlValuePack(columnName)}
+`
+
+	mapping.ColumnAdd = `
+
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} ADD {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
+`
+
+	mapping.ColumnDelete = `
+
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} DROP COLUMN {columnNamePack}
+`
+
+	mapping.ColumnComment = `
+
+COMMENT ON COLUMN [{ownerNamePack}.]{tableNamePack}.{columnNamePack} IS {sqlValuePack(columnComment)}
+`
+
+	mapping.ColumnRename = `
+
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} RENAME COLUMN {oldColumnNamePack} TO {columnNamePack}
+`
+
+	mapping.ColumnUpdate = `
+
+ALTER TABLE [{ownerNamePack}.]{tableNamePack} MODIFY {columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)}
+`
+
+	mapping.ColumnAfter = `
+`
+
+	mapping.PrimaryKeysSelect = `
+
+select
+	pg_attribute.attname as columnName,
+	pg_namespace.nspname  as ownerName,
+	pg_class.relname as tableName
+from
+	pg_constraint
+inner join pg_class on
+	pg_constraint.conrelid = pg_class.oid
+inner join pg_attribute on
+	pg_attribute.attrelid = pg_class.oid
+	and pg_attribute.attnum = any(pg_constraint.conkey)
+inner join pg_type on
+	pg_type.oid = pg_attribute.atttypid
+inner join pg_namespace on
+	pg_namespace.oid = pg_class.relnamespace
+where
+	pg_constraint.contype = 'p'
+    AND pg_namespace.nspname={sqlValuePack(ownerName)}
+    AND pg_class.relname={sqlValuePack(tableName)}
+`
+
+	mapping.PrimaryKeyAdd = `
+
+ALTER TABLE [{ownerName}.]{tableName} ADD PRIMARY KEY ({columnNamesPack})
+`
+
+	mapping.PrimaryKeyDelete = `
+
+ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
+`
+
+	mapping.IndexesSelect = `
+
+SELECT
+    na.nspname ownerName,
+    cl.relname tableName,
+    co.conname indexName,
+    co.contype,
+    pg_indexes.indexdef,
+    co.conkey,  --主键字段排序码（pg_attribute.attnum）
+    co.confkey  --外键字段排序码（pg_attribute.attnum）
+FROM pg_catalog.pg_class cl
+     join pg_catalog.pg_namespace na on cl.relnamespace = na.oid
+     join pg_constraint co on co.conrelid = cl.oid
+     join pg_indexes on pg_indexes.indexname = co.conname
+
+WHERE co.contype!='p'
+    AND na.nspname={sqlValuePack(ownerName)}
+    AND cl.relname={sqlValuePack(tableName)}
+`
+
+	mapping.IndexAdd = `
+
+CREATE {indexType} [{indexNamePack}] ON [{ownerNamePack}.]{tableNamePack} ({columnNamesPack})
+`
+
+	mapping.IndexDelete = `
+
+DROP INDEX {indexNamePack}
+`
+
+	mapping.IndexNamePack = `
+`
 }
 
 // DB2 数据库 SQL
