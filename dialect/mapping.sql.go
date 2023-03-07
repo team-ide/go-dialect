@@ -1389,14 +1389,14 @@ func appendOpenGaussSql(mapping *SqlMapping) {
 
 	mapping.OwnersSelect = `
 
-select schema_name ownerName
+select schema_name "ownerName"
 from information_schema.schemata
 ORDER BY schema_name
 `
 
 	mapping.OwnerSelect = `
 
-select schema_name ownerName
+select schema_name "ownerName"
 from information_schema.schemata
 WHERE schema_name={sqlValuePack(ownerName)}
 `
@@ -1414,19 +1414,19 @@ DROP USER IF EXISTS {ownerName} CASCADE
 	mapping.TablesSelect = `
 
 SELECT 
-table_schema ownerName,
-table_name tableName
+table_schema "ownerName",
+table_name "tableName"
 FROM information_schema.tables
-WHERE ownerName={sqlValuePack(ownerName)}
+WHERE table_schema={sqlValuePack(ownerName)}
 ORDER BY table_name `
 
 	mapping.TableSelect = `
 
 SELECT 
-table_schema ownerName,
-table_name tableName
+table_schema "ownerName",
+table_name "tableName"
 FROM information_schema.tables
-WHERE ownerName={sqlValuePack(ownerName)}
+WHERE table_schema={sqlValuePack(ownerName)}
   AND table_name={sqlValuePack(tableName)}
 `
 
@@ -1466,15 +1466,15 @@ ALTER TABLE [{ownerNamePack}.]{oldTableNamePack} RENAME TO {tableNamePack}
 	mapping.ColumnsSelect = `
 
 SELECT
-   table_schema ownerName,
-   table_name tableName,
-   column_name columnName,
-   column_default columnDefault,
-    is_nullable isNullable,
-    data_type columnDataType,
-    numeric_precision NUMERIC_PRECISION,
-    numeric_scale NUMERIC_SCALE,
-    character_maximum_length CHARACTER_MAXIMUM_LENGTH
+   table_schema "ownerName",
+   table_name "tableName",
+   column_name "columnName",
+   column_default "columnDefault",
+    is_nullable "isNullable",
+    data_type "columnDataType",
+    numeric_precision "NUMERIC_PRECISION",
+    numeric_scale "NUMERIC_SCALE",
+    character_maximum_length "CHARACTER_MAXIMUM_LENGTH"
 FROM information_schema.columns
 WHERE table_schema={sqlValuePack(ownerName)}
   AND table_name={sqlValuePack(tableName)}
@@ -1483,15 +1483,15 @@ WHERE table_schema={sqlValuePack(ownerName)}
 	mapping.ColumnSelect = `
 
 SELECT
-   table_schema ownerName,
-   table_name tableName,
-   column_name columnName,
-   column_default columnDefault,
-    is_nullable isNullable,
-    data_type columnDataType,
-    numeric_precision NUMERIC_PRECISION,
-    numeric_scale NUMERIC_SCALE,
-    character_maximum_length CHARACTER_MAXIMUM_LENGTH
+   table_schema "ownerName",
+   table_name "tableName",
+   column_name "columnName",
+   column_default "columnDefault",
+    is_nullable "isNullable",
+    data_type "columnDataType",
+    numeric_precision "NUMERIC_PRECISION",
+    numeric_scale "NUMERIC_SCALE",
+    character_maximum_length "CHARACTER_MAXIMUM_LENGTH"
 FROM information_schema.columns
 WHERE table_schema={sqlValuePack(ownerName)}
   AND table_name={sqlValuePack(tableName)}
@@ -1529,9 +1529,9 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} MODIFY {columnNamePack} {columnTyp
 	mapping.PrimaryKeysSelect = `
 
 select
-	pg_attribute.attname as columnName,
-	pg_namespace.nspname  as ownerName,
-	pg_class.relname as tableName
+	pg_attribute.attname as "columnName",
+	pg_namespace.nspname  as "ownerName",
+	pg_class.relname as "tableName"
 from
 	pg_constraint
 inner join pg_class on
@@ -1562,9 +1562,9 @@ ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
 	mapping.IndexesSelect = `
 
 SELECT
-    na.nspname ownerName,
-    cl.relname tableName,
-    co.conname indexName,
+    na.nspname "ownerName",
+    cl.relname "tableName",
+    co.conname "indexName",
     co.contype,
     pg_indexes.indexdef,
     co.conkey,  --主键字段排序码（pg_attribute.attnum）
@@ -1598,14 +1598,14 @@ func appendPostgresqlSql(mapping *SqlMapping) {
 
 	mapping.OwnersSelect = `
 
-select schema_name ownerName
+select schema_name "ownerName"
 from information_schema.schemata
 ORDER BY schema_name
 `
 
 	mapping.OwnerSelect = `
 
-select schema_name ownerName
+select schema_name "ownerName"
 from information_schema.schemata
 WHERE schema_name={sqlValuePack(ownerName)}
 `
@@ -1623,20 +1623,21 @@ DROP USER IF EXISTS {ownerName} CASCADE
 	mapping.TablesSelect = `
 
 SELECT 
-table_schema ownerName,
-table_name tableName
+table_schema "ownerName",
+table_name "tableName"
 FROM information_schema.tables
-WHERE ownerName={sqlValuePack(ownerName)}
+WHERE table_schema={sqlValuePack(ownerName)}
 ORDER BY table_name `
 
 	mapping.TableSelect = `
 
 SELECT 
-table_schema ownerName,
-table_name tableName
+table_schema "ownerName",
+table_name "tableName"
 FROM information_schema.tables
-WHERE ownerName={sqlValuePack(ownerName)}
-ORDER BY table_name `
+WHERE table_schema={sqlValuePack(ownerName)}
+  AND table_name={sqlValuePack(tableName)}
+`
 
 	mapping.TableCreate = `
 
@@ -1674,15 +1675,15 @@ ALTER TABLE [{ownerNamePack}.]{oldTableNamePack} RENAME TO {tableNamePack}
 	mapping.ColumnsSelect = `
 
 SELECT
-   table_schema ownerName,
-   table_name tableName,
-   column_name columnName,
-   column_default columnDefault,
-    is_nullable isNullable,
-    data_type columnDataType,
-    numeric_precision NUMERIC_PRECISION,
-    numeric_scale NUMERIC_SCALE,
-    character_maximum_length CHARACTER_MAXIMUM_LENGTH
+   table_schema "ownerName",
+   table_name "tableName",
+   column_name "columnName",
+   column_default "columnDefault",
+    is_nullable "isNullable",
+    data_type "columnDataType",
+    numeric_precision "NUMERIC_PRECISION",
+    numeric_scale "NUMERIC_SCALE",
+    character_maximum_length "CHARACTER_MAXIMUM_LENGTH"
 FROM information_schema.columns
 WHERE table_schema={sqlValuePack(ownerName)}
   AND table_name={sqlValuePack(tableName)}
@@ -1691,15 +1692,15 @@ WHERE table_schema={sqlValuePack(ownerName)}
 	mapping.ColumnSelect = `
 
 SELECT
-   table_schema ownerName,
-   table_name tableName,
-   column_name columnName,
-   column_default columnDefault,
-    is_nullable isNullable,
-    data_type columnDataType,
-    numeric_precision NUMERIC_PRECISION,
-    numeric_scale NUMERIC_SCALE,
-    character_maximum_length CHARACTER_MAXIMUM_LENGTH
+   table_schema "ownerName",
+   table_name "tableName",
+   column_name "columnName",
+   column_default "columnDefault",
+    is_nullable "isNullable",
+    data_type "columnDataType",
+    numeric_precision "NUMERIC_PRECISION",
+    numeric_scale "NUMERIC_SCALE",
+    character_maximum_length "CHARACTER_MAXIMUM_LENGTH"
 FROM information_schema.columns
 WHERE table_schema={sqlValuePack(ownerName)}
   AND table_name={sqlValuePack(tableName)}
@@ -1737,9 +1738,9 @@ ALTER TABLE [{ownerNamePack}.]{tableNamePack} MODIFY {columnNamePack} {columnTyp
 	mapping.PrimaryKeysSelect = `
 
 select
-	pg_attribute.attname as columnName,
-	pg_namespace.nspname  as ownerName,
-	pg_class.relname as tableName
+	pg_attribute.attname as "columnName",
+	pg_namespace.nspname  as "ownerName",
+	pg_class.relname as "tableName"
 from
 	pg_constraint
 inner join pg_class on
@@ -1770,9 +1771,9 @@ ALTER TABLE [{ownerName}.]{tableName} DROP PRIMARY KEY
 	mapping.IndexesSelect = `
 
 SELECT
-    na.nspname ownerName,
-    cl.relname tableName,
-    co.conname indexName,
+    na.nspname "ownerName",
+    cl.relname "tableName",
+    co.conname "indexName",
     co.contype,
     pg_indexes.indexdef,
     co.conkey,  --主键字段排序码（pg_attribute.attnum）
