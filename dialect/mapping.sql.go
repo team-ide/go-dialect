@@ -1403,12 +1403,12 @@ WHERE schema_name={sqlValuePack(ownerName)}
 
 	mapping.OwnerCreate = `
 
-CREATE SCHEMA {ownerName}
+CREATE USER {ownerName} WITH SYSADMIN PASSWORD {doubleQuotationMarksPack(ownerPassword)};
 `
 
 	mapping.OwnerDelete = `
 
-DROP SCHEMA IF EXISTS {ownerName} CASCADE
+DROP USER IF EXISTS {ownerName} CASCADE
 `
 
 	mapping.TablesSelect = `
@@ -1612,12 +1612,12 @@ WHERE schema_name={sqlValuePack(ownerName)}
 
 	mapping.OwnerCreate = `
 
-CREATE SCHEMA {ownerName}
+CREATE USER {ownerName} WITH SYSADMIN PASSWORD {doubleQuotationMarksPack(ownerPassword)};
 `
 
 	mapping.OwnerDelete = `
 
-DROP SCHEMA IF EXISTS {ownerName} CASCADE
+DROP USER IF EXISTS {ownerName} CASCADE
 `
 
 	mapping.TablesSelect = `
