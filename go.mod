@@ -1,12 +1,12 @@
 module github.com/team-ide/go-dialect
 
-go 1.18
+go 1.17
 
 require (
-	github.com/dop251/goja v0.0.0-20230203172422-5460598cfa32
+	github.com/dop251/goja v0.0.0-20230427124612-428fc442ff5f
 	github.com/google/uuid v1.3.0
 	github.com/tealeg/xlsx v1.0.5
-	github.com/team-ide/go-driver v1.2.1
+	github.com/team-ide/go-driver v1.2.3
 	google.golang.org/protobuf v1.28.1
 )
 
@@ -17,11 +17,12 @@ require (
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
-	github.com/godror/godror v0.36.0 // indirect
+	github.com/godror/godror v0.37.0 // indirect
 	github.com/godror/knownpb v0.1.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
+	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
 	github.com/lib/pq v1.10.7 // indirect
 	github.com/mattn/go-sqlite3 v1.14.16 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/sys v0.8.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
 )
