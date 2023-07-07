@@ -3,10 +3,10 @@ module github.com/team-ide/go-dialect
 go 1.18
 
 require (
-	github.com/dop251/goja v0.0.0-20230427124612-428fc442ff5f
 	github.com/google/uuid v1.3.0
 	github.com/tealeg/xlsx v1.0.5
 	github.com/team-ide/go-driver v1.2.4
+	github.com/team-ide/goja v1.0.2
 	google.golang.org/protobuf v1.28.1
 )
 

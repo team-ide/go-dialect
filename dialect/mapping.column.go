@@ -3,7 +3,7 @@ package dialect
 import (
 	"encoding/json"
 	"errors"
-	"github.com/dop251/goja"
+	"github.com/team-ide/goja"
 	"regexp"
 	"strconv"
 	"strings"
