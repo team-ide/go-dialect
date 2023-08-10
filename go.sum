@@ -45,8 +45,8 @@ github.com/rogpeppe/go-internal v1.6.1 h1:/FiVV8dS/e+YqF2JvO3yXRFbBLTIuSDkuC7aBO
 github.com/rogpeppe/go-internal v1.6.1/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTEfhy4qGm1nDQc=
 github.com/tealeg/xlsx v1.0.5 h1:+f8oFmvY8Gw1iUXzPk+kz+4GpbDZPK1FhPiQRd+ypgE=
 github.com/tealeg/xlsx v1.0.5/go.mod h1:btRS8dz54TDnvKNosuAqxrM1QgN1udgk9O34bDCnORM=
-github.com/team-ide/go-driver v1.2.8 h1:Qy82dQyRuDhT+TGYAezDcQT/aZrmtao9H4j+A1xqNd4=
-github.com/team-ide/go-driver v1.2.8/go.mod h1:A8z8/plW4IESmxq2iRUpOwyHWPuGoQESYHfXMvTZKMg=
+github.com/team-ide/go-driver v1.2.9 h1:XJOpVwutgUeOtiXp86g9ABgLk8VQ4kbpDHx85yTrQ+M=
+github.com/team-ide/go-driver v1.2.9/go.mod h1:A8z8/plW4IESmxq2iRUpOwyHWPuGoQESYHfXMvTZKMg=
 github.com/team-ide/goja v1.0.2 h1:AyTbZ+9JKPSAsq90YDEV7g6htbuwN/gntYQptfbAQTo=
 github.com/team-ide/goja v1.0.2/go.mod h1:Sd/GNJgfOpBvXEGIy2JgJden3hW+WWayjZwC8EATRTM=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
