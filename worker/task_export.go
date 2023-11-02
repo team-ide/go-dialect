@@ -43,6 +43,9 @@ type TaskExportParam struct {
 	Dir             string          `json:"dir"`
 	AppendOwnerName bool            `json:"appendOwnerName"`
 
+	IsDataListExport bool                     `json:"isDataListExport"`
+	DataList         []map[string]interface{} `json:"dataList"`
+
 	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string `json:"-"`
 	OnProgress      func(progress *TaskProgress)                                               `json:"-"`
 }
@@ -174,13 +177,17 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (success bool, err 
 		return
 	}
 
-	ownerOne, err := OwnerSelect(this_.db, this_.dia, this_.Param, owner.SourceName)
-	if err != nil {
-		return
-	}
-	if ownerOne == nil {
-		err = errors.New("source db owner [" + owner.SourceName + "] is not exist")
-		return
+	if !this_.IsDataListExport {
+		var ownerOne *dialect.OwnerModel
+
+		ownerOne, err = OwnerSelect(this_.db, this_.dia, this_.Param, owner.SourceName)
+		if err != nil {
+			return
+		}
+		if ownerOne == nil {
+			err = errors.New("source db owner [" + owner.SourceName + "] is not exist")
+			return
+		}
 	}
 	tables := owner.Tables
 
@@ -284,13 +291,17 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 	if this_.IsStop {
 		return
 	}
-	tableDetail, err := TableDetail(this_.db, this_.dia, this_.Param, sourceOwnerName, sourceTableName, false)
-	if err != nil {
-		return
-	}
-	if tableDetail == nil {
-		err = errors.New("source db table [" + sourceOwnerName + "." + sourceTableName + "] is not exist")
-		return
+
+	var tableDetail *dialect.TableModel
+	if !this_.IsDataListExport {
+		tableDetail, err = TableDetail(this_.db, this_.dia, this_.Param, sourceOwnerName, sourceTableName, false)
+		if err != nil {
+			return
+		}
+		if tableDetail == nil {
+			err = errors.New("source db table [" + sourceOwnerName + "." + sourceTableName + "] is not exist")
+			return
+		}
 	}
 
 	var tableDataSource DataSource
@@ -315,10 +326,12 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 		}()
 	}
 
-	if this_.ExportStruct {
-		err = this_.exportTableStruct(ownerDataSource, tableDataSource, tableDetail, targetOwnerName, targetTableName)
-		if err != nil {
-			return
+	if !this_.IsDataListExport {
+		if this_.ExportStruct {
+			err = this_.exportTableStruct(ownerDataSource, tableDataSource, tableDetail, targetOwnerName, targetTableName)
+			if err != nil {
+				return
+			}
 		}
 	}
 	if this_.ExportData {
@@ -403,9 +416,13 @@ func (this_ *taskExport) exportTableStruct(ownerDataSource DataSource, tableData
 
 func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSource DataSource, tableDetail *dialect.TableModel, targetOwnerName string, targetTableName string, columns []*TaskExportColumn) (err error) {
 
-	progress := &TaskProgress{
-		Title: "导出表数据[" + tableDetail.OwnerName + "." + tableDetail.TableName + "] 到 [" + targetOwnerName + "." + targetTableName + "]",
+	progress := &TaskProgress{}
+	if tableDetail != nil {
+		progress.Title = "导出表数据[" + tableDetail.OwnerName + "." + tableDetail.TableName + "] 到 [" + targetOwnerName + "." + targetTableName + "]"
+	} else {
+		progress.Title = "导出表数据[" + targetOwnerName + "." + targetTableName + "]"
 	}
+
 	defer func() {
 		if e := recover(); e != nil {
 			err = errors.New(fmt.Sprint(e))
@@ -425,6 +442,23 @@ func (this_ *taskExport) exportTableData(ownerDataSource DataSource, tableDataSo
 	this_.addProgress(progress)
 
 	if this_.IsStop {
+		return
+	}
+
+	if this_.IsDataListExport {
+		dataListSize := len(this_.DataList)
+		this_.countIncr(&this_.DataCount, dataListSize)
+		this_.countIncr(&this_.DataReadyCount, dataListSize)
+		var success bool
+		success, err = this_.exportDataList(ownerDataSource, tableDataSource, this_.DataList, targetOwnerName, targetTableName, nil, columns)
+		if success {
+			this_.countIncr(&this_.DataSuccessCount, dataListSize)
+		} else {
+			this_.countIncr(&this_.DataErrorCount, dataListSize)
+		}
+		if err != nil {
+			return
+		}
 		return
 	}
 
