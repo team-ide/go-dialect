@@ -211,15 +211,15 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (success bool, err 
 	}
 
 	var ownerDataSource DataSource
-	if this_.DataSourceType == DataSourceTypeSql {
-		fileName := ownerName + "." + this_.DataSourceType.FileSuffix
+	if this_.IsDataListExport {
+		fileName := "数据列表导出." + this_.DataSourceType.FileSuffix
 		fileName, err = this_.getFileName("", fileName)
 		if err != nil {
 			return
 		}
 		param := &DataSourceParam{
 			Path:      fileName,
-			SheetName: ownerName,
+			SheetName: "数据列表导出",
 			Dia:       this_.targetDialect,
 		}
 		ownerDataSource = this_.DataSourceType.New(param)
@@ -230,6 +230,27 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (success bool, err 
 		defer func() {
 			_ = ownerDataSource.WriteEnd()
 		}()
+	} else {
+		if this_.DataSourceType == DataSourceTypeSql {
+			fileName := ownerName + "." + this_.DataSourceType.FileSuffix
+			fileName, err = this_.getFileName("", fileName)
+			if err != nil {
+				return
+			}
+			param := &DataSourceParam{
+				Path:      fileName,
+				SheetName: ownerName,
+				Dia:       this_.targetDialect,
+			}
+			ownerDataSource = this_.DataSourceType.New(param)
+			err = ownerDataSource.WriteStart()
+			if err != nil {
+				return
+			}
+			defer func() {
+				_ = ownerDataSource.WriteEnd()
+			}()
+		}
 	}
 	for _, table := range tables {
 
@@ -305,25 +326,27 @@ func (this_ *taskExport) exportTable(ownerDataSource DataSource, sourceOwnerName
 	}
 
 	var tableDataSource DataSource
-	if this_.DataSourceType != DataSourceTypeSql {
-		fileName := targetTableName + "." + this_.DataSourceType.FileSuffix
-		fileName, err = this_.getFileName(targetOwnerName, fileName)
-		if err != nil {
-			return
+	if !this_.IsDataListExport {
+		if this_.DataSourceType != DataSourceTypeSql {
+			fileName := targetTableName + "." + this_.DataSourceType.FileSuffix
+			fileName, err = this_.getFileName(targetOwnerName, fileName)
+			if err != nil {
+				return
+			}
+			param := &DataSourceParam{
+				Path:      fileName,
+				SheetName: targetTableName,
+				Dia:       this_.targetDialect,
+			}
+			tableDataSource = this_.DataSourceType.New(param)
+			err = tableDataSource.WriteStart()
+			if err != nil {
+				return
+			}
+			defer func() {
+				_ = tableDataSource.WriteEnd()
+			}()
 		}
-		param := &DataSourceParam{
-			Path:      fileName,
-			SheetName: targetTableName,
-			Dia:       this_.targetDialect,
-		}
-		tableDataSource = this_.DataSourceType.New(param)
-		err = tableDataSource.WriteStart()
-		if err != nil {
-			return
-		}
-		defer func() {
-			_ = tableDataSource.WriteEnd()
-		}()
 	}
 
 	if !this_.IsDataListExport {
