@@ -20,6 +20,7 @@ type dataSourceExcel struct {
 	xlsxFForWrite *xlsx.File
 	sheetForWrite *xlsx.Sheet
 	isStop        bool
+	headerWritten bool
 }
 
 func (this_ *dataSourceExcel) Stop() {
@@ -169,6 +170,33 @@ func (this_ *dataSourceExcel) WriteEnd() (err error) {
 	}
 	return
 }
+
+func (this_ *dataSourceExcel) WriteHeader(columnList []*dialect.ColumnModel) (err error) {
+	if this_.headerWritten {
+		return
+	}
+	this_.headerWritten = true
+
+	if this_.xlsxFForWrite == nil {
+		err = this_.WriteStart()
+		if err != nil {
+			return
+		}
+	}
+
+	if this_.isStop {
+		return
+	}
+
+	var valueList []interface{}
+	for _, column := range columnList {
+		valueList = append(valueList, column.ColumnName)
+	}
+
+	sheetWrite(this_.sheetForWrite, valueList)
+	return
+}
+
 func (this_ *dataSourceExcel) Write(data *DataSourceData) (err error) {
 	defer func() {
 		if e := recover(); e != nil {

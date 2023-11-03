@@ -648,11 +648,23 @@ func (this_ *taskExport) exportDataList(ownerDataSource DataSource, tableDataSou
 		}
 	}
 
+	if ownerDataSource != nil {
+		err = ownerDataSource.WriteHeader(newColumnList)
+		if err != nil {
+			return
+		}
+	}
+	if tableDataSource != nil {
+		err = tableDataSource.WriteHeader(newColumnList)
+		if err != nil {
+			return
+		}
+	}
 	for _, data := range dataList {
 		dataSourceData := &DataSourceData{
 			HasData:    true,
 			Data:       data,
-			ColumnList: columnList,
+			ColumnList: newColumnList,
 		}
 		if ownerDataSource != nil {
 			err = ownerDataSource.Write(dataSourceData)

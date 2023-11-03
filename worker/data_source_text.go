@@ -19,8 +19,9 @@ func NewDataSourceText(param *DataSourceParam) (res DataSource) {
 
 type dataSourceText struct {
 	*DataSourceParam
-	saveFile *os.File
-	isStop   bool
+	saveFile      *os.File
+	isStop        bool
+	headerWritten bool
 }
 
 func (this_ *dataSourceText) Stop() {
@@ -164,6 +165,40 @@ func (this_ *dataSourceText) WriteEnd() (err error) {
 	}
 	return
 }
+
+func (this_ *dataSourceText) WriteHeader(columnList []*dialect.ColumnModel) (err error) {
+	if this_.headerWritten {
+		return
+	}
+	this_.headerWritten = true
+
+	if this_.saveFile == nil {
+		err = this_.WriteStart()
+		if err != nil {
+			return
+		}
+	}
+
+	if this_.isStop {
+		return
+	}
+
+	var valueList []string
+	for _, column := range columnList {
+		str := column.ColumnName
+		str = strings.ReplaceAll(str, "\r\n", this_.GetLinefeed())
+		str = strings.ReplaceAll(str, "\n", this_.GetLinefeed())
+		str = strings.ReplaceAll(str, "\r", this_.GetLinefeed())
+		valueList = append(valueList, str)
+	}
+
+	_, err = this_.saveFile.WriteString(strings.Join(valueList, this_.GetTextSeparator()) + "\n")
+	if err != nil {
+		return
+	}
+	return
+}
+
 func (this_ *dataSourceText) Write(data *DataSourceData) (err error) {
 	defer func() {
 		if e := recover(); e != nil {

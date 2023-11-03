@@ -10,6 +10,7 @@ type DataSource interface {
 	WriteStart() (err error)
 	Write(data *DataSourceData) (err error)
 	WriteEnd() (err error)
+	WriteHeader(columnList []*dialect.ColumnModel) (err error)
 }
 
 type DataSourceData struct {

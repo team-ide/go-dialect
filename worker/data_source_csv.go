@@ -19,8 +19,9 @@ func NewDataSourceCsv(param *DataSourceParam) (res DataSource) {
 
 type dataSourceCsv struct {
 	*DataSourceParam
-	saveFile *os.File
-	isStop   bool
+	saveFile      *os.File
+	isStop        bool
+	headerWritten bool
 }
 
 func (this_ *dataSourceCsv) Stop() {
@@ -121,6 +122,39 @@ func (this_ *dataSourceCsv) WriteStart() (err error) {
 func (this_ *dataSourceCsv) WriteEnd() (err error) {
 	if this_.saveFile != nil {
 		err = this_.saveFile.Close()
+		return
+	}
+	return
+}
+
+func (this_ *dataSourceCsv) WriteHeader(columnList []*dialect.ColumnModel) (err error) {
+	if this_.headerWritten {
+		return
+	}
+	this_.headerWritten = true
+
+	if this_.saveFile == nil {
+		err = this_.WriteStart()
+		if err != nil {
+			return
+		}
+	}
+
+	if this_.isStop {
+		return
+	}
+
+	var valueList []string
+	for _, column := range columnList {
+		str := column.ColumnName
+		str = strings.ReplaceAll(str, "\r\n", this_.GetLinefeed())
+		str = strings.ReplaceAll(str, "\n", this_.GetLinefeed())
+		str = strings.ReplaceAll(str, "\r", this_.GetLinefeed())
+		valueList = append(valueList, str)
+	}
+
+	_, err = this_.saveFile.WriteString(strings.Join(valueList, this_.GetCsvSeparator()) + "\n")
+	if err != nil {
 		return
 	}
 	return

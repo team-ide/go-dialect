@@ -114,6 +114,11 @@ func (this_ *dataSourceSql) WriteEnd() (err error) {
 	}
 	return
 }
+
+func (this_ *dataSourceSql) WriteHeader(columnList []*dialect.ColumnModel) (err error) {
+
+	return
+}
 func (this_ *dataSourceSql) Write(data *DataSourceData) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
