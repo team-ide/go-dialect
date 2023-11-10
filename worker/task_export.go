@@ -46,6 +46,8 @@ type TaskExportParam struct {
 	IsDataListExport bool                     `json:"isDataListExport"`
 	DataList         []map[string]interface{} `json:"dataList"`
 
+	MergeIntoOneFile bool `json:"mergeIntoOneFile"`
+
 	FormatIndexName func(ownerName string, tableName string, index *dialect.IndexModel) string `json:"-"`
 	OnProgress      func(progress *TaskProgress)                                               `json:"-"`
 }
@@ -72,7 +74,8 @@ type TaskExportColumn struct {
 type taskExport struct {
 	*Task
 	*TaskExportParam
-	targetDialect dialect.Dialect
+	targetDialect   dialect.Dialect
+	mergeDataSource DataSource
 }
 
 func (this_ *taskExport) do() (err error) {
@@ -97,6 +100,12 @@ func (this_ *taskExport) do() (err error) {
 	}
 
 	this_.countIncr(&this_.OwnerCount, len(owners))
+
+	defer func() {
+		if this_.mergeDataSource != nil {
+			_ = this_.mergeDataSource.WriteEnd()
+		}
+	}()
 	for _, owner := range owners {
 		if len(this_.SkipOwnerNames) > 0 {
 			var skip bool
@@ -232,24 +241,44 @@ func (this_ *taskExport) exportOwner(owner *TaskExportOwner) (success bool, err 
 		}()
 	} else {
 		if this_.DataSourceType == DataSourceTypeSql {
-			fileName := ownerName + "." + this_.DataSourceType.FileSuffix
-			fileName, err = this_.getFileName("", fileName)
-			if err != nil {
-				return
+			if this_.MergeIntoOneFile {
+				if this_.mergeDataSource == nil {
+					fileName := "database." + this_.DataSourceType.FileSuffix
+					fileName, err = this_.getFileName("", fileName)
+					if err != nil {
+						return
+					}
+					param := &DataSourceParam{
+						Path: fileName,
+						Dia:  this_.targetDialect,
+					}
+					this_.mergeDataSource = this_.DataSourceType.New(param)
+					err = this_.mergeDataSource.WriteStart()
+					if err != nil {
+						return
+					}
+				}
+				ownerDataSource = this_.mergeDataSource
+			} else {
+				fileName := ownerName + "." + this_.DataSourceType.FileSuffix
+				fileName, err = this_.getFileName("", fileName)
+				if err != nil {
+					return
+				}
+				param := &DataSourceParam{
+					Path:      fileName,
+					SheetName: ownerName,
+					Dia:       this_.targetDialect,
+				}
+				ownerDataSource = this_.DataSourceType.New(param)
+				err = ownerDataSource.WriteStart()
+				if err != nil {
+					return
+				}
+				defer func() {
+					_ = ownerDataSource.WriteEnd()
+				}()
 			}
-			param := &DataSourceParam{
-				Path:      fileName,
-				SheetName: ownerName,
-				Dia:       this_.targetDialect,
-			}
-			ownerDataSource = this_.DataSourceType.New(param)
-			err = ownerDataSource.WriteStart()
-			if err != nil {
-				return
-			}
-			defer func() {
-				_ = ownerDataSource.WriteEnd()
-			}()
 		}
 	}
 	for _, table := range tables {
