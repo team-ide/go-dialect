@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -103,10 +104,38 @@ func (this_ *mappingDialect) ColumnDefaultPack(param *ParamModel, column *Column
 	if column.ColumnDefault == "" {
 		return
 	}
-	columnDefaultPack = this_.SqlValuePack(param, column, column.ColumnDefault)
+	var columnDefault = column.ColumnDefault
+	if strings.HasPrefix(columnDefault, "'") && strings.HasSuffix(columnDefault, "'") {
+		columnDefault = strings.TrimPrefix(columnDefault, "'")
+		columnDefault = strings.TrimSuffix(columnDefault, "'")
+		columnDefaultPack = this_.SqlValuePack(param, column, columnDefault)
+	} else if strings.HasPrefix(columnDefault, "\"") && strings.HasSuffix(columnDefault, "\"") {
+		columnDefault = strings.TrimPrefix(columnDefault, "\"")
+		columnDefault = strings.TrimSuffix(columnDefault, "\"")
+		columnDefaultPack = this_.SqlValuePack(param, column, columnDefault)
+	} else {
+		if this_.dialectType != TypeMysql {
+			if strings.HasPrefix(columnDefault, "b'") && strings.HasSuffix(columnDefault, "'") {
+				columnDefault = strings.TrimPrefix(columnDefault, "b'")
+				columnDefault = strings.TrimSuffix(columnDefault, "'")
+			}
+		}
+		if IsNumber(columnDefault) {
+			columnDefaultPack = columnDefault
+		} else {
+			if strings.Contains(columnDefault, "(") {
+				columnDefaultPack = columnDefault
+			} else {
+				columnDefaultPack = this_.SqlValuePack(param, column, columnDefault)
+			}
+		}
+	}
 	return
 }
-
+func IsNumber(str string) bool {
+	_, err := strconv.Atoi(str)
+	return err == nil
+}
 func (this_ *mappingDialect) IsSqlEnd(sqlStr string) (isSqlEnd bool) {
 	if !strings.HasSuffix(strings.TrimSpace(sqlStr), ";") {
 		return

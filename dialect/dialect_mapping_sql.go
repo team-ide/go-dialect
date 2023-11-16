@@ -414,13 +414,13 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 	column.ColumnDataType = columnTypeInfo.Name
 
 	if column.ColumnDefault != "" {
-		if strings.HasSuffix(column.ColumnDefault, "::"+column.ColumnDataType) {
-			column.ColumnDefault = strings.TrimSuffix(column.ColumnDefault, "::"+column.ColumnDataType)
-		}
-		column.ColumnDefault = strings.TrimLeft(column.ColumnDefault, "'")
-		column.ColumnDefault = strings.TrimRight(column.ColumnDefault, "'")
-		column.ColumnDefault = strings.TrimLeft(column.ColumnDefault, "\"")
-		column.ColumnDefault = strings.TrimRight(column.ColumnDefault, "\"")
+		//if strings.HasSuffix(column.ColumnDefault, "::"+column.ColumnDataType) {
+		//	column.ColumnDefault = strings.TrimSuffix(column.ColumnDefault, "::"+column.ColumnDataType)
+		//}
+		//column.ColumnDefault = strings.TrimLeft(column.ColumnDefault, "'")
+		//column.ColumnDefault = strings.TrimRight(column.ColumnDefault, "'")
+		//column.ColumnDefault = strings.TrimLeft(column.ColumnDefault, "\"")
+		//column.ColumnDefault = strings.TrimRight(column.ColumnDefault, "\"")
 	}
 	if columnTypeInfo.FullColumnByColumnType != nil {
 		err = columnTypeInfo.FullColumnByColumnType(columnType, column)
