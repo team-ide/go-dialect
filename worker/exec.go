@@ -358,6 +358,24 @@ func SetStructColumnValues(columnValueMap map[string]interface{}, strValue refle
 					columnValue = int(num)
 				}
 				break
+			case "uint8", "uint16", "uint32", "uint64", "uint":
+				str := dialect.GetStringValue(columnValue)
+				var num uint64
+				if str != "" {
+					num, _ = dialect.StringToUint64(str)
+				}
+				if fieldType == "uint8" {
+					columnValue = uint8(num)
+				} else if fieldType == "uint16" {
+					columnValue = uint16(num)
+				} else if fieldType == "uint32" {
+					columnValue = uint32(num)
+				} else if fieldType == "uint64" {
+					columnValue = num
+				} else if fieldType == "uint" {
+					columnValue = uint(num)
+				}
+				break
 			case "float32", "float64":
 				str := dialect.GetStringValue(columnValue)
 				var num float64

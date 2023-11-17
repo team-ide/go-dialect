@@ -32,6 +32,16 @@ func StringToInt64(str string) (res int64, err error) {
 	}
 	return
 }
+func StringToUint64(str string) (res uint64, err error) {
+	if str == "null" {
+		return
+	}
+	res, err = strconv.ParseUint(str, 10, 64)
+	if err != nil {
+		return
+	}
+	return
+}
 
 // StringsIndex Returns the index position of the string val in array
 func StringsIndex(array []string, val string) (index int) {
@@ -84,19 +94,19 @@ func GetStringValue(value interface{}) string {
 	case int8:
 		return strconv.FormatInt(int64(v), 10)
 	case uint8:
-		return strconv.FormatInt(int64(v), 10)
+		return strconv.FormatUint(uint64(v), 10)
 	case int16:
 		return strconv.FormatInt(int64(v), 10)
 	case uint16:
-		return strconv.FormatInt(int64(v), 10)
+		return strconv.FormatUint(uint64(v), 10)
 	case int32:
 		return strconv.FormatInt(int64(v), 10)
 	case uint32:
-		return strconv.FormatInt(int64(v), 10)
+		return strconv.FormatUint(uint64(v), 10)
 	case int64:
 		return strconv.FormatInt(v, 10)
 	case uint64:
-		return strconv.FormatInt(int64(v), 10)
+		return strconv.FormatUint(v, 10)
 	case float32:
 		return strconv.FormatFloat(float64(v), 'f', -1, 64)
 	case float64:
