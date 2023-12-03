@@ -40,7 +40,8 @@ DROP DATABASE IF EXISTS {ownerNamePack}
 SELECT
     TABLE_NAME tableName,
     TABLE_COMMENT tableComment,
-    TABLE_SCHEMA ownerName
+    TABLE_SCHEMA ownerName,
+    TABLE_COLLATION tableCollationName
 FROM information_schema.tables
 WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
 ORDER BY TABLE_NAME
@@ -51,7 +52,8 @@ ORDER BY TABLE_NAME
 SELECT
     TABLE_NAME tableName,
     TABLE_COMMENT tableComment,
-    TABLE_SCHEMA ownerName
+    TABLE_SCHEMA ownerName,
+    TABLE_COLLATION tableCollationName
 FROM information_schema.tables
 WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
   AND TABLE_NAME={sqlValuePack(tableName)}
@@ -1805,4 +1807,3 @@ DROP INDEX {indexNamePack}
 // DB2 数据库 SQL
 func appendDb2Sql(mapping *SqlMapping) {
 }
-
