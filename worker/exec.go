@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -26,6 +27,18 @@ func DoExec(db *sql.DB, sqlInfo string, args []interface{}) (result sql.Result, 
 	return
 }
 
+type prepareFunc func(ctx context.Context, query string) (*sql.Stmt, error)
+
+func ExecByPrepare(prepare prepareFunc, ctx context.Context, sqlInfo string, sqlArgs ...interface{}) (result sql.Result, err error) {
+	stmt, err := prepare(ctx, sqlInfo)
+	if err != nil {
+		return
+	}
+	defer func() { _ = stmt.Close() }()
+	result, err = stmt.Exec(sqlArgs...)
+	return
+}
+
 func DoOwnerExecs(dia dialect.Dialect, db *sql.DB, ownerName string, sqlList []string, argsList [][]interface{}) (resultList []sql.Result, errSql string, errArgs []interface{}, err error) {
 	sqlListSize := len(sqlList)
 	if sqlListSize == 0 {
@@ -39,8 +52,9 @@ func DoOwnerExecs(dia dialect.Dialect, db *sql.DB, ownerName string, sqlList []s
 		err = errors.New(fmt.Sprintf("sqlList size is [%d] but argsList size is [%d]", sqlListSize, argsListSize))
 		return
 	}
+	ctx := context.Background()
 
-	tx, err := db.Begin()
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return
 	}
@@ -58,10 +72,10 @@ func DoOwnerExecs(dia dialect.Dialect, db *sql.DB, ownerName string, sqlList []s
 	if ownerName != "" {
 		switch dia.DialectType() {
 		case dialect.TypeMysql:
-			_, _ = tx.Exec(" USE " + ownerName)
+			_, _ = ExecByPrepare(tx.PrepareContext, ctx, " USE "+ownerName)
 			break
 		case dialect.TypeOracle:
-			_, _ = tx.Exec("ALTER SESSION SET CURRENT_SCHEMA=" + ownerName)
+			_, _ = ExecByPrepare(tx.PrepareContext, ctx, "ALTER SESSION SET CURRENT_SCHEMA="+ownerName)
 			break
 			//case dialect.TypeGBase:  // GBase 在 linux使用 database语句将会导致程序奔溃  属于 GBase驱动 so 库 问题
 			//	_, _ = tx.Exec("database " + ownerName)
@@ -75,7 +89,7 @@ func DoOwnerExecs(dia dialect.Dialect, db *sql.DB, ownerName string, sqlList []s
 		if strings.TrimSpace(sqlInfo) == "" {
 			continue
 		}
-		result, err = tx.Exec(sqlInfo, args...)
+		result, err = ExecByPrepare(tx.PrepareContext, ctx, sqlInfo, args...)
 		if err != nil {
 			errSql = sqlInfo
 			errArgs = args
@@ -100,8 +114,9 @@ func DoExecs(db *sql.DB, sqlList []string, argsList [][]interface{}) (resultList
 		err = errors.New(fmt.Sprintf("sqlList size is [%d] but argsList size is [%d]", sqlListSize, argsListSize))
 		return
 	}
+	ctx := context.Background()
 
-	tx, err := db.Begin()
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return
 	}
@@ -122,7 +137,7 @@ func DoExecs(db *sql.DB, sqlList []string, argsList [][]interface{}) (resultList
 		if strings.TrimSpace(sqlInfo) == "" {
 			continue
 		}
-		result, err = tx.Exec(sqlInfo, args...)
+		result, err = ExecByPrepare(tx.PrepareContext, ctx, sqlInfo, args...)
 		if err != nil {
 			errSql = sqlInfo
 			errArgs = args
@@ -158,13 +173,19 @@ func DoQueryOne(db *sql.DB, sqlInfo string, args []interface{}) (data map[string
 }
 
 func DoQueryStructs(db *sql.DB, sqlInfo string, args []interface{}, list interface{}) (err error) {
-	rows, err := db.Query(sqlInfo, args...)
+	ctx := context.Background()
+
+	stmt, err := db.PrepareContext(ctx, sqlInfo)
 	if err != nil {
 		return
 	}
-	defer func() {
-		_ = rows.Close()
-	}()
+	defer func() { _ = stmt.Close() }()
+
+	rows, err := stmt.Query(args...)
+	if err != nil {
+		return
+	}
+	defer func() { _ = rows.Close() }()
 	columnTypes, err := rows.ColumnTypes()
 	if err != nil {
 		return
@@ -194,13 +215,19 @@ func DoQueryStructs(db *sql.DB, sqlInfo string, args []interface{}, list interfa
 }
 
 func DoQueryStruct(db *sql.DB, sqlInfo string, args []interface{}, str interface{}) (find bool, err error) {
-	rows, err := db.Query(sqlInfo, args...)
+	ctx := context.Background()
+	stmt, err := db.PrepareContext(ctx, sqlInfo)
 	if err != nil {
 		return
 	}
-	defer func() {
-		_ = rows.Close()
-	}()
+	defer func() { _ = stmt.Close() }()
+
+	rows, err := stmt.Query(args...)
+	if err != nil {
+		return
+	}
+	defer func() { _ = rows.Close() }()
+
 	columnTypes, err := rows.ColumnTypes()
 	if err != nil {
 		return
@@ -243,13 +270,20 @@ func DoQueryStruct(db *sql.DB, sqlInfo string, args []interface{}, str interface
 	return
 }
 func DoQueryWithColumnTypes(db *sql.DB, sqlInfo string, args []interface{}) (columns []string, columnTypes []*sql.ColumnType, list []map[string]interface{}, err error) {
-	rows, err := db.Query(sqlInfo, args...)
+
+	ctx := context.Background()
+	stmt, err := db.PrepareContext(ctx, sqlInfo)
 	if err != nil {
 		return
 	}
-	defer func() {
-		_ = rows.Close()
-	}()
+	defer func() { _ = stmt.Close() }()
+
+	rows, err := stmt.Query(args...)
+	if err != nil {
+		return
+	}
+	defer func() { _ = rows.Close() }()
+
 	columns, err = rows.Columns()
 	if err != nil {
 		return
@@ -420,13 +454,19 @@ func GetListStructType(list interface{}) reflect.Type {
 }
 
 func DoQueryCount(db *sql.DB, sqlInfo string, args []interface{}) (count int, err error) {
-	rows, err := db.Query(sqlInfo, args...)
+	ctx := context.Background()
+
+	stmt, err := db.PrepareContext(ctx, sqlInfo)
 	if err != nil {
 		return
 	}
-	defer func() {
-		_ = rows.Close()
-	}()
+	defer func() { _ = stmt.Close() }()
+
+	rows, err := stmt.Query(args...)
+	if err != nil {
+		return
+	}
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		err = rows.Scan(&count)
 		if err != nil {

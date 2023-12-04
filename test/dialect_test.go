@@ -13,49 +13,49 @@ func getTable() (table *dialect.TableModel) {
 		TableName:    "USER_INFO",
 		TableComment: "用户信息",
 		ColumnList: []*dialect.ColumnModel{
-			{ColumnName: "userId", ColumnType: "bigint", ColumnLength: 20, PrimaryKey: true},
-			{ColumnName: "name", ColumnType: "varchar", ColumnLength: 200},
-			{ColumnName: "account", ColumnType: "varchar", ColumnLength: 50},
-			{ColumnName: "status", ColumnType: "int", ColumnLength: 3},
-			{ColumnName: "deleted", ColumnType: "bit", ColumnLength: 1},
-			{ColumnName: "detail", ColumnType: "text", ColumnLength: 500},
-			{ColumnName: "detail2", ColumnType: "longtext", ColumnLength: 500},
-			{ColumnName: "detail3", ColumnType: "blob", ColumnLength: 500},
-			{ColumnName: "detail4", ColumnType: "longblob", ColumnLength: 500},
-			{ColumnName: "createDate", ColumnType: "date", ColumnLength: 20},
-			{ColumnName: "createDate1", ColumnType: "datetime", ColumnLength: 20},
+			{ColumnName: "userId", ColumnDataType: "bigint", ColumnLength: 20, PrimaryKey: true},
+			{ColumnName: "name", ColumnDataType: "varchar", ColumnLength: 200},
+			{ColumnName: "account", ColumnDataType: "varchar", ColumnLength: 50},
+			{ColumnName: "status", ColumnDataType: "int", ColumnLength: 3},
+			{ColumnName: "deleted", ColumnDataType: "bit", ColumnLength: 1},
+			{ColumnName: "detail", ColumnDataType: "text", ColumnLength: 500},
+			{ColumnName: "detail2", ColumnDataType: "longtext", ColumnLength: 500},
+			{ColumnName: "detail3", ColumnDataType: "blob", ColumnLength: 500},
+			{ColumnName: "detail4", ColumnDataType: "longblob", ColumnLength: 500},
+			{ColumnName: "createDate", ColumnDataType: "date", ColumnLength: 20},
+			{ColumnName: "createDate1", ColumnDataType: "datetime", ColumnLength: 20},
 		},
 		IndexList: []*dialect.IndexModel{
-			{Name: "account", Type: "UNIQUE", Columns: []string{"account"}},
+			{IndexName: "account", IndexType: "UNIQUE", ColumnNames: []string{"account"}},
 		},
 	}
 	return
 }
 
 func testDLL(db *sql.DB, dia dialect.Dialect, ownerName string) {
-	initKingBase()
+	//initKingBase()
 	table := getTable()
 	testTableCreate(db, dia, ownerName, getTable())
 
 	testColumnUpdate(db, dia, ownerName, table.TableName,
 		&dialect.ColumnModel{
-			ColumnName:    "name",
-			ColumnType:    "varchar",
-			ColumnLength:  500,
-			ColumnComment: "name1注释",
+			ColumnName:     "name",
+			ColumnDataType: "varchar",
+			ColumnLength:   500,
+			ColumnComment:  "name1注释",
 		}, &dialect.ColumnModel{
-			ColumnName:    "name1",
-			ColumnType:    "varchar",
-			ColumnLength:  600,
-			ColumnComment: "name1注释",
+			ColumnName:     "name1",
+			ColumnDataType: "varchar",
+			ColumnLength:   600,
+			ColumnComment:  "name1注释",
 		},
 	)
 	testColumnDelete(db, dia, ownerName, table.TableName, "detail3")
 	testColumnAdd(db, dia, ownerName, table.TableName, &dialect.ColumnModel{
-		ColumnName:    "name2",
-		ColumnType:    "varchar",
-		ColumnLength:  500,
-		ColumnComment: "name2注释",
+		ColumnName:     "name2",
+		ColumnDataType: "varchar",
+		ColumnLength:   500,
+		ColumnComment:  "name2注释",
 	})
 	tableDetail(db, dia, ownerName, table.TableName)
 	testTableDelete(db, dia, ownerName, table.TableName)
@@ -205,7 +205,7 @@ func tables(db *sql.DB, dia dialect.Dialect, ownerName string) {
 
 func tableDetail(db *sql.DB, dia dialect.Dialect, ownerName string, tableName string) {
 	fmt.Println("--------owner [" + ownerName + "] table [" + tableName + "] detail--------")
-	table, err := worker.TableDetail(db, dia, nil, ownerName, tableName)
+	table, err := worker.TableDetail(db, dia, nil, ownerName, tableName, false)
 	if err != nil {
 		panic(err)
 	}
