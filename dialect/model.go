@@ -17,10 +17,10 @@ type ParamModel struct {
 
 type OwnerModel struct {
 	OwnerName             string `json:"ownerName"`
-	OwnerComment          string `json:"ownerComment,omitempty"`
-	OwnerPassword         string `json:"ownerPassword,omitempty"`
-	OwnerCharacterSetName string `json:"ownerCharacterSetName,omitempty"`
-	OwnerCollationName    string `json:"ownerCollationName,omitempty"`
+	OwnerComment          string `json:"ownerComment"`
+	OwnerPassword         string `json:"ownerPassword"`
+	OwnerCharacterSetName string `json:"ownerCharacterSetName"`
+	OwnerCollationName    string `json:"ownerCollationName"`
 
 	Error string `json:"error,omitempty"`
 }
@@ -32,8 +32,8 @@ type TableModel struct {
 	ColumnList            []*ColumnModel `json:"columnList"`
 	IndexList             []*IndexModel  `json:"indexList"`
 	PrimaryKeys           []string       `json:"primaryKeys"`
-	TableCharacterSetName string         `json:"tableCharacterSetName,omitempty"`
-	TableCollationName    string         `json:"tableCollationName,omitempty"`
+	TableCharacterSetName string         `json:"tableCharacterSetName"`
+	TableCollationName    string         `json:"tableCollationName"`
 
 	OwnerName string `json:"ownerName"`
 
