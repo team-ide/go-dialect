@@ -128,7 +128,7 @@ func TableDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, own
 func appendTableDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamModel, ownerName string, table *dialect.TableModel, ignoreError bool) (err error) {
 
 	var e error
-	table.ColumnList, e = ColumnsSelect(db, dia, param, ownerName, table.TableName, ignoreError)
+	columnList, e := ColumnsSelect(db, dia, param, ownerName, table.TableName, ignoreError)
 	if e != nil {
 		if !ignoreError {
 			err = e
@@ -136,6 +136,12 @@ func appendTableDetail(db *sql.DB, dia dialect.Dialect, param *dialect.ParamMode
 		}
 		table.Error += e.Error()
 	} else {
+		for _, one := range columnList {
+			if table.FindColumnByName(one.ColumnName) == nil {
+				table.AddColumn(one)
+			}
+		}
+
 		ps, e := PrimaryKeysSelect(db, dia, param, ownerName, table.TableName, ignoreError)
 		if e != nil {
 			if !ignoreError {
