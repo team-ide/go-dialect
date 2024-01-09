@@ -16,11 +16,13 @@ type ParamModel struct {
 }
 
 type OwnerModel struct {
-	OwnerName             string `json:"ownerName"`
-	OwnerComment          string `json:"ownerComment"`
-	OwnerPassword         string `json:"ownerPassword"`
-	OwnerCharacterSetName string `json:"ownerCharacterSetName"`
-	OwnerCollationName    string `json:"ownerCollationName"`
+	OwnerName             string                 `json:"ownerName"`
+	OwnerComment          string                 `json:"ownerComment"`
+	OwnerUsername         string                 `json:"ownerUsername"`
+	OwnerPassword         string                 `json:"ownerPassword"`
+	OwnerCharacterSetName string                 `json:"ownerCharacterSetName"`
+	OwnerCollationName    string                 `json:"ownerCollationName"`
+	Extend                map[string]interface{} `json:"extend,omitempty"`
 
 	Error string `json:"error,omitempty"`
 }
@@ -29,11 +31,12 @@ type TableModel struct {
 	TableName    string `json:"tableName"`
 	TableComment string `json:"tableComment"`
 
-	ColumnList            []*ColumnModel `json:"columnList"`
-	IndexList             []*IndexModel  `json:"indexList"`
-	PrimaryKeys           []string       `json:"primaryKeys"`
-	TableCharacterSetName string         `json:"tableCharacterSetName"`
-	TableCollationName    string         `json:"tableCollationName"`
+	ColumnList            []*ColumnModel         `json:"columnList"`
+	IndexList             []*IndexModel          `json:"indexList"`
+	PrimaryKeys           []string               `json:"primaryKeys"`
+	TableCharacterSetName string                 `json:"tableCharacterSetName"`
+	TableCollationName    string                 `json:"tableCollationName"`
+	Extend                map[string]interface{} `json:"extend,omitempty"`
 
 	OwnerName string `json:"ownerName"`
 
@@ -119,10 +122,11 @@ type ColumnModel struct {
 
 	PrimaryKey bool `json:"primaryKey"`
 
-	ColumnEnums []string `json:"columnEnums"`
-	ColumnExtra string   `json:"columnExtra"`
-	OwnerName   string   `json:"ownerName"`
-	TableName   string   `json:"tableName"`
+	ColumnEnums []string               `json:"columnEnums"`
+	ColumnExtra string                 `json:"columnExtra"`
+	OwnerName   string                 `json:"ownerName"`
+	TableName   string                 `json:"tableName"`
+	Extend      map[string]interface{} `json:"extend,omitempty"`
 
 	Error string `json:"error,omitempty"`
 }
