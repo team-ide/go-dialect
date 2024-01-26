@@ -2,8 +2,9 @@ package dialect
 
 import (
 	"errors"
+	"fmt"
+	"github.com/shopspring/decimal"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -171,30 +172,12 @@ func packingValue(column *ColumnModel, columnTypeInfo *ColumnTypeInfo, packingCh
 	}
 	var valueString string
 	switch v := value.(type) {
-	case int:
-		return strconv.FormatInt(int64(v), 10)
-	case uint:
-		return strconv.FormatInt(int64(v), 10)
-	case int8:
-		return strconv.FormatInt(int64(v), 10)
-	case uint8:
-		return strconv.FormatInt(int64(v), 10)
-	case int16:
-		return strconv.FormatInt(int64(v), 10)
-	case uint16:
-		return strconv.FormatInt(int64(v), 10)
-	case int32:
-		return strconv.FormatInt(int64(v), 10)
-	case uint32:
-		return strconv.FormatInt(int64(v), 10)
-	case int64:
-		return strconv.FormatInt(v, 10)
-	case uint64:
-		return strconv.FormatInt(int64(v), 10)
+	case int, uint, int8, uint8, int16, uint16, int32, uint32, int64, uint64:
+		return fmt.Sprintf("%d", v)
 	case float32:
-		return strconv.FormatFloat(float64(v), 'f', -1, 64)
+		return decimal.NewFromFloat32(v).String()
 	case float64:
-		return strconv.FormatFloat(v, 'f', -1, 64)
+		return decimal.NewFromFloat(v).String()
 	case bool:
 		if v {
 			return "1"

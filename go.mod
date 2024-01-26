@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/google/uuid v1.3.0
+	github.com/shopspring/decimal v1.3.1
 	github.com/tealeg/xlsx v1.0.5
 	github.com/team-ide/go-driver v1.3.1
 	github.com/team-ide/goja v1.0.2
