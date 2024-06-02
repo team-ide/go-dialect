@@ -62,8 +62,9 @@ type SqlMapping struct {
 	SqlValuePackChar   string
 	SqlValueEscapeChar string
 
-	PackPageSql        func(selectSql string, pageSize int, pageNo int) (pageSql string)
-	ReplaceSqlVariable func(sqlInfo string, args []interface{}) (variableSql string)
+	VariablePlaceholder string
+	PackPageSql         func(selectSql string, pageSize int, pageNo int) (pageSql string)
+	ReplaceSqlVariable  func(sqlInfo string, args []interface{}) (variableSql string)
 
 	OwnerTablePack func(param *ParamModel, ownerName string, tableName string) string
 	MethodCache    map[string]interface{}

@@ -38,6 +38,7 @@ func NewMappingOracle() (mapping *SqlMapping) {
 		}
 		return
 	}
+	mapping.VariablePlaceholder = ":index"
 
 	for _, one := range oracleColumnTypeList {
 		mapping.AddColumnTypeInfo(one)

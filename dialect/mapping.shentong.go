@@ -38,6 +38,7 @@ func NewMappingShenTong() (mapping *SqlMapping) {
 		}
 		return
 	}
+	mapping.VariablePlaceholder = ":index"
 
 	for _, one := range shenTongColumnTypeList {
 		mapping.AddColumnTypeInfo(one)

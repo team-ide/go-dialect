@@ -36,6 +36,7 @@ func NewMappingOpenGauss() (mapping *SqlMapping) {
 		}
 		return
 	}
+	mapping.VariablePlaceholder = "$index"
 
 	for _, one := range openGaussColumnTypeList {
 		mapping.AddColumnTypeInfo(one)

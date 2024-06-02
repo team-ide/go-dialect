@@ -41,6 +41,7 @@ func NewMappingKingBase() (mapping *SqlMapping) {
 		}
 		return
 	}
+	mapping.VariablePlaceholder = "$index"
 
 	for _, one := range kingBaseColumnTypeList {
 		mapping.AddColumnTypeInfo(one)

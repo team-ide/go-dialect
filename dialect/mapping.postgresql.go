@@ -36,6 +36,7 @@ func NewMappingPostgresql() (mapping *SqlMapping) {
 		}
 		return
 	}
+	mapping.VariablePlaceholder = "$index"
 
 	for _, one := range postgresqlColumnTypeList {
 		mapping.AddColumnTypeInfo(one)

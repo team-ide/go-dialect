@@ -347,3 +347,9 @@ func (this_ *mappingDialect) ReplaceSqlVariable(sqlInfo string, args []interface
 	variableSql = sqlInfo
 	return
 }
+func (this_ *mappingDialect) GetVariablePlaceholder() (variablePlaceholder string) {
+	if this_.SqlMapping.VariablePlaceholder != "" {
+		return this_.SqlMapping.VariablePlaceholder
+	}
+	return "?"
+}

@@ -68,6 +68,7 @@ type Dialect interface {
 
 	PackPageSql(selectSql string, pageSize int, pageNo int) (pageSql string)
 	ReplaceSqlVariable(sqlInfo string, args []interface{}) (variableSql string)
+	GetVariablePlaceholder() (variablePlaceholder string)
 	InsertSql(param *ParamModel, insert *InsertModel) (sqlList []string, err error)
 
 	DataListInsertSql(param *ParamModel, ownerName string, tableName string, columnList []*ColumnModel, dataList []map[string]interface{}) (sqlList []string, valuesList [][]interface{}, batchSqlList []string, batchValuesList [][]interface{}, err error)
