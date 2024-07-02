@@ -53,7 +53,11 @@ func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName stri
 			insertSql += " VALUES (" + insertValues + ")"
 		}
 
-		sqlList = append(sqlList, this_.ReplaceSqlVariable(insertSql, values))
+		if param != nil && param.AppendSqlValue != nil && *param.AppendSqlValue {
+			sqlList = append(sqlList, insertSql)
+		} else {
+			sqlList = append(sqlList, this_.ReplaceSqlVariable(insertSql, values))
+		}
 		valuesList = append(valuesList, values)
 
 		// 批量 插入 SQL
@@ -84,7 +88,10 @@ func (this_ *mappingDialect) DataListInsertSql(param *ParamModel, ownerName stri
 
 	}
 	for index := range batchSqlList {
-		batchSqlList[index] = this_.ReplaceSqlVariable(batchSqlList[index], batchValuesList[index])
+		if param != nil && param.AppendSqlValue != nil && *param.AppendSqlValue {
+		} else {
+			batchSqlList[index] = this_.ReplaceSqlVariable(batchSqlList[index], batchValuesList[index])
+		}
 	}
 	return
 }
@@ -132,7 +139,10 @@ func (this_ *mappingDialect) DataListUpdateSql(param *ParamModel, ownerName stri
 		}
 		updateSql = strings.TrimSuffix(updateSql, " AND ")
 
-		updateSql = this_.ReplaceSqlVariable(updateSql, values)
+		if param != nil && param.AppendSqlValue != nil && *param.AppendSqlValue {
+		} else {
+			updateSql = this_.ReplaceSqlVariable(updateSql, values)
+		}
 		sqlList = append(sqlList, updateSql)
 		valuesList = append(valuesList, values)
 	}
@@ -167,8 +177,10 @@ func (this_ *mappingDialect) DataListDeleteSql(param *ParamModel, ownerName stri
 			deleteSql += " AND "
 		}
 		deleteSql = strings.TrimSuffix(deleteSql, " AND ")
-
-		deleteSql = this_.ReplaceSqlVariable(deleteSql, values)
+		if param != nil && param.AppendSqlValue != nil && *param.AppendSqlValue {
+		} else {
+			deleteSql = this_.ReplaceSqlVariable(deleteSql, values)
+		}
 		sqlList = append(sqlList, deleteSql)
 		valuesList = append(valuesList, values)
 	}
@@ -290,6 +302,10 @@ func (this_ *mappingDialect) DataListSelectSql(param *ParamModel, ownerName stri
 		}
 
 	}
-	sql = this_.ReplaceSqlVariable(sql, values)
+
+	if param != nil && param.AppendSqlValue != nil && *param.AppendSqlValue {
+	} else {
+		sql = this_.ReplaceSqlVariable(sql, values)
+	}
 	return
 }
