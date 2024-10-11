@@ -3,7 +3,7 @@ package worker
 import (
 	"errors"
 	"fmt"
-	"github.com/tealeg/xlsx"
+	"github.com/tealeg/xlsx/v3"
 	"github.com/team-ide/go-dialect/dialect"
 )
 
@@ -87,15 +87,19 @@ func (this_ *dataSourceExcel) Read(columnList []*dialect.ColumnModel, onRead fun
 				return
 			}
 
-			row := sheet.Rows[rowIndex]
+			var row *xlsx.Row
+			row, err = sheet.Row(rowIndex)
+			if err != nil {
+				return
+			}
 
 			var data = map[string]interface{}{}
 
 			for cellIndex, column := range columnList {
-				if cellIndex >= len(row.Cells) {
+				cell := row.GetCell(cellIndex)
+				if cell == nil {
 					break
 				}
-				cell := row.Cells[cellIndex]
 				var v = cell.String()
 				if !column.ColumnNotNull && v == "" {
 					continue

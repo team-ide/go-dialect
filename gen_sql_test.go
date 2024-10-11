@@ -3,7 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/tealeg/xlsx"
+	"github.com/tealeg/xlsx/v3"
 	"os"
 	"strings"
 	"testing"
@@ -46,22 +46,37 @@ func sqlParse(path string, outPath string) (err error) {
 		var RowMergeEnd = -1
 		var RowMergeCell = -1
 		var RowMergeValue string
-		for rowIndex, row := range sheet.Rows {
+		colLen := sheet.Cols.Len
+		rowLen := sheet.MaxRow
+		var row *xlsx.Row
+		for rowIndex := 0; rowIndex < rowLen; rowIndex++ {
+			row, err = sheet.Row(rowIndex)
+			if err != nil {
+				return
+			}
 
 			if rowIndex == 0 {
-				for _, cell := range row.Cells {
-					title := cell.Value
+				for colIndex := 0; colIndex < colLen; colIndex++ {
+					cell := row.GetCell(colIndex)
+					if cell == nil {
+						break
+					}
+					title := cell.String()
 					title = strings.TrimSpace(title)
 					titles = append(titles, title)
 				}
 				continue
 			}
 			var dataType = map[string]string{}
-			for cellIndex, cell := range row.Cells {
-				if cellIndex >= len(titles) {
+			for colIndex := 0; colIndex < colLen; colIndex++ {
+				cell := row.GetCell(colIndex)
+				if cell == nil {
 					break
 				}
-				title := titles[cellIndex]
+				if colIndex >= len(titles) {
+					break
+				}
+				title := titles[colIndex]
 				if title == "" {
 					continue
 				}
@@ -70,11 +85,11 @@ func sqlParse(path string, outPath string) (err error) {
 					value = strings.TrimSpace(value)
 				}
 				if cell.VMerge > 0 {
-					RowMergeCell = cellIndex
+					RowMergeCell = colIndex
 					RowMergeEnd = rowIndex + cell.VMerge
 					RowMergeValue = value
 				}
-				if RowMergeCell == cellIndex {
+				if RowMergeCell == colIndex {
 					if rowIndex <= RowMergeEnd {
 						value = RowMergeValue
 					} else {
