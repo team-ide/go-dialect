@@ -467,6 +467,13 @@ func (this_ *mappingDialect) ColumnModel(data map[string]interface{}) (column *C
 				}
 
 			}
+		} else {
+			if column.ColumnLength == 0 && strings.Contains(columnTypeInfo.Format, "$l") {
+				column.ColumnLength = column.ColumnPrecision
+			}
+			if column.ColumnPrecision == 0 && strings.Contains(columnTypeInfo.Format, "$p") {
+				column.ColumnPrecision = column.ColumnLength
+			}
 		}
 	}
 	return
