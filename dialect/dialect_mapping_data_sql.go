@@ -2,10 +2,45 @@ package dialect
 
 import (
 	"errors"
+	"fmt"
 	"strings"
+	"time"
 )
 
 func (this_ *mappingDialect) AppendSqlValue(param *ParamModel, sqlInfo *string, column *ColumnModel, value interface{}, args *[]interface{}) {
+	if column != nil {
+		if strings.EqualFold(column.ColumnDataType, "date") ||
+			strings.EqualFold(column.ColumnDataType, "datetime") ||
+			strings.EqualFold(column.ColumnDataType, "timestamp") {
+			var t int64
+			switch tV := value.(type) {
+			case int64:
+				t = tV
+				break
+			case float64:
+				t = int64(tV)
+				break
+			case float32:
+				t = int64(tV)
+				break
+			case int32:
+				t = int64(tV)
+				break
+			case int:
+				t = int64(tV)
+				break
+			}
+			// 时间戳 大于0
+			if t > 0 {
+				tS := fmt.Sprintf("%d", t)
+				if len(tS) == 13 { // 毫秒
+					value = time.UnixMilli(t)
+				} else if len(tS) == 13 { // 秒
+					value = time.UnixMilli(t * 1000)
+				}
+			}
+		}
+	}
 	if param != nil && param.AppendSqlValue != nil && *param.AppendSqlValue {
 		*sqlInfo += this_.SqlValuePack(param, column, value)
 	} else {
