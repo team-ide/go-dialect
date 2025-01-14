@@ -33,10 +33,18 @@ func (this_ *mappingDialect) AppendSqlValue(param *ParamModel, sqlInfo *string, 
 			// 时间戳 大于0
 			if t > 0 {
 				tS := fmt.Sprintf("%d", t)
+				var d time.Time
 				if len(tS) == 13 { // 毫秒
-					value = time.UnixMilli(t)
+					d = time.UnixMilli(t)
 				} else if len(tS) == 13 { // 秒
-					value = time.UnixMilli(t * 1000)
+					d = time.UnixMilli(t * 1000)
+				}
+				if !d.IsZero() {
+					if strings.EqualFold(column.ColumnDataType, "date") {
+						value = d.Format("2006-01-02")
+					} else {
+						value = d
+					}
 				}
 			}
 		}
