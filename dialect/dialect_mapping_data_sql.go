@@ -36,7 +36,7 @@ func (this_ *mappingDialect) AppendSqlValue(param *ParamModel, sqlInfo *string, 
 				var d time.Time
 				if len(tS) == 13 { // 毫秒
 					d = time.UnixMilli(t)
-				} else if len(tS) == 13 { // 秒
+				} else if len(tS) == 10 { // 秒
 					d = time.UnixMilli(t * 1000)
 				}
 				if !d.IsZero() {
