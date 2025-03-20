@@ -162,14 +162,20 @@ type ColumnTypeInfo struct {
 	IsEnum bool `json:"isEnum,omitempty"`
 
 	// IsExtend 如果 非 当前 数据库能支持的类型 设置该属性
-	IsExtend bool     `json:"isExtend,omitempty"`
-	Matches  []string `json:"matches"`
+	IsExtend bool         `json:"isExtend,omitempty"`
+	Matches  []*MatchRule `json:"matches"`
 
 	IfNotFound             bool                                                                               `json:"ifNotFound,omitempty"`
 	ColumnDefaultPack      func(param *ParamModel, column *ColumnModel) (columnDefaultPack string, err error) `json:"-"`
 	ColumnTypePack         func(column *ColumnModel) (columnTypePack string, err error)                       `json:"-"`
 	SqlValuePack           func(value string) (sqlValue string)                                               `json:"-"`
 	FullColumnByColumnType func(columnType string, column *ColumnModel) (err error)                           `json:"-"`
+}
+
+type MatchRule struct {
+	DataType  string
+	SetScript string
+	Match     func(columnLength, columnPrecision, columnScale int, columnDataType string, columnDefault string) bool
 }
 
 type IndexTypeInfo struct {

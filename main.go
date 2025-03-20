@@ -10,6 +10,7 @@ import (
 	"github.com/team-ide/go-driver/db_postgresql"
 	"github.com/team-ide/go-driver/db_shentong"
 	"github.com/team-ide/go-driver/db_sqlite3"
+	"github.com/team-ide/go-driver/db_ux"
 	"strings"
 )
 
@@ -87,7 +88,7 @@ func getDbInfo(dbType string, user string, password string, host string, port in
 		db, err = db_sqlite3.Open(dsn)
 		break
 	case "dameng", "dm":
-		dsn := db_dm.GetDSN(user, password, host, port)
+		dsn := db_dm.GetDSN(user, password, host, port, database)
 		db, err = db_dm.Open(dsn)
 		break
 	case "kingbase", "kb":
@@ -105,6 +106,10 @@ func getDbInfo(dbType string, user string, password string, host string, port in
 	case "postgresql", "ps":
 		dsn := db_postgresql.GetDSN(user, password, host, port, database)
 		db, err = db_postgresql.Open(dsn)
+		break
+	case "ux":
+		dsn := db_ux.GetDSN(user, password, host, port, database)
+		db, err = db_ux.Open(dsn)
 		break
 	}
 	return

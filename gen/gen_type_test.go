@@ -1,17 +1,17 @@
-package main
+package gen
 
 import (
 	"errors"
 	"fmt"
 	"github.com/tealeg/xlsx/v3"
-	"github.com/team-ide/go-dialect/dialect"
+	"go/format"
 	"os"
 	"strings"
 	"testing"
 )
 
 func TestTypeParseGen(t *testing.T) {
-	err := dataTypeParse(`数据库类型.xlsx`, "dialect/mapping.column.type.go")
+	err := dataTypeParse(`../数据库类型.xlsx`, "../dialect/mapping.column.type.go")
 	if err != nil {
 		panic(err)
 	}
@@ -19,7 +19,43 @@ func TestTypeParseGen(t *testing.T) {
 
 type databaseModel struct {
 	Name      string
-	DataTypes []*dialect.ColumnTypeInfo
+	DataTypes []*ColumnTypeInfo
+}
+type ColumnTypeInfo struct {
+	Name         string `json:"name,omitempty"`
+	Comment      string `json:"comment,omitempty"`
+	Format       string `json:"format,omitempty"`
+	MinLength    *int   `json:"minLength"`
+	MaxLength    *int   `json:"maxLength"`
+	MinPrecision *int   `json:"minPrecision"`
+	MaxPrecision *int   `json:"maxPrecision"`
+	MinScale     *int   `json:"minScale"`
+	MaxScale     *int   `json:"maxScale"`
+
+	// IsNumber 如果 是 数字 数据存储 设置该属性
+	IsNumber  bool `json:"isNumber,omitempty"`
+	IsInteger bool `json:"isInteger,omitempty"`
+	IsFloat   bool `json:"isFloat,omitempty"`
+
+	// IsString 如果 是 字符串 数据存储 设置该属性
+	IsString bool `json:"isString,omitempty"`
+
+	// IsDateTime 如果 是 日期时间 数据存储 设置该属性
+	IsDateTime bool `json:"isDateTime,omitempty"`
+
+	// IsBytes 如果 是 流 数据存储 设置该属性
+	IsBytes bool `json:"isBytes,omitempty"`
+
+	IsBoolean bool `json:"isBoolean,omitempty"`
+
+	// IsEnum 如果 是 枚举 数据存储 设置该属性
+	IsEnum bool `json:"isEnum,omitempty"`
+
+	// IsExtend 如果 非 当前 数据库能支持的类型 设置该属性
+	IsExtend bool     `json:"isExtend,omitempty"`
+	Matches  []string `json:"matches"`
+
+	IfNotFound bool `json:"ifNotFound,omitempty"`
 }
 
 func dataTypeParse(path string, outPath string) (err error) {
@@ -150,7 +186,42 @@ import "strings"
 			code += "Name: `" + dataType.Name + "`, "
 			code += "Format: `" + dataType.Format + "`, "
 			if len(dataType.Matches) > 0 {
-				code += "Matches: []string{`" + strings.Join(dataType.Matches, "`, `") + "`}, "
+				code += "Matches: []*MatchRule{"
+				for _, matchForGen := range dataType.Matches {
+					matchForGen = strings.TrimSpace(matchForGen)
+					if matchForGen == "" {
+						continue
+					}
+					var matchDataType = matchForGen
+					var matchRule string
+					var setScript string
+
+					var index = strings.Index(matchForGen, "&&")
+					if index >= 0 {
+						matchDataType = matchForGen[0:index]
+						matchRule = matchForGen[index+2:]
+						index = strings.Index(matchRule, ";")
+						if index >= 0 {
+							setScript = matchRule[index+1:]
+							matchRule = matchRule[0:index]
+						}
+					}
+					matchDataType = strings.TrimSpace(matchDataType)
+					matchRule = strings.TrimSpace(matchRule)
+					setScript = strings.TrimSpace(setScript)
+					code += `{DataType: "` + matchDataType + `"`
+					if setScript != "" {
+						code += `, SetScript: "` + setScript + `"`
+					}
+					if matchRule != "" {
+						code += `, Match: func(columnLength, columnPrecision, columnScale int, columnDataType string, columnDefault string) bool {` + "\n"
+						code += `return ` + matchRule + ``
+						code += `},` + "\n"
+					}
+					code += `},`
+				}
+				code = strings.TrimRight(code, ", ")
+				code += "}, "
 			}
 			if dataType.IsNumber {
 				code += "IsNumber: true, "
@@ -231,6 +302,12 @@ import "strings"
 			}
 		}
 		code += "}" + "\n\n"
+		var bs []byte
+		bs, err = format.Source([]byte(code))
+		if err != nil {
+			return
+		}
+		code = string(bs)
 		fmt.Println(code)
 		_, err = outFile.WriteString(code)
 		if err != nil {
@@ -241,8 +318,8 @@ import "strings"
 	return
 }
 
-func formatDataType(dataType map[string]string) (info *dialect.ColumnTypeInfo) {
-	info = &dialect.ColumnTypeInfo{}
+func formatDataType(dataType map[string]string) (info *ColumnTypeInfo) {
+	info = &ColumnTypeInfo{}
 	name := dataType["名称"]
 	format := name
 	if strings.Contains(name, "(") {

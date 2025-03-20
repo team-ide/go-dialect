@@ -3,7 +3,6 @@ package dialect
 import (
 	"encoding/json"
 	"errors"
-	"github.com/dop251/goja"
 	"regexp"
 	"strconv"
 	"strings"
@@ -75,88 +74,59 @@ func (this_ *SqlMapping) GetColumnTypeInfo(column *ColumnModel) (columnTypeInfo 
 			var matched = false
 			//fmt.Println("typeName:", typeName, ",MatchName:", one.Name, ",matches:", one.Matches)
 			for _, match := range one.Matches {
-				if match == strings.ToUpper(columnDataType) {
-					matched = true
-					break
+				var dataTypeMatch bool
+				if match.DataType != "" {
+					if strings.EqualFold(columnDataType, match.DataType) {
+						dataTypeMatch = true
+					}
+					if regexp.MustCompile(match.DataType).MatchString(strings.ToUpper(columnDataType)) {
+						dataTypeMatch = true
+					}
 				}
-				//fmt.Println("typeName:", typeName, ",match:", match)
-				if strings.Contains(match, "&&") {
-					matchRule := match[0:strings.Index(match, "&&")]
-					scriptRule := match[strings.Index(match, "&&")+2:]
-					matchRule = strings.TrimSpace(matchRule)
-					scriptRule = strings.TrimSpace(scriptRule)
-					if matchRule == strings.ToUpper(columnDataType) || regexp.MustCompile(matchRule).MatchString(strings.ToUpper(columnDataType)) {
-						if scriptRule != "" {
-							setValueRule := ""
-							if strings.Contains(scriptRule, ";") {
-								setValueRule = scriptRule[strings.Index(scriptRule, ";")+1:]
-								setValueRule = strings.TrimSpace(setValueRule)
-								scriptRule = scriptRule[0:strings.Index(scriptRule, ";")]
-								scriptRule = strings.TrimSpace(scriptRule)
-							}
-							// 执行函数
-							//
-							vm := goja.New()
-							_ = vm.Set("columnLength", column.ColumnLength)
-							_ = vm.Set("columnPrecision", column.ColumnPrecision)
-							_ = vm.Set("columnScale", column.ColumnScale)
-							_ = vm.Set("columnDataType", column.ColumnDataType)
-							_ = vm.Set("columnDefault", column.ColumnDefault)
-
-							var res goja.Value
-							res, err = vm.RunString(scriptRule)
-							if err != nil {
-								err = errors.New("run script [" + scriptRule + "] error:" + err.Error())
-								return
-							}
-							//fmt.Println("scriptRule:", scriptRule, ",scriptValue:", res.String(), ",ToBoolean:", res.ToBoolean())
-							if !res.ToBoolean() {
-								matched = false
+				if match.Match == nil {
+					matched = dataTypeMatch
+					if matched {
+						break
+					}
+					continue
+				}
+				if match.Match != nil && (match.DataType == "" || dataTypeMatch) {
+					if !match.Match(column.ColumnLength, column.ColumnPrecision, column.ColumnScale, column.ColumnDataType, column.ColumnDefault) {
+						continue
+					}
+					if match.SetScript != "" {
+						setValues := strings.Split(match.SetScript, ",")
+						for _, setValueStr := range setValues {
+							if !strings.Contains(setValueStr, "=") {
 								continue
 							}
-							if setValueRule != "" {
-								setValues := strings.Split(setValueRule, ",")
-								for _, setValueStr := range setValues {
-									if !strings.Contains(setValueStr, "=") {
-										continue
-									}
-									setName := setValueStr[0:strings.Index(setValueStr, "=")]
-									setValue := setValueStr[strings.Index(setValueStr, "=")+1:]
-									setName = strings.TrimSpace(setName)
-									setValue = strings.TrimSpace(setValue)
-									if strings.EqualFold(setName, "columnLength") {
-										column.ColumnLength, err = StringToInt(setValue)
-										if err != nil {
-											err = errors.New("set value [" + setValue + "] error:" + err.Error())
-											return
-										}
-									} else if strings.EqualFold(setName, "columnPrecision") {
-										column.ColumnPrecision, err = StringToInt(setValue)
-										if err != nil {
-											err = errors.New("set value [" + setValue + "] error:" + err.Error())
-											return
-										}
-									} else if strings.EqualFold(setName, "columnScale") {
-										column.ColumnScale, err = StringToInt(setValue)
-										if err != nil {
-											err = errors.New("set value [" + setValue + "] error:" + err.Error())
-											return
-										}
-									}
+							setName := setValueStr[0:strings.Index(setValueStr, "=")]
+							setValue := setValueStr[strings.Index(setValueStr, "=")+1:]
+							setName = strings.TrimSpace(setName)
+							setValue = strings.TrimSpace(setValue)
+							if strings.EqualFold(setName, "columnLength") {
+								column.ColumnLength, err = StringToInt(setValue)
+								if err != nil {
+									err = errors.New("set value [" + setValue + "] error:" + err.Error())
+									return
+								}
+							} else if strings.EqualFold(setName, "columnPrecision") {
+								column.ColumnPrecision, err = StringToInt(setValue)
+								if err != nil {
+									err = errors.New("set value [" + setValue + "] error:" + err.Error())
+									return
+								}
+							} else if strings.EqualFold(setName, "columnScale") {
+								column.ColumnScale, err = StringToInt(setValue)
+								if err != nil {
+									err = errors.New("set value [" + setValue + "] error:" + err.Error())
+									return
 								}
 							}
 						}
-						matched = true
-						break
 					}
-
-				} else {
-					if regexp.MustCompile(match).MatchString(strings.ToUpper(columnDataType)) {
-						matched = true
-						break
-					}
+					matched = true
 				}
-
 			}
 			if matched {
 				columnTypeInfo = one
