@@ -175,7 +175,7 @@ type ColumnTypeInfo struct {
 type MatchRule struct {
 	DataType  string
 	SetScript string
-	Match     func(columnLength, columnPrecision, columnScale int, columnDataType string, columnDefault string) bool
+	Match     func(columnLength, columnPrecision, columnScale int, columnDataType string, columnDefault string) bool `json:"-"`
 }
 
 type IndexTypeInfo struct {
