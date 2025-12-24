@@ -41,7 +41,8 @@ SELECT
     TABLE_NAME tableName,
     TABLE_COMMENT tableComment,
     TABLE_SCHEMA ownerName,
-    TABLE_COLLATION tableCollationName
+    TABLE_COLLATION tableCollationName,
+    AUTO_INCREMENT
 FROM information_schema.tables
 WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
 ORDER BY TABLE_NAME
@@ -53,7 +54,8 @@ SELECT
     TABLE_NAME tableName,
     TABLE_COMMENT tableComment,
     TABLE_SCHEMA ownerName,
-    TABLE_COLLATION tableCollationName
+    TABLE_COLLATION tableCollationName,
+    AUTO_INCREMENT
 FROM information_schema.tables
 WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
   AND TABLE_NAME={sqlValuePack(tableName)}
@@ -64,12 +66,12 @@ WHERE TABLE_SCHEMA={sqlValuePack(ownerName)}
 CREATE TABLE [{ownerNamePack}.]{tableNamePack}(
 { tableCreateColumnContent }
 { tableCreatePrimaryKeyContent }
-)[CHARACTER SET {tableCharacterSetName}]
+)[CHARACTER SET {tableCharacterSetName}] {tableAutoIncrement(autoIncrement, autoIncrementStart)}
 `
 
 	mapping.TableCreateColumn = `
 
-	{columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)} [COMMENT {sqlValuePack(columnComment)}]
+	{columnNamePack} {columnTypePack} [DEFAULT {columnDefaultPack}] {columnNotNull(columnNotNull)} {autoIncrement(autoIncrement)} [COMMENT {sqlValuePack(columnComment)}]
 `
 	mapping.TableCreateColumnHasComment = true
 

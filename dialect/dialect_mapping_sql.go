@@ -113,6 +113,19 @@ func (this_ *mappingDialect) TableModel(data map[string]interface{}) (table *Tab
 	if err != nil {
 		return
 	}
+
+	for k, v := range data {
+		if strings.EqualFold(k, "auto_increment") {
+			if v != nil && v != "" {
+				strV := GetStringValue(v)
+				table.AutoIncrementStart, _ = strconv.ParseInt(strV, 10, 64)
+				if table.AutoIncrementStart > 0 {
+					table.AutoIncrement = true
+				}
+			}
+
+		}
+	}
 	return
 }
 
@@ -124,6 +137,9 @@ func (this_ *mappingDialect) TableCreateSql(param *ParamModel, ownerName string,
 		if column.PrimaryKey {
 			if StringsIndex(table.PrimaryKeys, column.ColumnName) < 0 {
 				table.PrimaryKeys = append(table.PrimaryKeys, column.ColumnName)
+			}
+			if table.AutoIncrement {
+				column.AutoIncrement = true
 			}
 		}
 	}
@@ -157,6 +173,10 @@ func (this_ *mappingDialect) TableCreateSql(param *ParamModel, ownerName string,
 			"ownerName":                    ownerName,
 			"tableCreateColumnContent":     tableCreateColumnContent,
 			"tableCreatePrimaryKeyContent": tableCreatePrimaryKeyContent,
+
+			"autoIncrement":      GetStringValue(table.AutoIncrement),
+			"autoIncrementStart": GetStringValue(table.AutoIncrementStart),
+			"autoIncrementName":  table.AutoIncrementName,
 		},
 	)
 	if err != nil {
@@ -209,6 +229,10 @@ func (this_ *mappingDialect) TableCreateColumnSql(param *ParamModel, column *Col
 		map[string]string{
 			"columnTypePack":    columnTypePack,
 			"columnDefaultPack": columnDefaultPack,
+
+			"autoIncrement":      GetStringValue(column.AutoIncrement),
+			"autoIncrementStart": GetStringValue(column.AutoIncrementStart),
+			"autoIncrementName":  column.AutoIncrementName,
 		},
 	)
 	if err != nil {

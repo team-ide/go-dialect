@@ -38,6 +38,10 @@ type TableModel struct {
 	TableCollationName    string                 `json:"tableCollationName"`
 	Extend                map[string]interface{} `json:"extend,omitempty"`
 
+	AutoIncrement      bool   `json:"autoIncrement"`
+	AutoIncrementStart int64  `json:"autoIncrementStart"`
+	AutoIncrementName  string `json:"autoIncrementName"`
+
 	OwnerName string `json:"ownerName"`
 
 	Sql   string `json:"sql,omitempty"`
@@ -121,6 +125,10 @@ type ColumnModel struct {
 	ColumnCharacterSetName string `json:"columnCharacterSetName"`
 
 	PrimaryKey bool `json:"primaryKey"`
+
+	AutoIncrement      bool   `json:"autoIncrement"`
+	AutoIncrementStart int64  `json:"autoIncrementStart"`
+	AutoIncrementName  string `json:"autoIncrementName"`
 
 	ColumnEnums []string               `json:"columnEnums"`
 	ColumnExtra string                 `json:"columnExtra"`

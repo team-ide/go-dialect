@@ -6,6 +6,32 @@ import (
 )
 
 func TestInsertDataList(t *testing.T) {
+	mysqlDia, err := NewDialect("mysql")
+	if err != nil {
+		panic(err)
+		return
+	}
+	table := &TableModel{
+		TableName: "user",
+		ColumnList: []*ColumnModel{
+			{ColumnName: "id", ColumnDataType: "bigint", ColumnLength: 20, PrimaryKey: true},
+			{ColumnName: "name", ColumnDataType: "varchar", ColumnLength: 100},
+		},
+		AutoIncrement:      true,
+		AutoIncrementStart: 1,
+	}
+	createSqls, err := mysqlDia.TableCreateSql(nil, "", table)
+	if err != nil {
+		panic(err)
+		return
+	}
+	fmt.Println("---------create sql start----------")
+	for _, one := range createSqls {
+		fmt.Println(one)
+	}
+
+	fmt.Println("---------create sql end----------")
+
 	dia, err := NewDialect("oracle")
 	if err != nil {
 		return

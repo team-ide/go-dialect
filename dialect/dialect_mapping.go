@@ -2,7 +2,9 @@ package dialect
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -102,13 +104,33 @@ func (this_ StatementScript) doubleQuotationMarksPack(value interface{}) (res st
 	return
 }
 
+func (this_ StatementScript) autoIncrement(autoIncrement interface{}) (res string) {
+	if isTrue(autoIncrement) {
+		res = "AUTO_INCREMENT"
+	}
+	return
+}
+
+func (this_ StatementScript) tableAutoIncrement(autoIncrement interface{}, autoIncrementStart interface{}) (res string) {
+	if !isTrue(autoIncrement) {
+		return
+	}
+	if autoIncrementStart != nil && autoIncrementStart != "" {
+		str := GetStringValue(autoIncrementStart)
+		int64V, _ := strconv.ParseInt(str, 10, 64)
+		if int64V != 0 {
+			res = fmt.Sprintf("AUTO_INCREMENT = %d", int64V)
+		}
+	}
+	return
+}
+
 func (this_ StatementScript) columnNotNull(columnNotNull interface{}) (res string) {
 	if isTrue(columnNotNull) {
 		res = "NOT NULL"
 	}
 	return
 }
-
 func (this_ StatementScript) equalFold(arg1 interface{}, arg2 interface{}) bool {
 	if arg1 == arg2 {
 		return true
@@ -142,6 +164,8 @@ func (this_ *mappingDialect) NewStatementContext(param *ParamModel, dataList ...
 	}
 	statementContext.AddMethod("sqlValuePack", statementScript.sqlValuePack)
 	statementContext.AddMethod("columnNotNull", statementScript.columnNotNull)
+	statementContext.AddMethod("autoIncrement", statementScript.autoIncrement)
+	statementContext.AddMethod("tableAutoIncrement", statementScript.tableAutoIncrement)
 	statementContext.AddMethod("joins", statementScript.joins)
 	statementContext.AddMethod("equalFold", statementScript.equalFold)
 	statementContext.AddMethod("doubleQuotationMarksPack", statementScript.doubleQuotationMarksPack)
